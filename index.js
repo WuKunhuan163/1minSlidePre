@@ -143,7 +143,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const createPresentationView = () => {
         const overlay = document.createElement('div');
         overlay.className = 'presentation-overlay';
-        
         overlay.innerHTML = `
             <div class="presentation-header">
                 <button class="back-button">
@@ -151,9 +150,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
                 <h2>${selectedTime}分钟即兴演讲</h2>
             </div>
-            <div class="slide-container">
-                <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
-            </div>
+            <div class="slide-container"></div>
+            <div class="countdown-overlay"></div>
+            <div class="presentation-controls"></div>
         `;
 
         document.body.appendChild(overlay);
@@ -166,16 +165,135 @@ document.addEventListener('DOMContentLoaded', function() {
         return slides[randomIndex];
     };
 
+    // Start countdown and recording
+    const startPresentation = async (overlay) => {
+        const slideContainer = overlay.querySelector('.slide-container');
+        const controlsContainer = overlay.querySelector('.presentation-controls');
+        const countdownOverlay = overlay.querySelector('.countdown-overlay');
+        const backButton = overlay.querySelector('.back-button');
+        const startSound = new Audio('assets/effects/start.mp3');
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isRecording = false;
+
+        try {
+
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { 
+                    displaySurface: "browser",
+                    frameRate: 30,
+                    preferCurrentTab: true
+                },
+                audio: true,
+                systemAudio: "include",
+                surfaceSwitching: "include",
+                selfBrowserSurface: "include"
+            }).catch(() => null); 
+            slideContainer.innerHTML = `
+                <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
+            `;
+            if (stream) {
+                const tracks = stream.getVideoTracks();
+                if (tracks.length > 0) {
+                    const settings = tracks[0].getSettings
+                    if (settings.displaySurface !== 'browser') {
+                        console.log('Non-browser surface selected, continuing without recording');
+                    } else {
+                        console.log('Browser surface selected, starting recording');
+                        mediaRecorder = new MediaRecorder(stream);
+                        mediaRecorder.ondataavailable = (event) => {
+                            if (event.data.size > 0) {
+                                recordedChunks.push(event.data);
+                            }
+                        };
+                        mediaRecorder.onstop = () => {
+                            if (recordedChunks.length > 0) {
+                                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = '即兴演讲.webm';
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            }
+                            stream.getTracks().forEach(track => track.stop());
+                        };
+                    }
+                }
+            }
+
+            // Setup back button handler
+            backButton.addEventListener('click', () => {
+                if (isRecording && mediaRecorder) {
+                    mediaRecorder.stop();
+                }
+                if (mediaRecorder) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+                slideContainer = null;
+                controlsContainer = null;
+                mediaRecorder = null;
+                countdownOverlay = null;
+                overlay.remove();
+            });
+
+            // Start countdown
+            slideContainer.classList.add('blur');
+            await startSound.play();
+            const countdown = ['3', '2', '1', '开始'];
+            for (let text of countdown) {
+                if (!countdownOverlay) {
+                    break;
+                }
+                countdownOverlay.textContent = text;
+                countdownOverlay.classList.add('show');
+                await new Promise(resolve => setTimeout(resolve, 800));
+                if (text != "开始") {countdownOverlay.classList.remove('show');}
+                await new Promise(resolve => setTimeout(resolve, 200));
+                if (text == "开始") {
+                    countdownOverlay.style.transition = "reset";
+                    countdownOverlay.classList.remove('show');
+                }
+            }
+
+            // Start recording
+            // check if the element exists to prevent errors due to 
+            // clicking back button before countdown ends
+            if (slideContainer) {
+                slideContainer.classList.remove('blur'); 
+            }
+            if (controlsContainer) {
+                controlsContainer.innerHTML = `
+                    <button class="stop-recording">停止录制</button>
+                `;
+            }
+            if (overlay) {
+                const recordStopButton = overlay.querySelector('.stop-recording')
+                if (isRecording) {
+                    recordStopButton.addEventListener('click', () => {
+                        mediaRecorder.stop();
+                    });
+                }
+                recordStopButton.addEventListener('click', () => {
+                    overlay.remove();
+                });
+            }
+            if (mediaRecorder) {
+                mediaRecorder.start();
+                isRecording = true;
+            }
+
+        } catch (err) {
+            console.error('Error in presentation:', err);
+            overlay.remove();
+        }
+    };
+
     // Start button click handler
     startButton.addEventListener('click', () => {
         if (slides.length === 0) return;
-        
         const overlay = createPresentationView();
-
-        // Back button handler
-        overlay.querySelector('.back-button').addEventListener('click', () => {
-            overlay.remove();
-        });
+        startPresentation(overlay);
     });
 
     // Initial button state
