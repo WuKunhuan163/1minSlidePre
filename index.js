@@ -177,49 +177,66 @@ document.addEventListener('DOMContentLoaded', function() {
         let isRecording = false;
 
         try {
+            // Check if it's a mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            let stream;
 
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: { 
-                    displaySurface: "browser",
-                    frameRate: 30,
-                    preferCurrentTab: true
-                },
-                audio: true,
-                systemAudio: "include",
-                surfaceSwitching: "include",
-                selfBrowserSurface: "include"
-            }).catch(() => null); 
+            if (isMobile) {
+                // For mobile devices, just capture audio
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: false
+                }).catch(err => {
+                    console.error('Error accessing media devices:', err);
+                    return null;
+                });
+            } else {
+                // For desktop, try screen capture with audio
+                stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { 
+                        displaySurface: "browser",
+                        frameRate: 30,
+                        preferCurrentTab: true
+                    },
+                    audio: true,
+                    systemAudio: "include",
+                    surfaceSwitching: "include",
+                    selfBrowserSurface: "include"
+                }).catch(async () => {
+                    // Fallback to just audio if screen capture fails
+                    return await navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                        video: false
+                    }).catch(() => null);
+                });
+            }
+
             slideContainer.innerHTML = `
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
             `;
+
             if (stream) {
-                const tracks = stream.getVideoTracks();
-                if (tracks.length > 0) {
-                    const settings = tracks[0].getSettings
-                    if (settings.displaySurface !== 'browser') {
-                        console.log('Non-browser surface selected, continuing without recording');
-                    } else {
-                        console.log('Browser surface selected, starting recording');
-                        mediaRecorder = new MediaRecorder(stream);
-                        mediaRecorder.ondataavailable = (event) => {
-                            if (event.data.size > 0) {
-                                recordedChunks.push(event.data);
-                            }
-                        };
-                        mediaRecorder.onstop = () => {
-                            if (recordedChunks.length > 0) {
-                                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = '即兴演讲.webm';
-                                a.click();
-                                URL.revokeObjectURL(url);
-                            }
-                            stream.getTracks().forEach(track => track.stop());
-                        };
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
                     }
-                }
+                };
+                mediaRecorder.onstop = () => {
+                    if (recordedChunks.length > 0) {
+                        const blob = new Blob(recordedChunks, { 
+                            type: isMobile ? 'audio/webm' : 'video/webm' 
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = isMobile ? '即兴演讲.webm' : '即兴演讲.webm';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                isRecording = true;
             }
 
             // Setup back button handler
@@ -227,8 +244,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (isRecording && mediaRecorder) {
                     mediaRecorder.stop();
                 }
-                if (mediaRecorder) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
                 }
                 slideContainer = null;
                 controlsContainer = null;
@@ -236,15 +253,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 countdownOverlay = null;
                 overlay.remove();
             });
+            controlsContainer.innerHTML = `
+                <button class="stop-recording">停止录制</button>
+            `;
+            const recordStopButton = controlsContainer.querySelector('.stop-recording');
+            recordStopButton.style.cursor = 'none';
+            recordStopButton.style.visibility = 'hidden';
 
             // Start countdown
             slideContainer.classList.add('blur');
             await startSound.play();
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
-                if (!countdownOverlay) {
-                    break;
-                }
+                if (!countdownOverlay) break;
                 countdownOverlay.textContent = text;
                 countdownOverlay.classList.add('show');
                 await new Promise(resolve => setTimeout(resolve, 800));
@@ -257,30 +278,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Start recording
-            // check if the element exists to prevent errors due to 
-            // clicking back button before countdown ends
             if (slideContainer) {
                 slideContainer.classList.remove('blur'); 
             }
-            if (controlsContainer) {
-                controlsContainer.innerHTML = `
-                    <button class="stop-recording">停止录制</button>
-                `;
+            if (recordStopButton) {
+                recordStopButton.style.visibility = 'visible';
+                recordStopButton.style.cursor = 'pointer';
             }
             if (overlay) {
-                const recordStopButton = overlay.querySelector('.stop-recording')
-                if (isRecording) {
+                if (mediaRecorder) {
                     recordStopButton.addEventListener('click', () => {
                         mediaRecorder.stop();
+                        overlay.remove();
+                    });
+                } else {
+                    recordStopButton.addEventListener('click', () => {
+                        overlay.remove();
                     });
                 }
-                recordStopButton.addEventListener('click', () => {
-                    overlay.remove();
-                });
             }
             if (mediaRecorder) {
                 mediaRecorder.start();
-                isRecording = true;
             }
 
         } catch (err) {
