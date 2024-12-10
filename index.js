@@ -151,6 +151,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2>${selectedTime}分钟即兴演讲</h2>
             </div>
             <div class="slide-container"></div>
+            <div class="timer-container">
+                <div class="timer-display">00:00</div>
+                <div class="progress-bar">
+                    <div class="progress"></div>
+                </div>
+            </div>
             <div class="countdown-overlay"></div>
             <div class="presentation-controls"></div>
         `;
@@ -171,29 +177,56 @@ document.addEventListener('DOMContentLoaded', function() {
         const controlsContainer = overlay.querySelector('.presentation-controls');
         const countdownOverlay = overlay.querySelector('.countdown-overlay');
         const backButton = overlay.querySelector('.back-button');
+        const timerDisplay = overlay.querySelector('.timer-display');
+        const progressBar = overlay.querySelector('.progress');
         const startSound = new Audio('assets/effects/start.mp3');
-        let mediaRecorder;
-        let recordedChunks = [];
+        const halfwaySound = new Audio('assets/effects/halfway.mp3');
+        const endSound = new Audio('assets/effects/end.mp3');
         let isRecording = false;
+        let startTime;
+        let timerInterval;
+
+        const formatTime = (seconds) => {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        };
+
+        const updateTimer = () => {
+            const currentTime = (Date.now() - startTime) / 1000; // seconds
+            const totalTime = selectedTime * 60; // convert minutes to seconds
+            const progress = Math.min((currentTime / totalTime) * 100, 100);
+            timerDisplay.textContent = formatTime(currentTime);
+            progressBar.style.width = `${progress}%`;
+            if (currentTime >= totalTime && endSound.currentTime === 0) {
+                console.log("Presentation time is up! ");
+                endSound.play();
+            } else if (currentTime >= totalTime / 2 && halfwaySound.currentTime === 0) {
+                console.log("Presentation time is halfway! ");
+                halfwaySound.play();
+            }
+        };
 
         try {
             slideContainer.innerHTML = `
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
             `;
+
             // Setup back button handler
             backButton.addEventListener('click', () => {
-                if (isRecording && mediaRecorder) {
-                    mediaRecorder.stop();
+                if (timerInterval) {
+                    clearInterval(timerInterval);
                 }
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
-                slideContainer = null;
-                controlsContainer = null;
-                mediaRecorder = null;
-                countdownOverlay = null;
+                if (startSound.currentTime > 0) startSound.pause();
+                if (halfwaySound.currentTime > 0) halfwaySound.pause();
+                if (endSound.currentTime > 0) endSound.pause();
                 overlay.remove();
             });
+
             controlsContainer.innerHTML = `
                 <button class="stop-recording">停止</button>
             `;
@@ -202,7 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
             recordStopButton.style.visibility = 'hidden';
 
             // Start countdown
+            await new Promise(resolve => setTimeout(resolve, 1000)); 
             slideContainer.classList.add('blur');
+            await new Promise(resolve => setTimeout(resolve, 1000));
             await startSound.play();
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
@@ -218,22 +253,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Start recording
+            // Start the presentation
             if (slideContainer) {
-                slideContainer.classList.remove('blur'); 
+                slideContainer.style.transition = "reset";
+                slideContainer.classList.remove('blur');
             }
             if (recordStopButton) {
                 recordStopButton.style.visibility = 'visible';
                 recordStopButton.style.cursor = 'pointer';
             }
+            
+            // Start the timer
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 100);
             if (overlay) {
                 recordStopButton.addEventListener('click', () => {
-                    overlay.remove();
+                    clearInterval(timerInterval);
+                    if (startSound.currentTime > 0) startSound.pause();
+                    if (halfwaySound.currentTime > 0) halfwaySound.pause();
+                    if (endSound.currentTime > 0) endSound.pause();
+                    recordStopButton.textContent = '演讲已结束';
+                    recordStopButton.style.backgroundColor = '#666'; 
+                    timerDisplay.style.color = '#fff';
+                    progressBar.style.backgroundColor = '#fff';
+                    recordStopButton.disabled = true;
                 });
             }
 
         } catch (err) {
             console.error('Error in presentation:', err);
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
             overlay.remove();
         }
     };
