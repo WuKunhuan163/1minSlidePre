@@ -306,7 +306,9 @@ body {
     align-items: center;
     gap: 20px;
     padding: 20px;
-    height: 80px; /* Fixed height for header */
+    height: 80px;
+    position: relative;
+    z-index: 1002;
 }
 
 .presentation-header h2 {
@@ -410,4 +412,10 @@ body {
 
 .stop-recording:hover {
     opacity: 1;
+}
+
+.presentation-header .back-button {
+    position: relative;
+    z-index: 1002;
+    cursor: pointer;
 } 
