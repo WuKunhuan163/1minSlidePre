@@ -186,7 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const startSound = new Audio('assets/effects/start.mp3');
         const halfwaySound = new Audio('assets/effects/halfway.mp3');
         const endSound = new Audio('assets/effects/end.mp3');
-        let isRecording = false;
         let startTime;
         let timerInterval;
         let isActive = true;
@@ -203,14 +202,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const updateTimer = () => {
             if (!isActive) return;
-            
             const currentTime = (Date.now() - startTime) / 1000;
             const totalTime = selectedTime * 60;
             const progress = Math.min((currentTime / totalTime) * 100, 100);
-            
             timerDisplay.textContent = formatTime(currentTime);
             progressBar.style.width = `${progress}%`;
-            
             if (isActive) {
                 if (currentTime >= totalTime && endSound.currentTime === 0) {
                     console.log("Presentation time is up!");
@@ -241,7 +237,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Setup back button handler
             backButton.addEventListener('click', cleanup);
-
             controlsContainer.innerHTML = `
                 <button class="stop-recording">停止</button>
             `;
@@ -254,7 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
             slideContainer.classList.add('blur');
             await new Promise(resolve => setTimeout(resolve, 1000));
             await startSound.play();
-            await new Promise(resolve => setTimeout(resolve, 400));
+            await new Promise(resolve => setTimeout(resolve, 300));
+            if (!isActive) return;
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
                 if (!countdownOverlay) break;
