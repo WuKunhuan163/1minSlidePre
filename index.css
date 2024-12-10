@@ -22,6 +22,7 @@ body {
 .cover-container {
     flex: 1;
     overflow: hidden;
+    cursor: none;
     position: relative;
 }
 
@@ -360,7 +361,7 @@ body {
 }
 
 .slide-container.blur {
-    filter: brightness(0.7);
+    filter: brightness(0.3);
 }
 
 .countdown-overlay {
@@ -380,7 +381,9 @@ body {
 }
 
 .countdown-overlay.show {
+    filter: unset !important;
     opacity: 1;
+    z-index: 1000;
 }
 
 .presentation-controls {
