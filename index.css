@@ -357,4 +357,55 @@ body {
 .presentation-header .back-button i {
     color: white;
     font-size: 20px;
+}
+
+.slide-container.blur {
+    filter: brightness(0.7);
+}
+
+.countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 120px;
+    font-weight: bold;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.countdown-overlay.show {
+    opacity: 1;
+}
+
+.presentation-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+}
+
+.stop-recording {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 30px;
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
+
+.stop-recording:hover {
+    opacity: 1;
 } 
