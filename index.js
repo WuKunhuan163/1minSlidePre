@@ -143,7 +143,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const createPresentationView = () => {
         const overlay = document.createElement('div');
         overlay.className = 'presentation-overlay';
-        
         overlay.innerHTML = `
             <div class="presentation-header">
                 <button class="back-button">
@@ -170,24 +169,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const startPresentation = async (overlay) => {
         const slideContainer = overlay.querySelector('.slide-container');
         const controlsContainer = overlay.querySelector('.presentation-controls');
+        const countdownOverlay = overlay.querySelector('.countdown-overlay');
         const backButton = overlay.querySelector('.back-button');
         const startSound = new Audio('assets/effects/start.mp3');
         let mediaRecorder;
         let recordedChunks = [];
         let isRecording = false;
 
-        // Setup back button handler
-        backButton.addEventListener('click', () => {
-            if (isRecording && mediaRecorder) {
-                mediaRecorder.stop();
-            }
-            if (mediaRecorder) {
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            }
-            overlay.remove();
-        });
-
         try {
+
             const stream = await navigator.mediaDevices.getDisplayMedia({
                 video: { 
                     displaySurface: "browser",
@@ -202,17 +192,10 @@ document.addEventListener('DOMContentLoaded', function() {
             slideContainer.innerHTML = `
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
             `;
-            controlsContainer.innerHTML = `
-                <button class="stop-recording">停止录制</button>
-            `;
-            overlay.querySelector('.stop-recording').addEventListener('click', () => {
-                overlay.remove();
-            });
             if (stream) {
                 const tracks = stream.getVideoTracks();
                 if (tracks.length > 0) {
-                    const settings = tracks[0].getSettings();
-                    // Check if the selected surface is not the current browser tab
+                    const settings = tracks[0].getSettings
                     if (settings.displaySurface !== 'browser') {
                         console.log('Non-browser surface selected, continuing without recording');
                     } else {
@@ -235,22 +218,33 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             stream.getTracks().forEach(track => track.stop());
                         };
-                        overlay.querySelector('.stop-recording').addEventListener('click', () => {
-                            mediaRecorder.stop();
-                        });
                     }
                 }
             }
 
+            // Setup back button handler
+            backButton.addEventListener('click', () => {
+                if (isRecording && mediaRecorder) {
+                    mediaRecorder.stop();
+                }
+                if (mediaRecorder) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+                slideContainer = null;
+                controlsContainer = null;
+                mediaRecorder = null;
+                countdownOverlay = null;
+                overlay.remove();
+            });
+
             // Start countdown
-            console.log('开始倒计时');
-            const countdownOverlay = overlay.querySelector('.countdown-overlay');
-            console.log(countdownOverlay);
             slideContainer.classList.add('blur');
             await startSound.play();
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
-                console.log(text);
+                if (!countdownOverlay) {
+                    break;
+                }
                 countdownOverlay.textContent = text;
                 countdownOverlay.classList.add('show');
                 await new Promise(resolve => setTimeout(resolve, 800));
@@ -261,9 +255,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     countdownOverlay.classList.remove('show');
                 }
             }
-            slideContainer.classList.remove('blur');
-            
-            // Only start recording if mediaRecorder exists
+
+            // Start recording
+            // check if the element exists to prevent errors due to 
+            // clicking back button before countdown ends
+            if (slideContainer) {
+                slideContainer.classList.remove('blur'); 
+            }
+            if (controlsContainer) {
+                controlsContainer.innerHTML = `
+                    <button class="stop-recording">停止录制</button>
+                `;
+            }
+            if (overlay) {
+                const recordStopButton = overlay.querySelector('.stop-recording')
+                if (isRecording) {
+                    recordStopButton.addEventListener('click', () => {
+                        mediaRecorder.stop();
+                    });
+                }
+                recordStopButton.addEventListener('click', () => {
+                    overlay.remove();
+                });
+            }
             if (mediaRecorder) {
                 mediaRecorder.start();
                 isRecording = true;
@@ -278,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start button click handler
     startButton.addEventListener('click', () => {
         if (slides.length === 0) return;
-        
         const overlay = createPresentationView();
         startPresentation(overlay);
     });
