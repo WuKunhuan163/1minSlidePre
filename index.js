@@ -181,10 +181,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const stream = await navigator.mediaDevices.getDisplayMedia({
                 video: { 
                     displaySurface: "browser",
-                    frameRate: 30
+                    frameRate: 30,
+                    preferCurrentTab: true
                 },
-                audio: true
+                audio: true,
+                systemAudio: "include",
+                surfaceSwitching: "include",
+                selfBrowserSurface: "include"
             });
+
+            // Add check to ensure current tab is selected
+            const tracks = stream.getVideoTracks();
+            if (tracks.length > 0) {
+                const settings = tracks[0].getSettings();
+                if (settings.displaySurface !== 'browser') {
+                    stream.getTracks().forEach(track => track.stop());
+                    throw new Error('Please select the current browser tab for recording.');
+                }
+            }
 
             // After permission is granted, show the slide and controls
             slideContainer.innerHTML = `
@@ -239,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (err) {
             console.error('Error starting presentation:', err);
-            alert('无法开始录制，请确保已授予屏幕录制权限。');
+            alert(err.message || '无法开始录制，请确保已授予屏幕录制权限。');
             overlay.remove();
         }
     };
