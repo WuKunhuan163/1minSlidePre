@@ -25,7 +25,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Slides management
-    let slides = ['assets/slides/0.JPG', 'assets/slides/1.JPG']; // Default slides
+    let slides = [
+        'assets/slides/Day2-1.JPG', 'assets/slides/Day2-2.JPG', 
+        'assets/slides/Day3-1.JPG', 'assets/slides/Day3-2.JPG', 'assets/slides/Day3-3.JPG', 'assets/slides/Day3-4.JPG', 'assets/slides/Day3-5.JPG', 'assets/slides/Day3-6.JPG', 'assets/slides/Day3-7.JPG', 'assets/slides/Day3-8.JPG', 'assets/slides/Day3-9.JPG', 'assets/slides/Day3-10.JPG', 'assets/slides/Day3-11.JPG', 
+        'assets/slides/Day4-1.JPG', 'assets/slides/Day4-2.JPG', 'assets/slides/Day4-3.JPG', 'assets/slides/Day4-4.JPG', 'assets/slides/Day4-5.JPG', 'assets/slides/Day4-6.JPG', 
+    ]; 
     const uploadButton = document.querySelector('.action-button');
     
     // Create slides manager overlay
