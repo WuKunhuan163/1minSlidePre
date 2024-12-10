@@ -190,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         try {
-            // Start screen recording
             const stream = await navigator.mediaDevices.getDisplayMedia({
                 video: { 
                     displaySurface: "browser",
@@ -201,54 +200,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 systemAudio: "include",
                 surfaceSwitching: "include",
                 selfBrowserSurface: "include"
-            });
-
-            // Add check to ensure current tab is selected
-            const tracks = stream.getVideoTracks();
-            if (tracks.length > 0) {
-                const settings = tracks[0].getSettings();
-                if (settings.displaySurface !== 'browser') {
-                    stream.getTracks().forEach(track => track.stop());
-                    throw new Error('Please select the current browser tab for recording.');
-                }
-            }
-
-            // After permission is granted, show the slide and controls
+            }).catch(() => null); 
             slideContainer.innerHTML = `
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
                 <div class="countdown-overlay"></div>
             `;
-            
             controlsContainer.innerHTML = `
                 <button class="stop-recording">停止录制</button>
             `;
-
-            mediaRecorder = new MediaRecorder(stream);
-            
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    recordedChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = () => {
-                if (recordedChunks.length > 0) {
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = '即兴演讲.webm';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-                stream.getTracks().forEach(track => track.stop());
-                overlay.remove();
-            };
-
-            // Setup stop recording button
             overlay.querySelector('.stop-recording').addEventListener('click', () => {
-                mediaRecorder.stop();
+                overlay.remove();
             });
+            if (stream) {
+                const tracks = stream.getVideoTracks();
+                if (tracks.length > 0) {
+                    const settings = tracks[0].getSettings();
+                    // Check if the selected surface is not the current browser tab
+                    if (settings.displaySurface !== 'browser') {
+                        console.log('Non-browser surface selected, continuing without recording');
+                    } else {
+                        console.log('Browser surface selected, starting recording');
+                        mediaRecorder = new MediaRecorder(stream);
+                        mediaRecorder.ondataavailable = (event) => {
+                            if (event.data.size > 0) {
+                                recordedChunks.push(event.data);
+                            }
+                        };
+                        mediaRecorder.onstop = () => {
+                            if (recordedChunks.length > 0) {
+                                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = '即兴演讲.webm';
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            }
+                            stream.getTracks().forEach(track => track.stop());
+                        };
+                        overlay.querySelector('.stop-recording').addEventListener('click', () => {
+                            mediaRecorder.stop();
+                        });
+                    }
+                }
+            }
 
             // Start countdown
             slideContainer.classList.add('blur');
@@ -264,12 +259,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             slideContainer.classList.remove('blur');
-            mediaRecorder.start();
-            isRecording = true;
+            
+            // Only start recording if mediaRecorder exists
+            if (mediaRecorder) {
+                mediaRecorder.start();
+                isRecording = true;
+            }
 
         } catch (err) {
-            console.error('Error starting presentation:', err);
-            alert(err.message || '无法开始录制，请确保已授予屏幕录制权限。');
+            console.error('Error in presentation:', err);
             overlay.remove();
         }
     };
