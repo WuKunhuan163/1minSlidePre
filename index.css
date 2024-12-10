@@ -286,4 +286,75 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 15px;
     }
+}
+
+.presentation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.presentation-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    height: 80px; /* Fixed height for header */
+}
+
+.presentation-header h2 {
+    color: white;
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.slide-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    /* Ensure top padding matches header height */
+    padding-top: 0;
+    padding-bottom: 80px; /* Match header height for symmetry */
+}
+
+.presentation-slide {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+/* Update existing back-button styles to be more specific */
+.slides-header .back-button,
+.presentation-header .back-button {
+    background: #333333;
+    border: none;
+    border-radius: 25px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.slides-header .back-button:hover,
+.presentation-header .back-button:hover {
+    opacity: 0.5;
+}
+
+.slides-header .back-button i,
+.presentation-header .back-button i {
+    color: white;
+    font-size: 20px;
 } 

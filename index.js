@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Render thumbnails
-    const renderThumbnails = (container) => {
+    var renderThumbnails = (container) => {
         const thumbnailsContainer = container.querySelector('.thumbnails-container');
         const addButton = thumbnailsContainer.querySelector('.add-slide');
         
@@ -120,4 +120,64 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Presentation management
+    const startButton = document.querySelectorAll('.action-button')[1]; // Second button
+    
+    const updateStartButton = () => {
+        if (slides.length === 0) {
+            startButton.disabled = true;
+        } else {
+            startButton.disabled = false;
+        }
+    };
+
+    // Update start button state whenever slides change
+    const originalRenderThumbnails = renderThumbnails;
+    renderThumbnails = (container) => {
+        originalRenderThumbnails(container);
+        updateStartButton();
+    };
+
+    // Create presentation view
+    const createPresentationView = () => {
+        const overlay = document.createElement('div');
+        overlay.className = 'presentation-overlay';
+        
+        overlay.innerHTML = `
+            <div class="presentation-header">
+                <button class="back-button">
+                    <i class='bx bx-arrow-back'></i>
+                </button>
+                <h2>${selectedTime}分钟即兴演讲</h2>
+            </div>
+            <div class="slide-container">
+                <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        return overlay;
+    };
+
+    // Get random slide
+    const getRandomSlide = () => {
+        const randomIndex = Math.floor(Math.random() * slides.length);
+        return slides[randomIndex];
+    };
+
+    // Start button click handler
+    startButton.addEventListener('click', () => {
+        if (slides.length === 0) return;
+        
+        const overlay = createPresentationView();
+
+        // Back button handler
+        overlay.querySelector('.back-button').addEventListener('click', () => {
+            overlay.remove();
+        });
+    });
+
+    // Initial button state
+    updateStartButton();
 }); 
