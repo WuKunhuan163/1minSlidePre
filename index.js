@@ -189,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let isRecording = false;
         let startTime;
         let timerInterval;
+        let isActive = true;
 
         const formatTime = (seconds) => {
             const h = Math.floor(seconds / 3600);
@@ -201,18 +202,36 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         const updateTimer = () => {
-            const currentTime = (Date.now() - startTime) / 1000; // seconds
-            const totalTime = selectedTime * 60; // convert minutes to seconds
+            if (!isActive) return;
+            
+            const currentTime = (Date.now() - startTime) / 1000;
+            const totalTime = selectedTime * 60;
             const progress = Math.min((currentTime / totalTime) * 100, 100);
+            
             timerDisplay.textContent = formatTime(currentTime);
             progressBar.style.width = `${progress}%`;
-            if (currentTime >= totalTime && endSound.currentTime === 0) {
-                console.log("Presentation time is up! ");
-                endSound.play();
-            } else if (currentTime >= totalTime / 2 && halfwaySound.currentTime === 0) {
-                console.log("Presentation time is halfway! ");
-                halfwaySound.play();
+            
+            if (isActive) {
+                if (currentTime >= totalTime && endSound.currentTime === 0) {
+                    console.log("Presentation time is up!");
+                    endSound.play();
+                } else if (currentTime >= totalTime / 2 && halfwaySound.currentTime === 0) {
+                    console.log("Presentation time is halfway!");
+                    halfwaySound.play();
+                }
             }
+        };
+
+        const cleanup = () => {
+            isActive = false;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            [startSound, halfwaySound, endSound].forEach(sound => {
+                sound.pause();
+                sound.currentTime = 0;
+            });
+            overlay.remove();
         };
 
         try {
@@ -221,15 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
 
             // Setup back button handler
-            backButton.addEventListener('click', () => {
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                }
-                if (startSound.currentTime > 0) startSound.pause();
-                if (halfwaySound.currentTime > 0) halfwaySound.pause();
-                if (endSound.currentTime > 0) endSound.pause();
-                overlay.remove();
-            });
+            backButton.addEventListener('click', cleanup);
 
             controlsContainer.innerHTML = `
                 <button class="stop-recording">停止</button>
@@ -243,6 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
             slideContainer.classList.add('blur');
             await new Promise(resolve => setTimeout(resolve, 1000));
             await startSound.play();
+            await new Promise(resolve => setTimeout(resolve, 400));
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
                 if (!countdownOverlay) break;
@@ -273,11 +285,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (overlay) {
                 recordStopButton.addEventListener('click', () => {
                     clearInterval(timerInterval);
-                    if (startSound.currentTime > 0) startSound.pause();
-                    if (halfwaySound.currentTime > 0) halfwaySound.pause();
-                    if (endSound.currentTime > 0) endSound.pause();
+                    isActive = false;
+                    [startSound, halfwaySound, endSound].forEach(sound => {
+                        sound.pause();
+                        sound.currentTime = 0;
+                    });
                     recordStopButton.textContent = '演讲已结束';
-                    recordStopButton.style.backgroundColor = '#666'; 
+                    recordStopButton.style.backgroundColor = '#666';
                     timerDisplay.style.color = '#fff';
                     progressBar.style.backgroundColor = '#fff';
                     recordStopButton.disabled = true;
@@ -286,10 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (err) {
             console.error('Error in presentation:', err);
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            overlay.remove();
+            cleanup();
         }
     };
 
