@@ -177,58 +177,16 @@ document.addEventListener('DOMContentLoaded', function() {
         let isRecording = false;
 
         try {
-
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: { 
-                    displaySurface: "browser",
-                    frameRate: 30,
-                    preferCurrentTab: true
-                },
-                audio: true,
-                systemAudio: "include",
-                surfaceSwitching: "include",
-                selfBrowserSurface: "include"
-            }).catch(() => null); 
             slideContainer.innerHTML = `
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
             `;
-            if (stream) {
-                const tracks = stream.getVideoTracks();
-                if (tracks.length > 0) {
-                    const settings = tracks[0].getSettings
-                    if (settings.displaySurface !== 'browser') {
-                        console.log('Non-browser surface selected, continuing without recording');
-                    } else {
-                        console.log('Browser surface selected, starting recording');
-                        mediaRecorder = new MediaRecorder(stream);
-                        mediaRecorder.ondataavailable = (event) => {
-                            if (event.data.size > 0) {
-                                recordedChunks.push(event.data);
-                            }
-                        };
-                        mediaRecorder.onstop = () => {
-                            if (recordedChunks.length > 0) {
-                                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = '即兴演讲.webm';
-                                a.click();
-                                URL.revokeObjectURL(url);
-                            }
-                            stream.getTracks().forEach(track => track.stop());
-                        };
-                    }
-                }
-            }
-
             // Setup back button handler
             backButton.addEventListener('click', () => {
                 if (isRecording && mediaRecorder) {
                     mediaRecorder.stop();
                 }
-                if (mediaRecorder) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
                 }
                 slideContainer = null;
                 controlsContainer = null;
@@ -236,15 +194,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 countdownOverlay = null;
                 overlay.remove();
             });
+            controlsContainer.innerHTML = `
+                <button class="stop-recording">停止</button>
+            `;
+            const recordStopButton = controlsContainer.querySelector('.stop-recording');
+            recordStopButton.style.cursor = 'none';
+            recordStopButton.style.visibility = 'hidden';
 
             // Start countdown
             slideContainer.classList.add('blur');
             await startSound.play();
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
-                if (!countdownOverlay) {
-                    break;
-                }
+                if (!countdownOverlay) break;
                 countdownOverlay.textContent = text;
                 countdownOverlay.classList.add('show');
                 await new Promise(resolve => setTimeout(resolve, 800));
@@ -257,30 +219,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Start recording
-            // check if the element exists to prevent errors due to 
-            // clicking back button before countdown ends
             if (slideContainer) {
                 slideContainer.classList.remove('blur'); 
             }
-            if (controlsContainer) {
-                controlsContainer.innerHTML = `
-                    <button class="stop-recording">停止录制</button>
-                `;
+            if (recordStopButton) {
+                recordStopButton.style.visibility = 'visible';
+                recordStopButton.style.cursor = 'pointer';
             }
             if (overlay) {
-                const recordStopButton = overlay.querySelector('.stop-recording')
-                if (isRecording) {
-                    recordStopButton.addEventListener('click', () => {
-                        mediaRecorder.stop();
-                    });
-                }
                 recordStopButton.addEventListener('click', () => {
                     overlay.remove();
                 });
-            }
-            if (mediaRecorder) {
-                mediaRecorder.start();
-                isRecording = true;
             }
 
         } catch (err) {
