@@ -235,7 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
             recordStopButton.style.visibility = 'hidden';
 
             // Start countdown
+            await new Promise(resolve => setTimeout(resolve, 1000)); 
             slideContainer.classList.add('blur');
+            await new Promise(resolve => setTimeout(resolve, 1000));
             await startSound.play();
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
@@ -253,6 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Start the presentation
             if (slideContainer) {
+                slideContainer.style.transition = "reset";
                 slideContainer.classList.remove('blur');
             }
             if (recordStopButton) {
