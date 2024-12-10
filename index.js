@@ -248,9 +248,10 @@ document.addEventListener('DOMContentLoaded', function() {
             await new Promise(resolve => setTimeout(resolve, 1000)); 
             slideContainer.classList.add('blur');
             await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!isActive) return;
+            console.log("Get ready for the presentation! ");
             await startSound.play();
             await new Promise(resolve => setTimeout(resolve, 300));
-            if (!isActive) return;
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
                 if (!countdownOverlay) break;
