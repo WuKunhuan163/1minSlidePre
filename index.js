@@ -152,12 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2>${selectedTime}分钟即兴演讲</h2>
             </div>
             <div class="slide-container">
-                <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
                 <div class="countdown-overlay"></div>
             </div>
-            <div class="presentation-controls">
-                <button class="stop-recording">停止录制</button>
-            </div>
+            <div class="presentation-controls"></div>
         `;
 
         document.body.appendChild(overlay);
@@ -174,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const startPresentation = async (overlay) => {
         const slideContainer = overlay.querySelector('.slide-container');
         const countdownOverlay = overlay.querySelector('.countdown-overlay');
+        const controlsContainer = overlay.querySelector('.presentation-controls');
         const startSound = new Audio('assets/effects/start.mp3');
         let mediaRecorder;
         let recordedChunks = [];
@@ -187,6 +185,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 audio: true
             });
+
+            // After permission is granted, show the slide and controls
+            slideContainer.innerHTML = `
+                <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
+                <div class="countdown-overlay"></div>
+            `;
+            
+            controlsContainer.innerHTML = `
+                <button class="stop-recording">停止录制</button>
+            `;
 
             mediaRecorder = new MediaRecorder(stream);
             
@@ -205,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.click();
                 URL.revokeObjectURL(url);
                 stream.getTracks().forEach(track => track.stop());
+                overlay.remove();
             };
 
             // Setup stop recording button
@@ -220,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let text of countdown) {
                 countdownOverlay.textContent = text;
                 countdownOverlay.classList.add('show');
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 800));
                 countdownOverlay.classList.remove('show');
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
