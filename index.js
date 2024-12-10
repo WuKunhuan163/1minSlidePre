@@ -151,9 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
                 <h2>${selectedTime}分钟即兴演讲</h2>
             </div>
-            <div class="slide-container">
-                <div class="countdown-overlay"></div>
-            </div>
+            <div class="slide-container"></div>
+            <div class="countdown-overlay"></div>
             <div class="presentation-controls"></div>
         `;
 
@@ -170,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start countdown and recording
     const startPresentation = async (overlay) => {
         const slideContainer = overlay.querySelector('.slide-container');
-        const countdownOverlay = overlay.querySelector('.countdown-overlay');
         const controlsContainer = overlay.querySelector('.presentation-controls');
         const backButton = overlay.querySelector('.back-button');
         const startSound = new Audio('assets/effects/start.mp3');
@@ -203,7 +201,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }).catch(() => null); 
             slideContainer.innerHTML = `
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
-                <div class="countdown-overlay"></div>
             `;
             controlsContainer.innerHTML = `
                 <button class="stop-recording">停止录制</button>
@@ -246,18 +243,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Start countdown
+            console.log('开始倒计时');
+            const countdownOverlay = overlay.querySelector('.countdown-overlay');
+            console.log(countdownOverlay);
             slideContainer.classList.add('blur');
             await startSound.play();
-
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
+                console.log(text);
                 countdownOverlay.textContent = text;
                 countdownOverlay.classList.add('show');
                 await new Promise(resolve => setTimeout(resolve, 800));
-                countdownOverlay.classList.remove('show');
+                if (text != "开始") {countdownOverlay.classList.remove('show');}
                 await new Promise(resolve => setTimeout(resolve, 200));
+                if (text == "开始") {
+                    countdownOverlay.style.transition = "reset";
+                    countdownOverlay.classList.remove('show');
+                }
             }
-
             slideContainer.classList.remove('blur');
             
             // Only start recording if mediaRecorder exists
