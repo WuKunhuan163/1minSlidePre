@@ -177,68 +177,9 @@ document.addEventListener('DOMContentLoaded', function() {
         let isRecording = false;
 
         try {
-            // Check if it's a mobile device
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            let stream;
-
-            if (isMobile) {
-                // For mobile devices, just capture audio
-                stream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: false
-                }).catch(err => {
-                    console.error('Error accessing media devices:', err);
-                    return null;
-                });
-            } else {
-                // For desktop, try screen capture with audio
-                stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { 
-                        displaySurface: "browser",
-                        frameRate: 30,
-                        preferCurrentTab: true
-                    },
-                    audio: true,
-                    systemAudio: "include",
-                    surfaceSwitching: "include",
-                    selfBrowserSurface: "include"
-                }).catch(async () => {
-                    // Fallback to just audio if screen capture fails
-                    return await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: false
-                    }).catch(() => null);
-                });
-            }
-
             slideContainer.innerHTML = `
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
             `;
-
-            if (stream) {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
-                };
-                mediaRecorder.onstop = () => {
-                    if (recordedChunks.length > 0) {
-                        const blob = new Blob(recordedChunks, { 
-                            type: isMobile ? 'audio/webm' : 'video/webm' 
-                        });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = isMobile ? '即兴演讲.webm' : '即兴演讲.webm';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }
-                    stream.getTracks().forEach(track => track.stop());
-                };
-                isRecording = true;
-            }
-
             // Setup back button handler
             backButton.addEventListener('click', () => {
                 if (isRecording && mediaRecorder) {
@@ -254,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.remove();
             });
             controlsContainer.innerHTML = `
-                <button class="stop-recording">停止录制</button>
+                <button class="stop-recording">停止</button>
             `;
             const recordStopButton = controlsContainer.querySelector('.stop-recording');
             recordStopButton.style.cursor = 'none';
@@ -286,19 +227,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 recordStopButton.style.cursor = 'pointer';
             }
             if (overlay) {
-                if (mediaRecorder) {
-                    recordStopButton.addEventListener('click', () => {
-                        mediaRecorder.stop();
-                        overlay.remove();
-                    });
-                } else {
-                    recordStopButton.addEventListener('click', () => {
-                        overlay.remove();
-                    });
-                }
-            }
-            if (mediaRecorder) {
-                mediaRecorder.start();
+                recordStopButton.addEventListener('click', () => {
+                    overlay.remove();
+                });
             }
 
         } catch (err) {
