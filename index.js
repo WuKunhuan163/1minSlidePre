@@ -269,6 +269,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isActive) return;
             console.log("Get ready for the presentation! ");
             if (!effectsMuted) {
+                startSound.currentTime = 0;
+                startSound.volume = effectsVolume;
                 await startSound.play();
             }
             await new Promise(resolve => setTimeout(resolve, 300));
