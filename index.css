@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    user-select: none;
 }
 
 body {
@@ -12,9 +13,11 @@ body {
 }
 
 .container {
+    position: fixed;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100vh;
     overflow: hidden;
     background-color: #000000;
 }
@@ -22,8 +25,9 @@ body {
 .cover-container {
     flex: 1;
     overflow: hidden;
+    user-select: none;
     cursor: none;
-    position: relative;
+    position: fixed;
 }
 
 .cover-image {
@@ -59,8 +63,8 @@ body {
     background-color: #333333;
     color: white;
     font-size: 14px;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
+    opacity: 0.8; 
+    cursor: pointer;
 }
 
 .action-button:hover {
@@ -202,8 +206,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
+    opacity: 0.8; 
 }
 
 .back-button:hover {
@@ -269,8 +272,7 @@ body {
     color: white;
     cursor: pointer;
     padding: 0;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
+    opacity: 0.8; 
 }
 
 .remove-slide:hover {
@@ -334,33 +336,6 @@ body {
     border-radius: 12px;
 }
 
-/* Update existing back-button styles to be more specific */
-.slides-header .back-button,
-.presentation-header .back-button {
-    background: #333333;
-    border: none;
-    border-radius: 25px;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
-}
-
-.slides-header .back-button:hover,
-.presentation-header .back-button:hover {
-    opacity: 0.5;
-}
-
-.slides-header .back-button i,
-.presentation-header .back-button i {
-    color: white;
-    font-size: 20px;
-}
-
 .slide-container.blur {
     filter: brightness(0.2);
 }
@@ -412,12 +387,6 @@ body {
     opacity: 1;
 }
 
-.presentation-header .back-button {
-    position: relative;
-    z-index: 1002;
-    cursor: pointer;
-}
-
 .timer-container {
     position: relative;
     width: 100%;
@@ -436,7 +405,7 @@ body {
 .progress-bar {
     width: 100%;
     height: 4px;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: #333333;
     overflow: hidden;
 }
 
@@ -444,10 +413,91 @@ body {
     width: 0%;
     height: 100%;
     background-color: #888888;
-    transition: width 0.1s linear;
 }
 
 .stop-recording:disabled {
     cursor: not-allowed;
     opacity: 0.7;
+}
+
+.volume-control-trigger {
+    cursor: pointer;
+    text-decoration: underline;
+    opacity: 1;
+}
+
+.volume-control-trigger:hover {
+    opacity: 0.8;
+}
+
+.volume-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    z-index: 2000;
+}
+
+.volume-control-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    margin: 0 auto;
+    position: relative;
+}
+
+.volume-slider-container {
+    width: 100%;
+    padding: 20px 0;
+}
+
+.volume-description {
+    text-align: center;
+    color: #888888;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.volume-slider {
+    width: 100%;
+    margin: 10px 0;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 4px;
+    background: #333333;
+    outline: none;
+    border-radius: 2px;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.volume-slider::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, #888888 var(--volume-percentage), #333333 var(--volume-percentage)); 
+    border: 2px solid #888888;
+    border-radius: 10px;
 } 

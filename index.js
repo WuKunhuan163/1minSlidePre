@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedValue = customSelect.querySelector('.selected-value');
     const timeOptions = customSelect.querySelectorAll('.time-option');
     let selectedTime = 1;
+    let effectsVolume = 1.0; // Default volume
+    let maxEffectsVolume = 1.0; 
 
     // Select functionality
     selectHeader.addEventListener('click', () => {
@@ -310,4 +312,84 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial button state
     updateStartButton();
+
+    // Add this new function after the DOMContentLoaded event handler starts
+    const createVolumeControl = async () => {
+        const overlay = document.createElement('div');
+        overlay.className = 'volume-overlay';
+        
+        // Add header
+        const header = document.createElement('div');
+        header.className = 'slides-header';
+        header.innerHTML = `
+            <button class="back-button">
+                <i class='bx bx-arrow-back'></i>
+            </button>
+            <h2>调整音效音量</h2>
+        `;
+        
+        const container = document.createElement('div');
+        container.className = 'volume-control-container';
+        
+        const sliderContainer = document.createElement('div');
+        sliderContainer.className = 'volume-slider-container';
+        
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'volume-slider';
+        slider.min = 0;
+        slider.max = 100;
+        slider.value = effectsVolume * 100;
+        
+        const description = document.createElement('div');
+        description.className = 'volume-description';
+        description.textContent = '滑动以调整音效音量';
+        
+        sliderContainer.appendChild(slider);
+        sliderContainer.appendChild(description);
+        
+        container.appendChild(sliderContainer);
+        
+        overlay.appendChild(header);
+        overlay.appendChild(container);
+        
+        document.body.appendChild(overlay);
+        
+        // Create test sound
+        const testSound = new Audio('assets/effects/end.mp3');
+        testSound.volume = effectsVolume;
+        
+        let toggleRadius = 10;
+        let sliderFullWidth = slider.offsetWidth;
+        
+        const updateVolumeUI = async () => {
+            let sliderWidthPercentage = (toggleRadius + (sliderFullWidth - 2 * toggleRadius) * effectsVolume / maxEffectsVolume) / sliderFullWidth;
+            slider.style.setProperty('--volume-percentage', `${sliderWidthPercentage * 100}%`);
+        };
+        await updateVolumeUI();
+        let lastMoveTime = 0;
+        const moveDelay = 100;
+        slider.addEventListener('input', async (e) => {
+            e.preventDefault();
+            const currentTime = Date.now();
+            const value = e.target.value;
+            effectsVolume = value / 100;
+            if (currentTime - lastMoveTime >= moveDelay) {
+                testSound.currentTime = 0;
+                testSound.volume = effectsVolume;
+                testSound.play();
+                lastMoveTime = currentTime;
+            }
+            await updateVolumeUI();
+        });
+        const backButton = header.querySelector('.back-button');
+        backButton.addEventListener('click', () => {
+            testSound.pause();
+            testSound.currentTime = 0;
+            overlay.remove();
+        });
+    };
+
+    // Add this event listener setup near other initialization code
+    document.querySelector('.volume-control-trigger').addEventListener('click', createVolumeControl);
 }); 
