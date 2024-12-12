@@ -7,10 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let effectsVolume = 1.0; // Default volume
     let effectsMuted = false;
     let maxEffectsVolume = 1.0; 
+
     let isIOSFunction = () => {
         const userAgent = window.navigator.userAgent;
         let result = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-        console.log(result ? "设备为iOS" : "设备为非iOS");
+        console.log(result ? "The device is iOS" : "The device is not iOS");
         return result;
     };
     let isIOS = isIOSFunction();
@@ -185,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return slides[randomIndex];
     };
 
-    // Start countdown and recording
+    // Start countdown
     const startPresentation = async (overlay) => {
         const slideContainer = overlay.querySelector('.slide-container');
         const controlsContainer = overlay.querySelector('.presentation-controls');
@@ -210,6 +211,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         };
 
+        let halfwayWarned = false;
+        let endWarned = false;
         const updateTimer = () => {
             if (!isActive) return;
             const currentTime = (Date.now() - startTime) / 1000;
@@ -218,14 +221,16 @@ document.addEventListener('DOMContentLoaded', function() {
             timerDisplay.textContent = formatTime(currentTime);
             progressBar.style.width = `${progress}%`;
             if (isActive) {
-                if (currentTime >= totalTime && endSound.currentTime === 0) {
+                if (currentTime >= totalTime && !endWarned) {
                     console.log("Presentation time is up!");
+                    endWarned = true;
                     if (!effectsMuted) {
                         endSound.volume = effectsVolume; 
                         endSound.play();
                     }
-                } else if (currentTime >= totalTime / 2 && halfwaySound.currentTime === 0) {
+                } else if (currentTime >= totalTime / 2 && !halfwayWarned) {
                     console.log("Presentation time is halfway!");
+                    halfwayWarned = true;
                     if (!effectsMuted) {
                         halfwaySound.volume = effectsVolume;
                         halfwaySound.play();
@@ -251,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <img src="${getRandomSlide()}" alt="Presentation Slide" class="presentation-slide">
             `;
 
-            // Setup back button handler
             backButton.addEventListener('click', cleanup);
             controlsContainer.innerHTML = `
                 <button class="stop-recording">停止</button>
@@ -259,14 +263,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const recordStopButton = controlsContainer.querySelector('.stop-recording');
             recordStopButton.style.cursor = 'none';
             recordStopButton.style.visibility = 'hidden';
-
-            // Start countdown
             await new Promise(resolve => setTimeout(resolve, 1000)); 
             slideContainer.classList.add('blur');
             await new Promise(resolve => setTimeout(resolve, 1000));
             if (!isActive) return;
             console.log("Get ready for the presentation! ");
-            await startSound.play();
+            if (!effectsMuted) {
+                await startSound.play();
+            }
             await new Promise(resolve => setTimeout(resolve, 300));
             const countdown = ['3', '2', '1', '开始'];
             for (let text of countdown) {
@@ -291,8 +295,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 recordStopButton.style.visibility = 'visible';
                 recordStopButton.style.cursor = 'pointer';
             }
-            
-            // Start the timer
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 100);
             if (overlay) {
@@ -335,8 +337,8 @@ document.addEventListener('DOMContentLoaded', function() {
             testSound.currentTime = 0;
         }
     };
-    const createVolumeControl = async () => {
 
+    const createVolumeControl = async () => {
         const overlay = document.createElement('div');
         overlay.className = 'volume-overlay';
         const header = document.createElement('div');
