@@ -501,3 +501,17 @@ body {
     border: 2px solid #888888;
     border-radius: 10px;
 } 
+
+.ios-volume-message {
+    text-align: center;
+    color: #888888;
+}
+
+.ios-volume-message i {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.ios-volume-message p {
+    font-size: 14px;
+}
