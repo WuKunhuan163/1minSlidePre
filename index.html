@@ -5,18 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>讲师训即兴演讲</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="index.css">
-    <link rel="icon" href="assets/favicon.ico">
+    <link rel="stylesheet" href="assets/stylesheets/index.css">
+    <link rel="stylesheet" href="assets/stylesheets/audio-setup.css">
+    <link rel="icon" href="assets/images/favicon.ico">
 </head>
 <body>
     <div class="container">
         <div class="cover-container">
-            <img src="assets/cover.jpg" alt="封面" class="cover-image">
+            <img src="assets/images/cover.jpg" alt="封面" class="cover-image">
         </div>
         <div class="button-container">
-            <div class="effect-copyright">
-                音效素材下载自<a href="https://www.aigei.com/">爱给</a>. <span class="volume-control-trigger">点此调整音量</span>
-            </div>
+            <!-- 音效素材版权信息已移至设置页面 -->
             <div class="controls-row">
                 <div class="custom-select">
                     <div class="select-header">
@@ -32,9 +31,19 @@
                 </div>
                 <button class="action-button">上传PPT</button>
                 <button class="action-button">开始演讲</button>
+                <button class="action-button settings-button">设置</button>
             </div>
         </div>
     </div>
-    <script src="index.js"></script>
+    <!-- 语音识别模块 -->
+    <script src="modules/config.js"></script>
+    <script src="modules/simple-recorder.js"></script>
+    <script src="modules/cursor-indicator.js"></script>
+    
+    <!-- 设置页面模板 -->
+    <script src="pages/audio-setup.js"></script>
+    <script src="pages/settings-template.js"></script>
+    
+    <script src="assets/scripts/index.js"></script>
 </body>
 </html>

@@ -1,12 +1,14 @@
+// 全局变量定义
+let effectsVolume = simpleConfig.get('effectsVolume') || 0.5; // 从配置加载音量，默认50%
+let effectsMuted = false;
+let maxEffectsVolume = 1.0;
+
 document.addEventListener('DOMContentLoaded', function() {
     const customSelect = document.querySelector('.custom-select');
     const selectHeader = customSelect.querySelector('.select-header');
     const selectedValue = customSelect.querySelector('.selected-value');
     const timeOptions = customSelect.querySelectorAll('.time-option');
-    let selectedTime = 1;
-    let effectsVolume = 1.0; // Default volume
-    let effectsMuted = false;
-    let maxEffectsVolume = 1.0; 
+    let selectedTime = 1; 
 
     let isIOSFunction = () => {
         const userAgent = window.navigator.userAgent;
@@ -188,6 +190,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Start countdown
     const startPresentation = async (overlay) => {
+        // 进入演讲模式，停止背景音乐
+        isPresentationMode = true;
+        toggleBackgroundMusic(false);
+        
         const slideContainer = overlay.querySelector('.slide-container');
         const controlsContainer = overlay.querySelector('.presentation-controls');
         const countdownOverlay = overlay.querySelector('.countdown-overlay');
@@ -225,14 +231,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log("Presentation time is up!");
                     endWarned = true;
                     if (!effectsMuted) {
-                        endSound.volume = effectsVolume; 
+                        endSound.volume = effectsVolume * effectsVolume; // 平方权重 
                         endSound.play();
                     }
                 } else if (currentTime >= totalTime / 2 && !halfwayWarned) {
                     console.log("Presentation time is halfway!");
                     halfwayWarned = true;
                     if (!effectsMuted) {
-                        halfwaySound.volume = effectsVolume;
+                        halfwaySound.volume = effectsVolume * effectsVolume; // 平方权重
                         halfwaySound.play();
                     }
                 }
@@ -248,6 +254,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 sound.pause();
                 sound.currentTime = 0;
             });
+            
+            // 退出演讲模式，恢复背景音乐
+            isPresentationMode = false;
+            toggleBackgroundMusic(true);
+            
             overlay.remove();
         };
 
@@ -270,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Get ready for the presentation! ");
             if (!effectsMuted) {
                 startSound.currentTime = 0;
-                startSound.volume = effectsVolume;
+                startSound.volume = effectsVolume * effectsVolume; // 平方权重
                 await startSound.play();
             }
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -332,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const playTestSound = (stop = false) => {
         if (!effectsMuted && !stop) {
             testSound.currentTime = 0;
-            testSound.volume = effectsVolume;
+            testSound.volume = effectsVolume * effectsVolume; // 平方权重
             testSound.play();
         } else {
             testSound.pause();
@@ -397,30 +408,132 @@ document.addEventListener('DOMContentLoaded', function() {
             sliderContainer.appendChild(description);
             container.appendChild(sliderContainer);
             const testSound = new Audio('assets/effects/end.mp3');
-            testSound.volume = effectsVolume;
+            testSound.volume = effectsVolume * effectsVolume; // 平方权重
             let toggleRadius = 10;
             let sliderFullWidth = slider.offsetWidth;
             const updateVolumeUI = async () => {
                 let sliderWidthPercentage = (toggleRadius + (sliderFullWidth - 2 * toggleRadius) * effectsVolume / maxEffectsVolume) / sliderFullWidth;
                 slider.style.setProperty('--volume-percentage', `${sliderWidthPercentage * 100}%`);
             };
-            let lastMoveTime = 0;
-            const moveDelay = 100;
+            let isEditing = false;
             playTestSound();
             await updateVolumeUI();
+            
+            // 鼠标按下时开始编辑状态
+            slider.addEventListener('mousedown', () => {
+                isEditing = true;
+                slider.classList.add('editing');
+            });
+            
+            // 鼠标松开时结束编辑状态并播放音效
+            slider.addEventListener('mouseup', () => {
+                if (isEditing) {
+                    isEditing = false;
+                    slider.classList.remove('editing');
+                    playTestSound(); // 只在鼠标松开时播放音效
+                }
+            });
+            
+            // 滑动过程中只更新UI，不播放音效
             slider.addEventListener('input', async (e) => {
                 e.preventDefault();
-                const currentTime = Date.now();
                 const value = e.target.value;
                 effectsVolume = value / 100;
-                if (currentTime - lastMoveTime >= moveDelay) {
-                    playTestSound();
-                    lastMoveTime = currentTime;
-                }
                 await updateVolumeUI();
+                
+                // 主界面的音量滑动条只控制计时音效，不再控制背景音乐
+                // 背景音乐音量由设置页面独立控制
+                
+                // 移除了滑动时播放音效的代码
             });
         }
     };
 
-    document.querySelector('.volume-control-trigger').addEventListener('click', createVolumeControl);
+    // 音量控制已移至设置页面
 }); 
+
+// 背景音乐控制（移到全局作用域）
+let backgroundMusic = null;
+let isBackgroundMusicEnabled = true;
+let isPresentationMode = false;
+let audioContextUnlocked = false; // 标记音频上下文是否已解锁
+
+// 背景音乐音量倍数常数（用户要求200%，即4倍）
+const BACKGROUND_MUSIC_VOLUME_MULTIPLIER = 4.0;
+
+// 初始化背景音乐
+const initBackgroundMusic = () => {
+    const backgroundMusicVolume = simpleConfig.get('backgroundMusicVolume') || 0.5;
+    backgroundMusic = new Audio('assets/effects/background.mp3');
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = Math.min(backgroundMusicVolume * BACKGROUND_MUSIC_VOLUME_MULTIPLIER, 1.0);
+    
+    // 设置为全局变量，供设置页面访问
+    window.backgroundMusic = backgroundMusic;
+    window.effectsVolume = effectsVolume;
+    window.BACKGROUND_MUSIC_VOLUME_MULTIPLIER = BACKGROUND_MUSIC_VOLUME_MULTIPLIER;
+    
+    // 不立即播放，等待用户首次交互
+    console.log('🎵 背景音乐已准备就绪，等待用户交互后播放');
+};
+
+// 尝试启动背景音乐（在用户交互后调用）
+const tryStartBackgroundMusic = () => {
+    if (backgroundMusic && isBackgroundMusicEnabled && !isPresentationMode && !audioContextUnlocked) {
+        backgroundMusic.play().then(() => {
+            audioContextUnlocked = true;
+            console.log('🎵 背景音乐开始播放');
+        }).catch(e => {
+            console.log('🔇 背景音乐仍需要用户交互:', e.message);
+        });
+    }
+};
+
+// 控制背景音乐播放/停止
+const toggleBackgroundMusic = (play) => {
+    if (!backgroundMusic) return;
+    
+    if (play && isBackgroundMusicEnabled && !isPresentationMode) {
+        const backgroundMusicVolume = simpleConfig.get('backgroundMusicVolume') || 0.5;
+        backgroundMusic.volume = Math.min(backgroundMusicVolume * BACKGROUND_MUSIC_VOLUME_MULTIPLIER, 1.0);
+        
+        // 只有在音频上下文已解锁的情况下才播放
+        if (audioContextUnlocked) {
+            backgroundMusic.play().catch(e => console.log('背景音乐播放失败:', e));
+        }
+    } else {
+        backgroundMusic.pause();
+    }
+};
+
+// 添加用户交互监听器，用于启动背景音乐
+const addUserInteractionListeners = () => {
+    const events = ['click', 'touchstart', 'keydown'];
+    
+    const handleFirstInteraction = () => {
+        tryStartBackgroundMusic();
+        
+        // 移除监听器，只需要首次交互
+        events.forEach(event => {
+            document.removeEventListener(event, handleFirstInteraction);
+        });
+    };
+    
+    events.forEach(event => {
+        document.addEventListener(event, handleFirstInteraction, { once: true });
+    });
+};
+
+// 确保DOM加载完成后再初始化设置页面
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化设置页面
+    initAudioSetup();
+    initSettingsPage();
+    
+    // 初始化背景音乐
+    initBackgroundMusic();
+    
+    // 添加用户交互监听器
+    addUserInteractionListeners();
+});
+

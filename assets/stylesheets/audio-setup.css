@@ -1,0 +1,612 @@
+/* Audio Setup Styles - 录音设置样式 */
+
+.audio-setup-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    overflow-y: auto;
+    height: calc(100vh - 120px); /* 减去header高度 */
+}
+
+/* Setup Container - 包含所有步骤内容 */
+.setup-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    position: relative;
+}
+
+/* Header中的导入导出按钮 */
+.slides-header .config-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto; /* 推到右边 */
+}
+
+/* 原来在底部的导入导出按钮样式（如果还有的话） */
+.setup-container .config-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+    padding: 20px 0;
+}
+
+.btn-import,
+.btn-export {
+    background: #333;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-import:hover,
+.btn-export:hover {
+    background: #666AF6;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.setup-flow {
+    position: relative;
+}
+
+.setup-step {
+    position: relative;
+    margin-bottom: 40px;
+    padding-left: 80px;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+}
+
+.setup-step.visible {
+    opacity: 1;
+}
+
+.setup-step:last-child {
+    margin-bottom: 0;
+}
+
+.step-circle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.3s;
+    z-index: 2;
+}
+
+.step-circle.pending {
+    background: #e9ecef;
+    color: #6c757d;
+    border: 3px solid #dee2e6;
+}
+
+.setup-step.current-step .step-circle {
+    background: #666AF6; /* 紫色 */
+    color: white;
+    border: 3px solid #666AF6;
+    animation: pulse 2s infinite;
+}
+
+.step-circle.completed {
+    background: #666AF6 !important; /* 完成步骤改为紫色 */
+    color: white !important;
+    border: 3px solid #666AF6 !important;
+    animation: none !important;
+}
+
+.step-line {
+    position: absolute;
+    left: 24px;
+    top: 50px;
+    width: 2px;
+    height: calc(100% - 10px);
+    background: #ffffff22;
+    transition: all 0.3s;
+}
+
+.step-line.completed {
+    background: #666AF6; /* 完成步骤线条改为紫色 */
+}
+
+.setup-step.current-step .step-line {
+    background: #ffffff44; 
+}
+
+.setup-step:last-child .step-line {
+    display: none;
+}
+
+.step-content {
+    background: #1a1a1a; /* 黑色背景 */
+    padding: 25px;
+    border-radius: 15px;
+    border-left: 4px solid transparent;
+    transition: all 0.3s;
+}
+
+/* Step Title and Description Styles */
+.step-title {
+    color: #f8f8f8; /* 近乎纯白色 */
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.step-description {
+    color: #eeeeee; /* 近乎纯白色 */
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Step Description Links */
+.step-description a {
+    color: #666AF6; /* 保持链接为紫色 */
+    text-decoration: none;
+}
+
+.step-description a:hover {
+    color: #5555e6; /* 链接hover时稍深一点 */
+    text-decoration: underline;
+}
+
+.step-content.active {
+    border-left-color: #666AF6;
+    background: #f0f0ff;
+}
+
+.setup-step .step-content.completed {
+    border-left-color: #666AF6 !important; /* 完成步骤边框改为紫色 */
+    background: rgba(102, 106, 246, 0.2) !important; /* 完成步骤背景改为更明显的紫色 */
+    border: 2px solid rgba(102, 106, 246, 0.4) !important; /* 添加紫色边框 */
+}
+
+.setup-step.current-step .step-content {
+    background: rgba(102, 106, 246, 0.1); /* 紫色背景 */
+    border: 2px solid #666AF6; /* 紫色边框 */
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(102, 106, 246, 0.3);
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+}
+
+.step-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.step-description {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.step-description a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.step-description a:hover {
+    text-decoration: underline;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #333;
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    color: #495057;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #666AF6;
+    box-shadow: 0 0 0 0.2rem rgba(102, 106, 246, 0.25);
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #666AF6;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #5a5de6;
+    transform: translateY(-2px);
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+    border: none;
+}
+
+.btn-back:hover {
+    background: #545b62;
+    transform: translateY(-2px);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+#audio-step1-status,
+#audio-step2-status,
+#audio-step3-status,
+#audio-step4-status {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    display: none;
+}
+
+.status-success {
+    background: rgba(76, 175, 80, 0.2); /* 绿色背景 */
+    border: 1px solid #66BB6A; /* 绿色边框 */
+    color: #81C784; /* 绿色文字 */
+}
+
+.status-error {
+    background: rgba(255, 107, 107, 0.2); /* 增加背景透明度 */
+    border: 1px solid #FF8A80; /* 更亮的红色边框 */
+    color: #FFAB91; /* 更亮的红色文字 */
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.status-processing {
+    background: rgba(102, 106, 246, 0.2); /* 增加背景透明度 */
+    border: 1px solid #9C27B0; /* 更亮的紫色边框 */
+    color: #CE93D8; /* 更亮的紫色文字 */
+}
+
+/* 脉动动画 */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(102, 106, 246, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(102, 106, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(102, 106, 246, 0);
+    }
+}
+
+/* 重写步骤标题和描述样式 */
+.step-title {
+    color: #f8f8f8 !important; /* 近乎纯白色 */
+    font-size: 18px !important;
+    font-weight: bold !important;
+    margin-bottom: 15px !important;
+}
+
+.step-description {
+    color: #eeeeee !important; /* 近乎纯白色 */
+    line-height: 1.6 !important;
+    margin-bottom: 20px !important;
+}
+
+/* 重写步骤描述链接样式 */
+.step-description a {
+    color: #666AF6 !important; /* 链接为紫色 */
+    text-decoration: none !important;
+}
+
+.step-description a:hover {
+    color: #5555e6 !important; /* 链接hover时稍深一点 */
+    text-decoration: underline !important;
+}
+
+/* 表单标签样式 */
+.form-group label {
+    color: #f8f8f8 !important; /* 白色标签 */
+    font-weight: 500 !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+}
+
+.form-group .required {
+    color: #ff6b6b !important; /* 红色必填标识 */
+}
+
+.form-group input {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #f8f8f8 !important;
+    padding: 10px 12px !important;
+    border-radius: 6px !important;
+    width: 100% !important;
+    margin-bottom: 15px !important;
+    transition: all 0.3s ease !important;
+}
+
+.form-group input::placeholder {
+    color: rgba(248, 248, 248, 0.6) !important;
+}
+
+.form-group input:focus {
+    border-color: #666AF6 !important;
+    box-shadow: 0 0 0 2px rgba(102, 106, 246, 0.2) !important;
+    outline: none !important;
+}
+
+/* 标签行样式 */
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.label-row label {
+    margin-bottom: 0;
+}
+
+/* 密钥预览显示 */
+.secret-display {
+    font-family: monospace;
+    font-size: 12px;
+    color: #81C784; /* 绿色文字 */
+    background: rgba(76, 175, 80, 0.1);
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    min-width: 80px;
+    text-align: center;
+    display: none; /* 默认隐藏 */
+}
+
+.secret-display.show {
+    display: block;
+}
+
+/* Info图标样式 */
+.info-icon {
+    margin-left: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666AF6; /* 紫色 */
+    position: relative;
+}
+
+/* 点击触发tooltip */
+.info-icon.show-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: normal;
+    width: max-content;
+    max-width: 200px;
+    word-wrap: break-word;
+    z-index: 10000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    pointer-events: none;
+}
+
+/* 重写按钮样式 */
+.setup-step .btn.btn-primary {
+    background: #333 !important; /* 默认黑色 */
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.setup-step .btn.btn-primary:hover {
+    background: #666AF6 !important; /* hover时紫色 */
+    color: white !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 上一步按钮样式 */
+.setup-step .btn.btn-back {
+    background: #333 !important; /* 默认黑色 */
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    margin-right: 10px !important;
+}
+
+.setup-step .btn.btn-back:hover {
+    background: #ff6b6b !important; /* hover时红色 */
+    color: white !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 录音测试区域样式 */
+.recording-test-area {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(102, 106, 246, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(102, 106, 246, 0.2);
+}
+
+.recording-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.btn-record {
+    background: #333 !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 24px !important;
+    border-radius: 25px !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-record:hover {
+    background: #666AF6 !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-record.recording {
+    background: #ff6b6b !important;
+    animation: pulse-recording 1.5s infinite;
+}
+
+@keyframes pulse-recording {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 107, 107, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+    }
+}
+
+.recording-status {
+    font-size: 14px;
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.recording-status.recording {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.recording-status.processing {
+    background: rgba(102, 106, 246, 0.1);
+    color: #666AF6;
+    border: 1px solid rgba(102, 106, 246, 0.3);
+}
+
+.recording-status.success {
+    background: rgba(76, 175, 80, 0.1);
+    color: #81C784;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.recording-status.error {
+    background: rgba(255, 107, 107, 0.1);
+    color: #FFAB91;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+/* 音峰图样式 */
+.waveform-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#waveformCanvas {
+    border-radius: 4px;
+    background: transparent;
+}
+
+/* 识别结果样式 */
+.recognition-result {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.recognition-result h4 {
+    color: #81C784;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.result-text {
+    color: #f8f8f8;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    font-family: monospace;
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: pre-wrap;
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
