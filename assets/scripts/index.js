@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     timeOptions.forEach(option => {
         option.addEventListener('click', () => {
-            selectedTime = parseInt(option.dataset.value);
+            selectedTime = 1; // 固定为1分钟
             selectedValue.textContent = option.textContent;
             customSelect.classList.remove('open');
         });
@@ -201,11 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const startButton = document.querySelectorAll('.action-button')[1]; // Second button
     
     const updateStartButton = () => {
-        if (slides.length === 0) {
-            startButton.disabled = true;
-        } else {
-            startButton.disabled = false;
-        }
+        // 开始演讲按钮始终可用，没有PPT时会跳转到上传PPT
+        startButton.disabled = false;
     };
 
     // Update start button state whenever slides change
@@ -224,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button class="back-button">
                     <i class='bx bx-arrow-back'></i>
                 </button>
-                <h2>${selectedTime}分钟即兴演讲</h2>
+                <h2>1分钟即兴演讲</h2>
             </div>
             <div class="slide-container"></div>
             <div class="timer-container">
@@ -393,7 +390,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Start button click handler
     startButton.addEventListener('click', () => {
-        if (slides.length === 0) return;
+        if (slides.length === 0) {
+            // 没有PPT时，等效于点击"上传PPT"按钮
+            console.log('🎯 没有PPT，自动跳转到上传PPT界面');
+            uploadButton.click();
+            return;
+        }
         const overlay = createPresentationView();
         startPresentation(overlay);
     });
