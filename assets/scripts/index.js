@@ -85,13 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- 演讲内容要求输入区域 -->
             <div class="speech-requirements" id="speechRequirements">
                 <h3>演讲内容要求</h3>
-                <textarea id="speechRequirementsText" placeholder="请输入对这张PPT演讲的具体要求，AI将根据这些要求对您的演讲进行评分...
-
-例如：
-- 需要包含产品特性介绍
-- 强调用户痛点和解决方案
-- 控制在1分钟内完成
-- 语调要有感染力"></textarea>
+                <textarea id="speechRequirementsText" placeholder="请输入对这张PPT演讲的内容要求。例如：需要包含产品特性介绍，强调用户痛点和解决方案。越详细越好。最多1000字。AI将根据这些要求对您的演讲进行评分。"></textarea>
                 <div class="button-row">
                     <button class="btn btn-cancel" onclick="cancelSpeechRequirements()">取消</button>
                     <button class="btn btn-save" onclick="saveSpeechRequirements()">保存</button>
@@ -232,15 +226,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
                 <h2>1分钟即兴演讲</h2>
             </div>
-            <div class="slide-container"></div>
-            <div class="timer-container">
-                <div class="timer-display">00:00</div>
-                <div class="progress-bar">
-                    <div class="progress"></div>
+            
+            <!-- 预加载阶段 -->
+            <div class="preload-stage" id="preloadStage">
+                <div class="preload-content">
+                    <h3>准备演讲环境</h3>
+                    <div class="preload-steps">
+                        <div class="preload-step" id="microphoneStep">
+                            <i class='bx bx-microphone'></i>
+                            <span>请求麦克风权限...</span>
+                            <div class="step-status" id="microphoneStatus">⏳</div>
+                        </div>
+                        <div class="preload-step" id="cameraStep">
+                            <i class='bx bx-video'></i>
+                            <span>请求摄像头权限...</span>
+                            <div class="step-status" id="cameraStatus">⏳</div>
+                        </div>
+                        <div class="preload-step" id="imageStep">
+                            <i class='bx bx-image'></i>
+                            <span>加载PPT图片...</span>
+                            <div class="step-status" id="imageStatus">⏳</div>
+                        </div>
+                    </div>
+                    <div class="preload-progress">
+                        <div class="progress-text">准备中...</div>
+                    </div>
                 </div>
             </div>
-            <div class="countdown-overlay"></div>
-            <div class="presentation-controls"></div>
+            
+            <!-- 主演讲界面 -->
+            <div class="main-presentation" id="mainPresentation" style="display: none;">
+                <div class="slide-container"></div>
+                <div class="timer-container">
+                    <div class="timer-display">00:00</div>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                </div>
+                <div class="countdown-overlay"></div>
+                <div class="presentation-controls"></div>
+            </div>
         `;
 
         document.body.appendChild(overlay);
@@ -253,11 +278,116 @@ document.addEventListener('DOMContentLoaded', function() {
         return slides[randomIndex];
     };
 
+    // 预加载阶段
+    const performPreloadSteps = async (overlay) => {
+        console.log('🎬 开始预加载阶段');
+        
+        const microphoneStatus = overlay.querySelector('#microphoneStatus');
+        const cameraStatus = overlay.querySelector('#cameraStatus');
+        const imageStatus = overlay.querySelector('#imageStatus');
+        const progressText = overlay.querySelector('.progress-text');
+        
+        let completedSteps = 0;
+        const totalSteps = 3;
+        
+        const updateProgress = () => {
+            completedSteps++;
+            progressText.textContent = `准备中... ${completedSteps}/${totalSteps}`;
+            
+            if (completedSteps === totalSteps) {
+                progressText.textContent = '准备完成！正在进入演讲模式...';
+            }
+        };
+        
+        // 步骤1: 请求麦克风权限
+        try {
+            progressText.textContent = '正在请求麦克风权限...';
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            microphoneStatus.textContent = '✅';
+            microphoneStatus.className = 'step-status success';
+            console.log('✅ 麦克风权限获取成功');
+            
+            // 停止流，我们只是为了获取权限
+            stream.getTracks().forEach(track => track.stop());
+            updateProgress();
+        } catch (error) {
+            console.warn('⚠️ 麦克风权限获取失败:', error);
+            microphoneStatus.textContent = '❌';
+            microphoneStatus.className = 'step-status error';
+            updateProgress();
+        }
+        
+        // 等待一小段时间，让用户看到进度
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 步骤2: 请求摄像头权限
+        try {
+            progressText.textContent = '正在请求摄像头权限...';
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            cameraStatus.textContent = '✅';
+            cameraStatus.className = 'step-status success';
+            console.log('✅ 摄像头权限获取成功');
+            
+            // 停止流，我们只是为了获取权限
+            stream.getTracks().forEach(track => track.stop());
+            updateProgress();
+        } catch (error) {
+            console.warn('⚠️ 摄像头权限获取失败:', error);
+            cameraStatus.textContent = '❌';
+            cameraStatus.className = 'step-status error';
+            updateProgress();
+        }
+        
+        // 等待一小段时间
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 步骤3: 预加载PPT图片
+        try {
+            progressText.textContent = '正在加载PPT图片...';
+            const imagePromises = slides.map(slide => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                    img.src = slide;
+                });
+            });
+            
+            const results = await Promise.all(imagePromises);
+            const successCount = results.filter(Boolean).length;
+            
+            imageStatus.textContent = '✅';
+            imageStatus.className = 'step-status success';
+            console.log(`✅ PPT图片加载完成: ${successCount}/${slides.length}`);
+            updateProgress();
+        } catch (error) {
+            console.warn('⚠️ PPT图片加载失败:', error);
+            imageStatus.textContent = '❌';
+            imageStatus.className = 'step-status error';
+            updateProgress();
+        }
+        
+        // 等待一小段时间让用户看到完成状态
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log('🎬 预加载阶段完成');
+    };
+
     // Start countdown
     const startPresentation = async (overlay) => {
         // 进入演讲模式，停止背景音乐
         isPresentationMode = true;
         toggleBackgroundMusic(false);
+        
+        // 首先执行预加载步骤
+        await performPreloadSteps(overlay);
+        
+        // 隐藏预加载界面，显示主演讲界面
+        const preloadStage = overlay.querySelector('#preloadStage');
+        const mainPresentation = overlay.querySelector('#mainPresentation');
+        
+        preloadStage.style.display = 'none';
+        mainPresentation.style.display = 'flex';
         
         const slideContainer = overlay.querySelector('.slide-container');
         const controlsContainer = overlay.querySelector('.presentation-controls');
@@ -719,7 +849,7 @@ const saveSpeechRequirements = () => {
 const showSaveSuccessMessage = () => {
     // 创建临时提示消息
     const message = document.createElement('div');
-    message.textContent = '✅ 演讲要求已保存';
+    message.textContent = '演讲要求已保存';
     message.style.cssText = `
         position: fixed;
         top: 50%;
