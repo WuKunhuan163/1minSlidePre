@@ -1672,8 +1672,16 @@ const createStepAutoJumpManager = () => {
                 name: 'AccessKey配置',
                 canAutoJump: () => {
                     const config = simpleConfig.getAll();
-                    return config.accessKeyId && config.accessKeySecret && 
-                           config.accessKeyId.trim() && config.accessKeySecret.trim();
+                    const hasAccessKey = config.accessKeyId && config.accessKeySecret && 
+                                        config.accessKeyId.trim() && config.accessKeySecret.trim();
+                    
+                    // 检查步骤是否已经完成（避免无限循环）
+                    const step4Circle = document.getElementById('audio-step4-circle');
+                    const isCompleted = step4Circle && step4Circle.classList.contains('completed');
+                    
+                    console.log(`🔍 步骤4检查: hasAccessKey=${hasAccessKey}, isCompleted=${isCompleted}`);
+                    
+                    return hasAccessKey && !isCompleted;
                 },
                 jumpFunction: () => validateAudioStep4()
             },
