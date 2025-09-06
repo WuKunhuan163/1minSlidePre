@@ -3,6 +3,25 @@ let effectsVolume = simpleConfig.get('effectsVolume') || 0.5; // 从配置加载
 let effectsMuted = false;
 let maxEffectsVolume = 1.0;
 
+// PPT管理全局变量
+let slides = [
+    'assets/slides/Day2-1.JPG', 'assets/slides/Day2-2.JPG', 
+    // 'assets/slides/Day3-1.JPG', 'assets/slides/Day3-2.JPG', 'assets/slides/Day3-3.JPG', 'assets/slides/Day3-4.JPG', 'assets/slides/Day3-5.JPG', 'assets/slides/Day3-6.JPG', 'assets/slides/Day3-7.JPG', 'assets/slides/Day3-8.JPG', 'assets/slides/Day3-9.JPG', 'assets/slides/Day3-10.JPG', 'assets/slides/Day3-11.JPG', 
+    // 'assets/slides/Day4-1.JPG', 'assets/slides/Day4-2.JPG', 'assets/slides/Day4-3.JPG', 'assets/slides/Day4-4.JPG', 'assets/slides/Day4-5.JPG', 'assets/slides/Day4-6.JPG', 
+];
+let selectedSlideIndex = -1; // 当前选中的PPT索引
+let slideRequirements = {}; // 存储每张PPT的演讲要求
+
+// 初始化默认PPT的演讲要求（如果没有对应txt文件，则暂时没有要求）
+const initializeDefaultSlideRequirements = () => {
+    slides.forEach((slide, index) => {
+        if (!slideRequirements.hasOwnProperty(index)) {
+            // 默认PPT没有演讲要求，保持undefined
+            // slideRequirements[index] 不设置，表示暂时没有要求
+        }
+    });
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const customSelect = document.querySelector('.custom-select');
     const selectHeader = customSelect.querySelector('.select-header');
@@ -37,14 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Slides management
-    let slides = [
-        'assets/slides/Day2-1.JPG', 'assets/slides/Day2-2.JPG', 
-        // 'assets/slides/Day3-1.JPG', 'assets/slides/Day3-2.JPG', 'assets/slides/Day3-3.JPG', 'assets/slides/Day3-4.JPG', 'assets/slides/Day3-5.JPG', 'assets/slides/Day3-6.JPG', 'assets/slides/Day3-7.JPG', 'assets/slides/Day3-8.JPG', 'assets/slides/Day3-9.JPG', 'assets/slides/Day3-10.JPG', 'assets/slides/Day3-11.JPG', 
-        // 'assets/slides/Day4-1.JPG', 'assets/slides/Day4-2.JPG', 'assets/slides/Day4-3.JPG', 'assets/slides/Day4-4.JPG', 'assets/slides/Day4-5.JPG', 'assets/slides/Day4-6.JPG', 
-    ];
-    let selectedSlideIndex = -1; // 当前选中的PPT索引
-    let slideRequirements = {}; // 存储每张PPT的演讲要求 
+    // Slides management - 使用全局变量 
     const uploadButton = document.querySelector('.action-button');
     
     // Create slides manager overlay
@@ -597,6 +609,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始化PPT选择功能
     initSlideSelection();
+    
+    // 初始化默认PPT的演讲要求
+    initializeDefaultSlideRequirements();
     
     // 初始化背景音乐
     initBackgroundMusic();
