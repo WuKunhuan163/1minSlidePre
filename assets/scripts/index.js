@@ -84,10 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             <!-- 演讲内容要求输入区域 -->
             <div class="speech-requirements" id="speechRequirements">
-                <h3>
-                    <i class='bx bx-edit-alt'></i>
-                    演讲内容要求
-                </h3>
+                <h3>演讲内容要求</h3>
                 <textarea id="speechRequirementsText" placeholder="请输入对这张PPT演讲的具体要求，AI将根据这些要求对您的演讲进行评分...
 
 例如：

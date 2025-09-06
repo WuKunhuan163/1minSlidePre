@@ -319,7 +319,6 @@ body {
     left: 0;
     right: 0;
     background: #1a1a1a;
-    border-top: 2px solid #666AF6;
     padding: 20px;
     transform: translateY(100%);
     transition: transform 0.3s ease;
@@ -348,7 +347,7 @@ body {
     color: white;
     padding: 12px;
     font-size: 14px;
-    resize: vertical;
+    resize: none;
     font-family: inherit;
 }
 
