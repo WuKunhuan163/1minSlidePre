@@ -1462,8 +1462,15 @@ const importAudioConfig = async () => {
             // 重新加载当前配置到表单
             loadCurrentConfig();
             
-            // 恢复自动跳转管理器，但不立即触发自动跳转
+            // 恢复自动跳转管理器，并回到第1步重新开始自动跳转
             stepAutoJumpManager = originalAutoJumpManager;
+            
+            // 回到第1步并重新开始自动跳转流程
+            showAudioStep(1, false); // 先显示第1步，不触发自动跳转
+            setTimeout(() => {
+                console.log('📥 导入配置完成，从第1步重新开始自动跳转');
+                autoJumpFromStep(1);
+            }, 500);
             
         } catch (error) {
             if (error.name === 'NotAllowedError') {
@@ -1506,8 +1513,15 @@ const importAudioConfigFromFile = () => {
                     // 重新加载当前配置到表单
                     loadCurrentConfig();
                     
-                    // 恢复自动跳转管理器，但不立即触发自动跳转
+                    // 恢复自动跳转管理器，并回到第1步重新开始自动跳转
                     stepAutoJumpManager = originalAutoJumpManager;
+                    
+                    // 回到第1步并重新开始自动跳转流程
+                    showAudioStep(1, false); // 先显示第1步，不触发自动跳转
+                    setTimeout(() => {
+                        console.log('📥 导入配置完成，从第1步重新开始自动跳转');
+                        autoJumpFromStep(1);
+                    }, 500);
                     
                 } catch (error) {
                     alert('配置文件格式错误！');
