@@ -58,6 +58,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class='bx bx-arrow-back'></i>
                 </button>
                 <h2>已经上传的PPT</h2>
+                <!-- 批量导入导出按钮 -->
+                <div class="config-actions">
+                    <button class="btn btn-import" onclick="batchImportSlides()">批量导入</button>
+                    <button class="btn btn-export" onclick="batchExportSlides()">批量导出</button>
+                </div>
             </div>
             <div class="thumbnails-container">
                 <div class="thumbnail add-slide">
@@ -126,7 +131,10 @@ document.addEventListener('DOMContentLoaded', function() {
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
+                    const newIndex = slides.length;
                     slides.push(e.target.result);
+                    // 通过加号添加的图片，要求默认为空
+                    // slideRequirements[newIndex] 不设置，保持undefined
                     renderThumbnails(document.querySelector('.slides-overlay'));
                 };
                 reader.readAsDataURL(file);
@@ -722,7 +730,221 @@ const showSaveSuccessMessage = () => {
     }, 2000);
 };
 
+// 批量导出PPT和演讲要求
+const batchExportSlides = async () => {
+    console.log('📦 开始批量导出PPT和演讲要求');
+    
+    if (slides.length === 0) {
+        alert('没有可导出的PPT');
+        return;
+    }
+    
+    try {
+        const zip = new JSZip();
+        
+        // 处理每张PPT
+        for (let i = 0; i < slides.length; i++) {
+            const slide = slides[i];
+            const slideIndex = String(i + 1).padStart(3, '0'); // 001, 002, 003...
+            
+            // 添加图片到zip
+            if (slide.startsWith('data:')) {
+                // 如果是data URL，提取图片数据
+                const response = await fetch(slide);
+                const blob = await response.blob();
+                const extension = blob.type.split('/')[1] || 'jpg';
+                zip.file(`${slideIndex}.${extension}`, blob);
+            } else {
+                // 如果是文件路径，需要获取图片数据
+                try {
+                    const response = await fetch(slide);
+                    const blob = await response.blob();
+                    const extension = slide.split('.').pop().toLowerCase() || 'jpg';
+                    zip.file(`${slideIndex}.${extension}`, blob);
+                } catch (error) {
+                    console.warn(`无法获取图片 ${slide}:`, error);
+                    // 跳过这张图片
+                    continue;
+                }
+            }
+            
+            // 添加演讲要求txt文件
+            const requirements = slideRequirements[i] || '';
+            zip.file(`${slideIndex}.txt`, requirements);
+        }
+        
+        // 生成并下载zip文件
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `PPT演讲资料_${new Date().toISOString().slice(0, 10)}.zip`;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+        console.log('✅ 批量导出完成');
+        
+        // 显示成功提示
+        showExportSuccessMessage();
+        
+    } catch (error) {
+        console.error('❌ 批量导出失败:', error);
+        alert('批量导出失败: ' + error.message);
+    }
+};
+
+// 批量导入PPT和演讲要求
+const batchImportSlides = () => {
+    console.log('📥 开始批量导入PPT和演讲要求');
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip';
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+            const zip = new JSZip();
+            const zipContent = await zip.loadAsync(file);
+            
+            // 收集图片和txt文件
+            const imageFiles = {};
+            const textFiles = {};
+            
+            // 遍历zip中的所有文件
+            zipContent.forEach((relativePath, zipEntry) => {
+                const fileName = relativePath.toLowerCase();
+                const baseName = fileName.split('.')[0];
+                const extension = fileName.split('.').pop();
+                
+                if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
+                    // 如果已经有同名的图片，跳过（只选择第一个）
+                    if (!imageFiles[baseName]) {
+                        imageFiles[baseName] = zipEntry;
+                    }
+                } else if (extension === 'txt') {
+                    textFiles[baseName] = zipEntry;
+                }
+            });
+            
+            // 按数字顺序排序
+            const sortedImageNames = Object.keys(imageFiles).sort((a, b) => {
+                const numA = parseInt(a) || 0;
+                const numB = parseInt(b) || 0;
+                return numA - numB;
+            });
+            
+            // 清空现有的slides和requirements
+            slides.length = 0;
+            Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
+            
+            // 导入图片和对应的演讲要求
+            for (let i = 0; i < sortedImageNames.length; i++) {
+                const baseName = sortedImageNames[i];
+                const imageEntry = imageFiles[baseName];
+                const textEntry = textFiles[baseName];
+                
+                // 读取图片
+                const imageBlob = await imageEntry.async('blob');
+                const imageUrl = await blobToDataURL(imageBlob);
+                slides.push(imageUrl);
+                
+                // 读取对应的演讲要求
+                if (textEntry) {
+                    const requirements = await textEntry.async('text');
+                    slideRequirements[i] = requirements;
+                }
+            }
+            
+            console.log(`✅ 成功导入 ${slides.length} 张PPT`);
+            
+            // 重新渲染缩略图
+            const overlay = document.querySelector('.slides-overlay');
+            if (overlay) {
+                renderThumbnails(overlay);
+            }
+            
+            // 显示成功提示
+            showImportSuccessMessage(slides.length);
+            
+        } catch (error) {
+            console.error('❌ 批量导入失败:', error);
+            alert('批量导入失败: ' + error.message);
+        }
+    };
+    
+    input.click();
+};
+
+// 将Blob转换为Data URL
+const blobToDataURL = (blob) => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(blob);
+    });
+};
+
+// 显示导出成功消息
+const showExportSuccessMessage = () => {
+    const message = document.createElement('div');
+    message.textContent = '📦 批量导出成功';
+    message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #28a745;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    `;
+    
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+        if (message.parentNode) {
+            message.parentNode.removeChild(message);
+        }
+    }, 2000);
+};
+
+// 显示导入成功消息
+const showImportSuccessMessage = (count) => {
+    const message = document.createElement('div');
+    message.textContent = `📥 成功导入 ${count} 张PPT`;
+    message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #666AF6;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    `;
+    
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+        if (message.parentNode) {
+            message.parentNode.removeChild(message);
+        }
+    }, 2000);
+};
+
 // 导出函数供全局使用
 window.cancelSpeechRequirements = cancelSpeechRequirements;
 window.saveSpeechRequirements = saveSpeechRequirements;
+window.batchExportSlides = batchExportSlides;
+window.batchImportSlides = batchImportSlides;
 
