@@ -1327,6 +1327,8 @@ const showAudioStep = (stepNumber) => {
         if (stepAutoJumpManager && stepAutoJumpManager.canStepAutoJump(stepNumber)) {
             console.log(`🚀 步骤${stepNumber}可以自动验证，开始执行`);
             autoJumpFromStep(stepNumber);
+        } else {
+            console.log(`⏸️ 步骤${stepNumber}不满足自动跳转条件或自动跳转已禁用`);
         }
     }, 500);
 };
@@ -1378,10 +1380,19 @@ const importAudioConfig = async () => {
             }
             
             const config = JSON.parse(text);
+            
+            // 暂时禁用自动跳转
+            const originalAutoJumpManager = stepAutoJumpManager;
+            stepAutoJumpManager = null;
+            
             simpleConfig.setAll(config);
             alert('配置从剪切板导入成功！');
             // 重新加载当前配置到表单
             loadCurrentConfig();
+            
+            // 恢复自动跳转管理器，但不立即触发自动跳转
+            stepAutoJumpManager = originalAutoJumpManager;
+            
         } catch (error) {
             if (error.name === 'NotAllowedError') {
                 alert('无法访问剪切板，请使用文件导入方式');
@@ -1408,10 +1419,19 @@ const importAudioConfigFromFile = () => {
             reader.onload = (e) => {
                 try {
                     const config = JSON.parse(e.target.result);
+                    
+                    // 暂时禁用自动跳转
+                    const originalAutoJumpManager = stepAutoJumpManager;
+                    stepAutoJumpManager = null;
+                    
                     simpleConfig.setAll(config);
                     alert('配置从JSON导入成功！');
                     // 重新加载当前配置到表单
                     loadCurrentConfig();
+                    
+                    // 恢复自动跳转管理器，但不立即触发自动跳转
+                    stepAutoJumpManager = originalAutoJumpManager;
+                    
                 } catch (error) {
                     alert('配置文件格式错误！');
                 }

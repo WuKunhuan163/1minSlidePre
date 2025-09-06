@@ -1343,33 +1343,6 @@ const showExportSuccessMessage = () => {
     }, 2000);
 };
 
-// 显示导入成功消息
-const showImportSuccessMessage = (count) => {
-    const message = document.createElement('div');
-    message.textContent = `📥 成功导入 ${count} 张PPT`;
-    message.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #666AF6;
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        z-index: 10000;
-        font-size: 14px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    `;
-    
-    document.body.appendChild(message);
-    
-    setTimeout(() => {
-        if (message.parentNode) {
-            message.parentNode.removeChild(message);
-        }
-    }, 2000);
-};
-
 // 检查是否应该显示文字稿按钮
 const shouldShowTranscriptButton = () => {
     // 检查是否开启了录音识别功能和麦克风权限
@@ -1650,7 +1623,7 @@ const processFolderFiles = async (files) => {
 const showImportSuccessMessage = (count) => {
     const message = document.createElement('div');
     message.className = 'success-message';
-    message.textContent = `✅ 成功导入 ${count} 张PPT`;
+    message.textContent = `成功导入 ${count} 张PPT`;
     message.style.cssText = `
         position: fixed;
         bottom: 20px;
