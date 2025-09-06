@@ -1220,6 +1220,7 @@ const openAISetup = () => {
 
 const showAudioStep = (stepNumber, allowAutoJump = true) => {
     console.log(`🔄 显示音频设置步骤 ${stepNumber}, 允许自动跳转: ${allowAutoJump}`);
+    console.trace(`📍 showAudioStep调用栈:`); // 显示调用栈
     
     // 移除所有步骤的当前状态和visible状态
     document.querySelectorAll('.setup-step').forEach(step => {
@@ -1372,6 +1373,9 @@ const disableNonCurrentStepInteractions = (currentStep) => {
 
 // 导入配置 - 支持文件和剪切板
 const importAudioConfig = async () => {
+    console.log(`📥📥📥 importAudioConfig被调用`);
+    console.trace(`📍 importAudioConfig调用栈:`); // 显示调用栈
+    
     const choice = confirm('选择导入方式：\n确定 = 从剪切板导入\n取消 = 从JSON导入');
     
     if (choice) {
@@ -1506,7 +1510,8 @@ const showAudioStatus = (elementId, message, type) => {
 
 // 初始化录音设置功能
 const initAudioSetup = () => {
-    console.log('🎤 录音设置详细界面已加载');
+    console.log('🎤🎤🎤 initAudioSetup被调用 - 录音设置详细界面已加载');
+    console.trace(`📍 initAudioSetup调用栈:`); // 显示调用栈
     
     // 确保第一步初始化为可见状态和active状态
     setTimeout(() => {
@@ -1791,6 +1796,9 @@ let stepAutoJumpManager = null;
 
 // 从指定步骤开始自动跳转的全局函数
 const autoJumpFromStep = async (startStep) => {
+    console.log(`🚀🚀🚀 autoJumpFromStep被调用，startStep=${startStep}`);
+    console.trace(`📍 autoJumpFromStep调用栈:`); // 显示调用栈
+    
     if (!stepAutoJumpManager) {
         stepAutoJumpManager = createStepAutoJumpManager();
     }
