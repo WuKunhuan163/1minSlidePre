@@ -12,6 +12,14 @@ let slides = [
 let selectedSlideIndex = -1; // 当前选中的PPT索引
 let slideRequirements = {}; // 存储每张PPT的演讲要求
 
+// 录音录像相关变量
+let mediaRecorder = null;
+let videoRecorder = null;
+let audioChunks = [];
+let videoChunks = [];
+let audioBlob = null;
+let videoBlob = null;
+
 // 初始化默认PPT的演讲要求（如果没有对应txt文件，则暂时没有要求）
 const initializeDefaultSlideRequirements = () => {
     slides.forEach((slide, index) => {
@@ -227,31 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2>1分钟即兴演讲</h2>
             </div>
             
-            <!-- 预加载阶段 -->
+            <!-- 预加载阶段 - 纯黑屏 -->
             <div class="preload-stage" id="preloadStage">
-                <div class="preload-content">
-                    <h3>准备演讲环境</h3>
-                    <div class="preload-steps">
-                        <div class="preload-step" id="microphoneStep">
-                            <i class='bx bx-microphone'></i>
-                            <span>请求麦克风权限...</span>
-                            <div class="step-status" id="microphoneStatus">⏳</div>
-                        </div>
-                        <div class="preload-step" id="cameraStep">
-                            <i class='bx bx-video'></i>
-                            <span>请求摄像头权限...</span>
-                            <div class="step-status" id="cameraStatus">⏳</div>
-                        </div>
-                        <div class="preload-step" id="imageStep">
-                            <i class='bx bx-image'></i>
-                            <span>加载PPT图片...</span>
-                            <div class="step-status" id="imageStatus">⏳</div>
-                        </div>
-                    </div>
-                    <div class="preload-progress">
-                        <div class="progress-text">准备中...</div>
-                    </div>
-                </div>
             </div>
             
             <!-- 主演讲界面 -->
@@ -278,72 +263,32 @@ document.addEventListener('DOMContentLoaded', function() {
         return slides[randomIndex];
     };
 
-    // 预加载阶段
+    // 预加载阶段 - 纯黑屏，快速完成
     const performPreloadSteps = async (overlay) => {
         console.log('🎬 开始预加载阶段');
         
-        const microphoneStatus = overlay.querySelector('#microphoneStatus');
-        const cameraStatus = overlay.querySelector('#cameraStatus');
-        const imageStatus = overlay.querySelector('#imageStatus');
-        const progressText = overlay.querySelector('.progress-text');
-        
-        let completedSteps = 0;
-        const totalSteps = 3;
-        
-        const updateProgress = () => {
-            completedSteps++;
-            progressText.textContent = `准备中... ${completedSteps}/${totalSteps}`;
-            
-            if (completedSteps === totalSteps) {
-                progressText.textContent = '准备完成！正在进入演讲模式...';
-            }
-        };
-        
         // 步骤1: 请求麦克风权限
         try {
-            progressText.textContent = '正在请求麦克风权限...';
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            microphoneStatus.textContent = '✅';
-            microphoneStatus.className = 'step-status success';
             console.log('✅ 麦克风权限获取成功');
-            
             // 停止流，我们只是为了获取权限
             stream.getTracks().forEach(track => track.stop());
-            updateProgress();
         } catch (error) {
             console.warn('⚠️ 麦克风权限获取失败:', error);
-            microphoneStatus.textContent = '❌';
-            microphoneStatus.className = 'step-status error';
-            updateProgress();
         }
-        
-        // 等待一小段时间，让用户看到进度
-        await new Promise(resolve => setTimeout(resolve, 500));
         
         // 步骤2: 请求摄像头权限
         try {
-            progressText.textContent = '正在请求摄像头权限...';
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            cameraStatus.textContent = '✅';
-            cameraStatus.className = 'step-status success';
             console.log('✅ 摄像头权限获取成功');
-            
             // 停止流，我们只是为了获取权限
             stream.getTracks().forEach(track => track.stop());
-            updateProgress();
         } catch (error) {
             console.warn('⚠️ 摄像头权限获取失败:', error);
-            cameraStatus.textContent = '❌';
-            cameraStatus.className = 'step-status error';
-            updateProgress();
         }
-        
-        // 等待一小段时间
-        await new Promise(resolve => setTimeout(resolve, 500));
         
         // 步骤3: 预加载PPT图片
         try {
-            progressText.textContent = '正在加载PPT图片...';
             const imagePromises = slides.map(slide => {
                 return new Promise((resolve) => {
                     const img = new Image();
@@ -355,22 +300,197 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const results = await Promise.all(imagePromises);
             const successCount = results.filter(Boolean).length;
-            
-            imageStatus.textContent = '✅';
-            imageStatus.className = 'step-status success';
             console.log(`✅ PPT图片加载完成: ${successCount}/${slides.length}`);
-            updateProgress();
         } catch (error) {
             console.warn('⚠️ PPT图片加载失败:', error);
-            imageStatus.textContent = '❌';
-            imageStatus.className = 'step-status error';
-            updateProgress();
         }
         
-        // 等待一小段时间让用户看到完成状态
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         console.log('🎬 预加载阶段完成');
+    };
+
+    // 开始录音录像
+    const startRecording = async () => {
+        console.log('🎤 开始录音录像');
+        
+        // 重置之前的录制数据
+        audioChunks = [];
+        videoChunks = [];
+        audioBlob = null;
+        videoBlob = null;
+        
+        try {
+            // 尝试同时获取音频和视频
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: true, 
+                video: true 
+            });
+            
+            // 创建视频录制器（包含音频）
+            videoRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp8,opus'
+            });
+            
+            videoRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    videoChunks.push(event.data);
+                }
+            };
+            
+            videoRecorder.onstop = () => {
+                videoBlob = new Blob(videoChunks, { type: 'video/webm' });
+                console.log('📹 视频录制完成');
+            };
+            
+            videoRecorder.start();
+            console.log('✅ 视频录制（含音频）已开始');
+            
+        } catch (error) {
+            console.warn('⚠️ 视频录制失败，尝试仅录音:', error);
+            
+            try {
+                // 如果视频失败，至少尝试录音
+                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                mediaRecorder = new MediaRecorder(audioStream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    console.log('🎤 音频录制完成');
+                };
+                
+                mediaRecorder.start();
+                console.log('✅ 音频录制已开始');
+                
+            } catch (audioError) {
+                console.warn('⚠️ 音频录制也失败:', audioError);
+            }
+        }
+    };
+
+    // 停止录音录像
+    const stopRecording = () => {
+        console.log('🛑 停止录音录像');
+        
+        if (videoRecorder && videoRecorder.state !== 'inactive') {
+            videoRecorder.stop();
+            // 停止所有轨道
+            videoRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+        
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            // 停止所有轨道
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+    };
+
+    // 添加下载按钮
+    const addDownloadButtons = (overlay) => {
+        console.log('📥 添加下载按钮');
+        
+        const timerContainer = overlay.querySelector('.timer-container');
+        if (!timerContainer) return;
+        
+        // 创建下载按钮容器
+        const downloadContainer = document.createElement('div');
+        downloadContainer.className = 'download-buttons';
+        downloadContainer.style.cssText = `
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        `;
+        
+        // 下载音频按钮
+        if (audioBlob || videoBlob) {
+            const downloadAudioBtn = document.createElement('button');
+            downloadAudioBtn.textContent = '下载音频';
+            downloadAudioBtn.className = 'download-btn';
+            downloadAudioBtn.style.cssText = `
+                padding: 10px 20px;
+                background: #28a745;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            `;
+            
+            downloadAudioBtn.onclick = () => {
+                downloadAudio();
+            };
+            
+            downloadContainer.appendChild(downloadAudioBtn);
+        }
+        
+        // 下载视频按钮
+        if (videoBlob) {
+            const downloadVideoBtn = document.createElement('button');
+            downloadVideoBtn.textContent = '下载视频';
+            downloadVideoBtn.className = 'download-btn';
+            downloadVideoBtn.style.cssText = `
+                padding: 10px 20px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            `;
+            
+            downloadVideoBtn.onclick = () => {
+                downloadVideo();
+            };
+            
+            downloadContainer.appendChild(downloadVideoBtn);
+        }
+        
+        timerContainer.appendChild(downloadContainer);
+    };
+
+    // 下载音频
+    const downloadAudio = () => {
+        console.log('🎤 下载音频');
+        
+        let blob = audioBlob;
+        let filename = '演讲录音.webm';
+        
+        // 如果有视频但没有单独的音频，从视频中提取音频
+        if (!audioBlob && videoBlob) {
+            blob = videoBlob;
+            filename = '演讲录音.webm';
+        }
+        
+        if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    // 下载视频
+    const downloadVideo = () => {
+        console.log('📹 下载视频');
+        
+        if (videoBlob) {
+            const url = URL.createObjectURL(videoBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '演讲录像.webm';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
     };
 
     // Start countdown
@@ -503,6 +623,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 recordStopButton.style.visibility = 'visible';
                 recordStopButton.style.cursor = 'pointer';
             }
+            // 开始录音录像
+            await startRecording();
+            
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 100);
             if (overlay) {
@@ -513,11 +636,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         sound.pause();
                         sound.currentTime = 0;
                     });
-                    recordStopButton.textContent = '演讲已结束';
+                    // 停止录音录像
+                    stopRecording();
+                    
+                    recordStopButton.textContent = '已结束';
                     recordStopButton.style.backgroundColor = '#666';
                     timerDisplay.style.color = '#fff';
                     progressBar.style.backgroundColor = '#fff';
                     recordStopButton.disabled = true;
+                    
+                    // 添加下载按钮
+                    addDownloadButtons(overlay);
                 });
             }
 
