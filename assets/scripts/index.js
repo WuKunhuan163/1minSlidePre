@@ -4,11 +4,7 @@ let effectsMuted = false;
 let maxEffectsVolume = 1.0;
 
 // PPT管理全局变量
-let slides = [
-    'assets/slides/Day2-1.JPG', 'assets/slides/Day2-2.JPG', 
-    // 'assets/slides/Day3-1.JPG', 'assets/slides/Day3-2.JPG', 'assets/slides/Day3-3.JPG', 'assets/slides/Day3-4.JPG', 'assets/slides/Day3-5.JPG', 'assets/slides/Day3-6.JPG', 'assets/slides/Day3-7.JPG', 'assets/slides/Day3-8.JPG', 'assets/slides/Day3-9.JPG', 'assets/slides/Day3-10.JPG', 'assets/slides/Day3-11.JPG', 
-    // 'assets/slides/Day4-1.JPG', 'assets/slides/Day4-2.JPG', 'assets/slides/Day4-3.JPG', 'assets/slides/Day4-4.JPG', 'assets/slides/Day4-5.JPG', 'assets/slides/Day4-6.JPG', 
-];
+let slides = [];
 let selectedSlideIndex = -1; // 当前选中的PPT索引
 let slideRequirements = {}; // 存储每张PPT的演讲要求
 
@@ -71,6 +67,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Slides management - 使用全局变量 
     const uploadButton = document.querySelector('.action-button');
     
+    // Render thumbnails - 全局函数
+    window.renderThumbnails = (container) => {
+        const thumbnailsContainer = container.querySelector('.thumbnails-container');
+        const addButton = thumbnailsContainer.querySelector('.add-slide');
+        
+        // Clear existing thumbnails except add button
+        while (thumbnailsContainer.firstChild !== addButton) {
+            thumbnailsContainer.removeChild(thumbnailsContainer.firstChild);
+        }
+
+        // Add thumbnails
+        slides.forEach((slide, index) => {
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'thumbnail';
+            thumbnail.dataset.slideIndex = index;
+            thumbnail.innerHTML = `
+                <img src="${slide}" alt="Slide ${index + 1}">
+                <button class="remove-slide" data-index="${index}">
+                    <i class='bx bxs-x-circle'></i>
+                </button>
+            `;
+            thumbnailsContainer.insertBefore(thumbnail, addButton);
+        });
+    };
+    
     // Create slides manager overlay
     const createSlidesManager = () => {
         const overlay = document.createElement('div');
@@ -118,30 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return overlay;
     };
 
-    // Render thumbnails
-    var renderThumbnails = (container) => {
-        const thumbnailsContainer = container.querySelector('.thumbnails-container');
-        const addButton = thumbnailsContainer.querySelector('.add-slide');
-        
-        // Clear existing thumbnails except add button
-        while (thumbnailsContainer.firstChild !== addButton) {
-            thumbnailsContainer.removeChild(thumbnailsContainer.firstChild);
-        }
-
-        // Add thumbnails
-        slides.forEach((slide, index) => {
-            const thumbnail = document.createElement('div');
-            thumbnail.className = 'thumbnail';
-            thumbnail.dataset.slideIndex = index;
-            thumbnail.innerHTML = `
-                <img src="${slide}" alt="Slide ${index + 1}">
-                <button class="remove-slide" data-index="${index}">
-                    <i class='bx bxs-x-circle'></i>
-                </button>
-            `;
-            thumbnailsContainer.insertBefore(thumbnail, addButton);
-        });
-    };
 
     // Handle slide upload
     const handleSlideUpload = () => {
@@ -159,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     slides.push(e.target.result);
                     // 通过加号添加的图片，要求默认为空
                     // slideRequirements[newIndex] 不设置，保持undefined
-                    renderThumbnails(document.querySelector('.slides-overlay'));
+                    window.renderThumbnails(document.querySelector('.slides-overlay'));
                 };
                 reader.readAsDataURL(file);
             });
@@ -171,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Upload button click handler
     uploadButton.addEventListener('click', () => {
         const overlay = createSlidesManager();
-        renderThumbnails(overlay);
+        window.renderThumbnails(overlay);
 
         // Back button handler
         overlay.querySelector('.back-button').addEventListener('click', () => {
@@ -208,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
                 slideRequirements = newRequirements;
-                renderThumbnails(overlay);
+                window.renderThumbnails(overlay);
                 return;
             }
 
@@ -230,8 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Update start button state whenever slides change
-    const originalRenderThumbnails = renderThumbnails;
-    renderThumbnails = (container) => {
+    const originalRenderThumbnails = window.renderThumbnails;
+    window.renderThumbnails = (container) => {
         originalRenderThumbnails(container);
         updateStartButton();
     };
@@ -1249,7 +1246,7 @@ const batchImportSlides = () => {
             // 重新渲染缩略图
             const overlay = document.querySelector('.slides-overlay');
             if (overlay) {
-                renderThumbnails(overlay);
+                window.renderThumbnails(overlay);
             }
             
             // 显示成功提示
@@ -1639,7 +1636,7 @@ const processFolderFiles = async (files) => {
     // 重新渲染缩略图
     const overlay = document.querySelector('.slides-overlay');
     if (overlay) {
-        renderThumbnails(overlay);
+        window.renderThumbnails(overlay);
     }
     
     // 显示成功提示
