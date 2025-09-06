@@ -397,17 +397,71 @@ document.addEventListener('DOMContentLoaded', function() {
     const stopRecording = () => {
         console.log('🛑 停止录音录像');
         
-        if (videoRecorder && videoRecorder.state !== 'inactive') {
-            videoRecorder.stop();
-            // 停止所有轨道
-            videoRecorder.stream.getTracks().forEach(track => track.stop());
-        }
-        
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-            // 停止所有轨道
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        }
+        return new Promise((resolve) => {
+            let completedCount = 0;
+            const totalRecorders = (videoRecorder ? 1 : 0) + (mediaRecorder ? 1 : 0);
+            
+            if (totalRecorders === 0) {
+                resolve();
+                return;
+            }
+            
+            const checkComplete = () => {
+                completedCount++;
+                if (completedCount >= totalRecorders) {
+                    console.log('✅ 所有录制器已停止，摄像头已关闭');
+                    resolve();
+                }
+            };
+            
+            if (videoRecorder && videoRecorder.state !== 'inactive') {
+                const originalOnStop = videoRecorder.onstop;
+                videoRecorder.onstop = (event) => {
+                    if (originalOnStop) originalOnStop(event);
+                    
+                    // 确保彻底关闭摄像头和麦克风
+                    if (videoRecorder.stream) {
+                        videoRecorder.stream.getTracks().forEach(track => {
+                            console.log(`🔇 停止轨道: ${track.kind} (${track.label})`);
+                            track.stop();
+                        });
+                        videoRecorder.stream = null;
+                    }
+                    
+                    checkComplete();
+                };
+                
+                videoRecorder.stop();
+            }
+            
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                const originalOnStop = mediaRecorder.onstop;
+                mediaRecorder.onstop = async (event) => {
+                    if (originalOnStop) await originalOnStop(event);
+                    
+                    // 确保彻底关闭麦克风
+                    if (mediaRecorder.stream) {
+                        mediaRecorder.stream.getTracks().forEach(track => {
+                            console.log(`🔇 停止轨道: ${track.kind} (${track.label})`);
+                            track.stop();
+                        });
+                        mediaRecorder.stream = null;
+                    }
+                    
+                    checkComplete();
+                };
+                
+                mediaRecorder.stop();
+            }
+            
+            // 设置超时，防止无限等待
+            setTimeout(() => {
+                if (completedCount < totalRecorders) {
+                    console.warn('⚠️ 录制器停止超时，强制完成');
+                    resolve();
+                }
+            }, 3000);
+        });
     };
 
     // 将音频转换为MP3
@@ -470,20 +524,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const addDownloadButtons = (overlay) => {
         console.log('📥 添加下载按钮');
         
+        // 查找录音停止按钮和定时器容器
+        const recordStopButton = overlay.querySelector('.record-stop-button');
         const timerContainer = overlay.querySelector('.timer-container');
-        if (!timerContainer) return;
         
-        // 创建下载按钮容器
-        const downloadContainer = document.createElement('div');
-        downloadContainer.className = 'download-buttons';
-        downloadContainer.id = 'downloadButtonsContainer';
-        downloadContainer.style.cssText = `
+        if (!timerContainer || !recordStopButton) return;
+        
+        // 修改定时器容器的布局，使按钮和下载按钮在同一行
+        const buttonRow = document.createElement('div');
+        buttonRow.className = 'button-row';
+        buttonRow.style.cssText = `
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            align-items: center;
             justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
             flex-wrap: wrap;
         `;
+        
+        // 将"已结束"按钮移到新的行容器中
+        recordStopButton.parentNode.removeChild(recordStopButton);
+        buttonRow.appendChild(recordStopButton);
         
         // 下载音频按钮
         if (audioBlob) {
@@ -498,14 +559,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 border-radius: 5px;
                 cursor: pointer;
                 font-size: 14px;
-                margin: 5px;
+                transition: background 0.3s;
             `;
+            
+            downloadAudioBtn.onmouseover = () => {
+                downloadAudioBtn.style.background = '#218838';
+            };
+            downloadAudioBtn.onmouseout = () => {
+                downloadAudioBtn.style.background = '#28a745';
+            };
             
             downloadAudioBtn.onclick = () => {
                 downloadAudio();
             };
             
-            downloadContainer.appendChild(downloadAudioBtn);
+            buttonRow.appendChild(downloadAudioBtn);
         }
         
         // 下载视频按钮
@@ -521,14 +589,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 border-radius: 5px;
                 cursor: pointer;
                 font-size: 14px;
-                margin: 5px;
+                transition: background 0.3s;
             `;
+            
+            downloadVideoBtn.onmouseover = () => {
+                downloadVideoBtn.style.background = '#0056b3';
+            };
+            downloadVideoBtn.onmouseout = () => {
+                downloadVideoBtn.style.background = '#007bff';
+            };
             
             downloadVideoBtn.onclick = () => {
                 downloadVideo();
             };
             
-            downloadContainer.appendChild(downloadVideoBtn);
+            buttonRow.appendChild(downloadVideoBtn);
         }
         
         // 文字稿按钮（如果需要）
@@ -545,14 +620,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 border-radius: 5px;
                 cursor: not-allowed;
                 font-size: 14px;
-                margin: 5px;
             `;
             transcriptBtn.disabled = true;
             
-            downloadContainer.appendChild(transcriptBtn);
+            buttonRow.appendChild(transcriptBtn);
         }
         
-        timerContainer.appendChild(downloadContainer);
+        // 将按钮行添加到定时器容器
+        timerContainer.appendChild(buttonRow);
     };
 
     // 下载音频
@@ -728,28 +803,43 @@ document.addEventListener('DOMContentLoaded', function() {
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 100);
             if (overlay) {
-                recordStopButton.addEventListener('click', () => {
+                recordStopButton.addEventListener('click', async () => {
                     clearInterval(timerInterval);
                     isActive = false;
                     [startSound, halfwaySound, endSound].forEach(sound => {
                         sound.pause();
                         sound.currentTime = 0;
                     });
-                    // 停止录音录像
-                    stopRecording();
                     
-                    recordStopButton.textContent = '已结束';
-                    recordStopButton.style.backgroundColor = '#666';
-                    timerDisplay.style.color = '#fff';
-                    progressBar.style.backgroundColor = '#fff';
+                    // 禁用按钮并显示停止中状态
                     recordStopButton.disabled = true;
+                    recordStopButton.textContent = '停止中...';
+                    recordStopButton.style.backgroundColor = '#ffc107';
                     
-                    // 添加下载按钮和文字稿功能
-                    addDownloadButtons(overlay);
-                    
-                    // 如果开启了录音识别功能，开始语音转文字
-                    if (shouldShowTranscriptButton()) {
-                        startSpeechRecognition(overlay);
+                    try {
+                        // 等待录音录像完全停止
+                        await stopRecording();
+                        
+                        recordStopButton.textContent = '已结束';
+                        recordStopButton.style.backgroundColor = '#666';
+                        timerDisplay.style.color = '#fff';
+                        progressBar.style.backgroundColor = '#fff';
+                        
+                        // 等待一小段时间确保blob数据准备好
+                        setTimeout(() => {
+                            // 添加下载按钮和文字稿功能
+                            addDownloadButtons(overlay);
+                            
+                            // 如果开启了录音识别功能，开始语音转文字
+                            if (shouldShowTranscriptButton()) {
+                                startSpeechRecognition(overlay);
+                            }
+                        }, 500);
+                        
+                    } catch (error) {
+                        console.error('❌ 停止录制失败:', error);
+                        recordStopButton.textContent = '停止失败';
+                        recordStopButton.style.backgroundColor = '#dc3545';
                     }
                 });
             }
