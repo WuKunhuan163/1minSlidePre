@@ -2629,25 +2629,92 @@ const callZhipuAPI = async (messages, modelId = 'glm-4-flash') => {
 };
 
 // 导入导出智谱AI配置
-const importAIConfig = () => {
+const importAIConfig = async () => {
+    console.log('📥📥📥 importAIConfig被调用');
+    
+    const choice = confirm('选择导入方式：\n确定 = 从剪切板导入\n取消 = 从JSON文件导入');
+    console.log(`🤔 用户选择: ${choice ? '剪切板导入' : 'JSON文件导入'}`);
+    
+    if (choice) {
+        // 从剪切板导入
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text.trim()) {
+                alert('剪切板为空，请先复制配置JSON');
+                return;
+            }
+            
+            const config = JSON.parse(text);
+            
+            if (config.zhipuApiKey) {
+                simpleConfig.set('zhipuApiKey', config.zhipuApiKey);
+                showMessage('智谱AI配置从剪切板导入成功！', 'success');
+                
+                // 重新加载当前配置到表单
+                const apiKeyInput = document.getElementById('aiApiKey');
+                if (apiKeyInput) {
+                    apiKeyInput.value = config.zhipuApiKey;
+                }
+                
+                // 重置所有步骤为待验证状态并回到第1步重新开始自动跳转
+                resetAllAIStepsToRevalidation();
+                showAIStep(1);
+                setTimeout(() => {
+                    console.log('📥 智谱AI配置导入完成，从第1步重新开始自动跳转');
+                    autoJumpFromAIStep(1);
+                }, 500);
+                
+            } else {
+                alert('配置文件中没有找到智谱AI配置！');
+            }
+        } catch (error) {
+            if (error.name === 'NotAllowedError') {
+                alert('无法访问剪切板，请允许剪切板权限或选择文件导入');
+                importAIConfigFromFile();
+            } else {
+                alert('配置格式错误！');
+            }
+        }
+    } else {
+        // 从JSON文件导入
+        importAIConfigFromFile();
+    }
+};
+
+// 从JSON文件导入智谱AI配置
+const importAIConfigFromFile = () => {
+    console.log('📁📁📁 importAIConfigFromFile被调用');
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
     input.onchange = (e) => {
+        console.log('📄 文件选择器onChange事件触发');
         const file = e.target.files[0];
         if (file) {
+            console.log(`✅ 用户选择了文件: ${file.name}`);
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const config = JSON.parse(e.target.result);
                     if (config.zhipuApiKey) {
                         simpleConfig.set('zhipuApiKey', config.zhipuApiKey);
-                        alert('智谱AI配置导入成功！');
+                        showMessage('智谱AI配置从JSON导入成功！', 'success');
+                        
                         // 重新加载当前配置到表单
                         const apiKeyInput = document.getElementById('aiApiKey');
                         if (apiKeyInput) {
                             apiKeyInput.value = config.zhipuApiKey;
                         }
+                        
+                        // 重置所有步骤为待验证状态并回到第1步重新开始自动跳转
+                        resetAllAIStepsToRevalidation();
+                        showAIStep(1);
+                        setTimeout(() => {
+                            console.log('📥 智谱AI配置导入完成，从第1步重新开始自动跳转');
+                            autoJumpFromAIStep(1);
+                        }, 500);
+                        
                     } else {
                         alert('配置文件中没有找到智谱AI配置！');
                     }
@@ -2694,6 +2761,144 @@ window.createAISetupOverlay = createAISetupOverlay;
 window.updateMobileProgress = updateMobileProgress;
 window.initAudioSetup = initAudioSetup;
 
+// 重置所有智谱AI步骤为待验证状态
+const resetAllAIStepsToRevalidation = () => {
+    console.log('🔄 重置所有智谱AI步骤为待验证状态');
+    
+    // 重置所有步骤圆圈为pending状态
+    for (let i = 1; i <= 3; i++) {
+        const circle = document.getElementById(`ai-step${i}-circle`);
+        const line = document.getElementById(`ai-step${i}-line`);
+        const content = document.getElementById(`ai-step${i}-content`);
+        
+        if (circle) {
+            circle.classList.remove('active', 'completed');
+            circle.classList.add('pending');
+        }
+        if (line) {
+            line.classList.remove('completed');
+        }
+        if (content) {
+            content.classList.remove('completed', 'active');
+        }
+        
+        // 清除步骤状态信息
+        const statusElement = document.getElementById(`ai-step${i}-status`);
+        if (statusElement) {
+            statusElement.textContent = '';
+            statusElement.className = '';
+            statusElement.style.display = 'none';
+        }
+    }
+    
+    console.log('✅ 所有智谱AI步骤状态已重置');
+};
+
+// 智谱AI步骤自动跳转管理器
+const createAIStepAutoJumpManager = () => {
+    return {
+        // 步骤配置
+        stepConfigs: {
+            1: {
+                name: '注册智谱AI',
+                canAutoJump: () => {
+                    // 检查是否之前完成过
+                    return simpleConfig.isSettingTested('ai_step1');
+                },
+                jumpFunction: () => completeAIStep1()
+            },
+            2: {
+                name: '配置API Key',
+                canAutoJump: () => {
+                    // 检查是否有保存的API Key
+                    const apiKey = simpleConfig.get('zhipuApiKey');
+                    return apiKey && apiKey.trim() !== '';
+                },
+                jumpFunction: () => validateAIStep2()
+            },
+            3: {
+                name: 'API测试',
+                canAutoJump: () => {
+                    // 检查是否已启用AI功能
+                    return simpleConfig.get('aiEnabled') === true;
+                },
+                jumpFunction: () => {
+                    // 第3步是测试步骤，不自动跳转，只显示
+                    console.log('🎯 智谱AI第3步是测试步骤，显示测试界面');
+                    return true;
+                }
+            }
+        },
+
+        // 检查步骤是否可以自动跳转
+        canStepAutoJump(stepNumber) {
+            const config = this.stepConfigs[stepNumber];
+            if (!config) {
+                console.log(`❌ 找不到智谱AI步骤${stepNumber}的配置`);
+                return false;
+            }
+
+            const canJump = config.canAutoJump();
+            console.log(`🔍 智谱AI步骤${stepNumber}(${config.name})自动跳转检查: ${canJump ? '✅可以' : '❌不可以'}`);
+            return canJump;
+        },
+
+        // 执行步骤跳转
+        async executeStepJump(stepNumber) {
+            const config = this.stepConfigs[stepNumber];
+            if (!config) {
+                console.log(`❌ 找不到智谱AI步骤${stepNumber}的配置`);
+                return false;
+            }
+
+            try {
+                console.log(`🚀 执行智谱AI步骤${stepNumber}(${config.name})的跳转函数`);
+                const result = await config.jumpFunction();
+                console.log(`✅ 智谱AI步骤${stepNumber}跳转函数执行完成，结果: ${result}`);
+                return result !== false; // 只有明确返回false才算失败
+            } catch (error) {
+                console.error(`❌ 智谱AI步骤${stepNumber}跳转函数执行失败:`, error);
+                return false;
+            }
+        },
+
+        // 从指定步骤开始自动跳转
+        async autoJumpFromStep(startStep) {
+            console.log(`🎯 开始从智谱AI步骤${startStep}自动跳转`);
+            
+            for (let step = startStep; step <= 3; step++) {
+                if (!this.canStepAutoJump(step)) {
+                    console.log(`⏹️ 智谱AI步骤${step}不能自动跳转，停止连跳`);
+                    // 显示当前应该停留的步骤
+                    showAIStep(step);
+                    break;
+                }
+                
+                const success = await this.executeStepJump(step);
+                if (!success) {
+                    console.log(`❌ 智谱AI步骤${step}跳转失败，停止连跳`);
+                    break;
+                }
+                
+                console.log(`✅ 智谱AI步骤${step}跳转成功，继续下一步`);
+            }
+        }
+    };
+};
+
+// 全局智谱AI步骤跳转管理器
+let aiStepAutoJumpManager = null;
+
+// 从指定步骤开始智谱AI自动跳转的全局函数
+const autoJumpFromAIStep = async (startStep) => {
+    console.log(`🚀🚀🚀 autoJumpFromAIStep被调用，startStep=${startStep}`);
+    
+    if (!aiStepAutoJumpManager) {
+        aiStepAutoJumpManager = createAIStepAutoJumpManager();
+    }
+    await aiStepAutoJumpManager.autoJumpFromStep(startStep);
+};
+
 // 导出智谱AI相关函数
 window.completeAIStep1 = completeAIStep1;
 window.validateAIStep2 = validateAIStep2;
@@ -2701,4 +2906,7 @@ window.completeAIStep3 = completeAIStep3;
 window.goBackToAIStep = goBackToAIStep;
 window.sendTestMessage = sendTestMessage;
 window.importAIConfig = importAIConfig;
+window.importAIConfigFromFile = importAIConfigFromFile;
 window.exportAIConfig = exportAIConfig;
+window.resetAllAIStepsToRevalidation = resetAllAIStepsToRevalidation;
+window.autoJumpFromAIStep = autoJumpFromAIStep;
