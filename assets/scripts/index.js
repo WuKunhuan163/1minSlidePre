@@ -20,6 +20,10 @@ let videoChunks = [];
 let audioBlob = null;
 let videoBlob = null;
 
+// 语音识别相关变量
+let transcriptText = '';
+let transcriptStatus = 'none'; // none, processing, success, failed, retry_failed
+
 // 初始化默认PPT的演讲要求（如果没有对应txt文件，则暂时没有要求）
 const initializeDefaultSlideRequirements = () => {
     slides.forEach((slide, index) => {
@@ -361,9 +365,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 };
                 
-                mediaRecorder.onstop = () => {
-                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    console.log('🎤 音频录制完成');
+                mediaRecorder.onstop = async () => {
+                    const webmBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    console.log('🎤 音频录制完成，开始转换为MP3');
+                    
+                    try {
+                        audioBlob = await convertToMp3(webmBlob);
+                        console.log('✅ 音频转换为MP3成功');
+                    } catch (error) {
+                        console.warn('⚠️ MP3转换失败，使用原始格式:', error);
+                        audioBlob = webmBlob;
+                    }
                 };
                 
                 mediaRecorder.start();
@@ -392,6 +404,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // 将音频转换为MP3
+    const convertToMp3 = async (webmBlob) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const arrayBuffer = reader.result;
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    audioContext.decodeAudioData(arrayBuffer)
+                        .then(audioBuffer => {
+                            // 获取音频数据
+                            const samples = audioBuffer.getChannelData(0);
+                            const sampleRate = audioBuffer.sampleRate;
+                            
+                            // 转换为16位PCM
+                            const buffer = new ArrayBuffer(samples.length * 2);
+                            const view = new DataView(buffer);
+                            for (let i = 0; i < samples.length; i++) {
+                                const sample = Math.max(-1, Math.min(1, samples[i]));
+                                view.setInt16(i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                            }
+                            
+                            // 使用lame.js编码为MP3
+                            const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+                            const mp3Data = [];
+                            
+                            const sampleBlockSize = 1152;
+                            const samples16 = new Int16Array(buffer);
+                            
+                            for (let i = 0; i < samples16.length; i += sampleBlockSize) {
+                                const sampleChunk = samples16.subarray(i, i + sampleBlockSize);
+                                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                                if (mp3buf.length > 0) {
+                                    mp3Data.push(mp3buf);
+                                }
+                            }
+                            
+                            const mp3buf = mp3encoder.flush();
+                            if (mp3buf.length > 0) {
+                                mp3Data.push(mp3buf);
+                            }
+                            
+                            const mp3Blob = new Blob(mp3Data, { type: 'audio/mpeg' });
+                            resolve(mp3Blob);
+                        })
+                        .catch(reject);
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(webmBlob);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    };
+
     // 添加下载按钮
     const addDownloadButtons = (overlay) => {
         console.log('📥 添加下载按钮');
@@ -402,18 +470,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // 创建下载按钮容器
         const downloadContainer = document.createElement('div');
         downloadContainer.className = 'download-buttons';
+        downloadContainer.id = 'downloadButtonsContainer';
         downloadContainer.style.cssText = `
             display: flex;
             gap: 10px;
             margin-top: 20px;
             justify-content: center;
+            flex-wrap: wrap;
         `;
         
         // 下载音频按钮
-        if (audioBlob || videoBlob) {
+        if (audioBlob) {
             const downloadAudioBtn = document.createElement('button');
             downloadAudioBtn.textContent = '下载音频';
-            downloadAudioBtn.className = 'download-btn';
+            downloadAudioBtn.className = 'download-btn audio-btn';
             downloadAudioBtn.style.cssText = `
                 padding: 10px 20px;
                 background: #28a745;
@@ -422,6 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 border-radius: 5px;
                 cursor: pointer;
                 font-size: 14px;
+                margin: 5px;
             `;
             
             downloadAudioBtn.onclick = () => {
@@ -435,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (videoBlob) {
             const downloadVideoBtn = document.createElement('button');
             downloadVideoBtn.textContent = '下载视频';
-            downloadVideoBtn.className = 'download-btn';
+            downloadVideoBtn.className = 'download-btn video-btn';
             downloadVideoBtn.style.cssText = `
                 padding: 10px 20px;
                 background: #007bff;
@@ -444,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 border-radius: 5px;
                 cursor: pointer;
                 font-size: 14px;
+                margin: 5px;
             `;
             
             downloadVideoBtn.onclick = () => {
@@ -451,6 +523,27 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             downloadContainer.appendChild(downloadVideoBtn);
+        }
+        
+        // 文字稿按钮（如果需要）
+        if (shouldShowTranscriptButton()) {
+            const transcriptBtn = document.createElement('button');
+            transcriptBtn.textContent = '转译中';
+            transcriptBtn.className = 'download-btn transcript-btn';
+            transcriptBtn.id = 'transcriptButton';
+            transcriptBtn.style.cssText = `
+                padding: 10px 20px;
+                background: #6c757d;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: not-allowed;
+                font-size: 14px;
+                margin: 5px;
+            `;
+            transcriptBtn.disabled = true;
+            
+            downloadContainer.appendChild(transcriptBtn);
         }
         
         timerContainer.appendChild(downloadContainer);
@@ -461,12 +554,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🎤 下载音频');
         
         let blob = audioBlob;
-        let filename = '演讲录音.webm';
+        let filename = '演讲录音.mp3';
         
         // 如果有视频但没有单独的音频，从视频中提取音频
         if (!audioBlob && videoBlob) {
             blob = videoBlob;
-            filename = '演讲录音.webm';
+            filename = '演讲录音.webm'; // 视频文件保持webm格式
         }
         
         if (blob) {
@@ -645,8 +738,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     progressBar.style.backgroundColor = '#fff';
                     recordStopButton.disabled = true;
                     
-                    // 添加下载按钮
+                    // 添加下载按钮和文字稿功能
                     addDownloadButtons(overlay);
+                    
+                    // 如果开启了录音识别功能，开始语音转文字
+                    if (shouldShowTranscriptButton()) {
+                        startSpeechRecognition(overlay);
+                    }
                 });
             }
 
@@ -1228,6 +1326,178 @@ const showImportSuccessMessage = (count) => {
             message.parentNode.removeChild(message);
         }
     }, 2000);
+};
+
+// 检查是否应该显示文字稿按钮
+const shouldShowTranscriptButton = () => {
+    // 检查是否开启了录音识别功能和麦克风权限
+    const recordingEnabled = simpleConfig.get('recordingEnabled');
+    return recordingEnabled && (audioBlob || videoBlob);
+};
+
+// 开始语音识别
+const startSpeechRecognition = async (overlay) => {
+    console.log('🎤 开始语音识别');
+    transcriptStatus = 'processing';
+    
+    try {
+        // 获取音频数据
+        let audioToRecognize = audioBlob;
+        if (!audioToRecognize && videoBlob) {
+            // 如果没有单独的音频，使用视频文件
+            audioToRecognize = videoBlob;
+        }
+        
+        if (!audioToRecognize) {
+            throw new Error('没有可用的音频数据');
+        }
+        
+        // 调用阿里云语音识别API（需要实现）
+        const result = await callAliyunSpeechAPI(audioToRecognize);
+        
+        if (result.success) {
+            transcriptText = result.text;
+            transcriptStatus = 'success';
+            updateTranscriptButton('success');
+            console.log('✅ 语音识别成功:', transcriptText);
+        } else {
+            throw new Error(result.error || '识别失败');
+        }
+        
+    } catch (error) {
+        console.error('❌ 语音识别失败:', error);
+        transcriptStatus = 'failed';
+        updateTranscriptButton('failed');
+    }
+};
+
+// 更新文字稿按钮状态
+const updateTranscriptButton = (status) => {
+    const transcriptBtn = document.getElementById('transcriptButton');
+    if (!transcriptBtn) return;
+    
+    const aiEnabled = simpleConfig.get('aiEnabled');
+    
+    switch (status) {
+        case 'success':
+            if (aiEnabled) {
+                transcriptBtn.textContent = 'AI评分';
+                transcriptBtn.style.background = '#666AF6';
+                transcriptBtn.onclick = () => startAIScoring();
+            } else {
+                transcriptBtn.textContent = '文字稿';
+                transcriptBtn.style.background = '#17a2b8';
+                transcriptBtn.onclick = () => downloadTranscript();
+            }
+            transcriptBtn.style.cursor = 'pointer';
+            transcriptBtn.disabled = false;
+            break;
+            
+        case 'failed':
+            transcriptBtn.textContent = '转译失败';
+            transcriptBtn.style.background = '#dc3545';
+            transcriptBtn.style.cursor = 'pointer';
+            transcriptBtn.disabled = false;
+            transcriptBtn.onclick = () => retryRecognition();
+            break;
+            
+        case 'retry_failed':
+            // 重试失败，按钮消失
+            transcriptBtn.remove();
+            break;
+    }
+};
+
+// 重试语音识别
+const retryRecognition = async () => {
+    console.log('🔄 重试语音识别');
+    const transcriptBtn = document.getElementById('transcriptButton');
+    
+    if (transcriptBtn) {
+        transcriptBtn.textContent = '转译中';
+        transcriptBtn.style.background = '#6c757d';
+        transcriptBtn.style.cursor = 'not-allowed';
+        transcriptBtn.disabled = true;
+    }
+    
+    try {
+        let audioToRecognize = audioBlob;
+        if (!audioToRecognize && videoBlob) {
+            audioToRecognize = videoBlob;
+        }
+        
+        const result = await callAliyunSpeechAPI(audioToRecognize);
+        
+        if (result.success) {
+            transcriptText = result.text;
+            transcriptStatus = 'success';
+            updateTranscriptButton('success');
+        } else {
+            throw new Error(result.error || '重试识别失败');
+        }
+        
+    } catch (error) {
+        console.error('❌ 重试语音识别失败:', error);
+        transcriptStatus = 'retry_failed';
+        updateTranscriptButton('retry_failed');
+    }
+};
+
+// 下载文字稿
+const downloadTranscript = () => {
+    console.log('📄 下载文字稿');
+    
+    if (!transcriptText) {
+        console.warn('没有文字稿内容');
+        return;
+    }
+    
+    const blob = new Blob([transcriptText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '演讲文字稿.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // 更新按钮状态
+    const transcriptBtn = document.getElementById('transcriptButton');
+    if (transcriptBtn) {
+        transcriptBtn.textContent = '已下载';
+        transcriptBtn.style.background = '#6c757d';
+        transcriptBtn.disabled = true;
+        
+        // 1秒后恢复
+        setTimeout(() => {
+            transcriptBtn.textContent = '文字稿';
+            transcriptBtn.style.background = '#17a2b8';
+            transcriptBtn.disabled = false;
+        }, 1000);
+    }
+};
+
+// 开始AI评分
+const startAIScoring = () => {
+    console.log('🤖 开始AI评分');
+    // TODO: 实现AI评分功能
+    alert('AI评分功能开发中...');
+};
+
+// 调用阿里云语音识别API
+const callAliyunSpeechAPI = async (audioBlob) => {
+    // TODO: 实现阿里云语音识别API调用
+    // 这里需要实现实际的API调用逻辑
+    console.log('🔄 调用阿里云语音识别API');
+    
+    // 模拟API调用
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                success: true,
+                text: '这是模拟的语音识别结果文本。实际使用时需要调用阿里云API。'
+            });
+        }, 2000);
+    });
 };
 
 // 导出函数供全局使用
