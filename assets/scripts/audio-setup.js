@@ -1107,8 +1107,8 @@ const recognizeAudio = async (pcmData) => {
     }
 };
 
-// 重试识别功能
-const retryRecognition = async () => {
+// 重试识别功能 (audio-setup专用)
+const audioSetupRetryRecognition = async () => {
     if (!lastRecordedAudio) {
         return;
     }
