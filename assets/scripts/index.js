@@ -84,7 +84,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2>已经上传的PPT</h2>
                 <!-- 批量导入导出按钮 -->
                 <div class="config-actions">
-                    <button class="btn btn-import" onclick="batchImportSlides()">批量导入</button>
+                    <div class="import-dropdown">
+                        <button class="btn btn-import" onclick="toggleImportDropdown()">批量导入 ▼</button>
+                        <div class="import-options" id="importOptions" style="display: none;">
+                            <button onclick="batchImportSlides()">导入ZIP文件</button>
+                            <button onclick="batchImportFolder()">导入文件夹</button>
+                        </div>
+                    </div>
                     <button class="btn btn-export" onclick="batchExportSlides()">批量导出</button>
                 </div>
             </div>
@@ -97,7 +103,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- 演讲内容要求输入区域 -->
             <div class="speech-requirements" id="speechRequirements">
                 <h3>演讲内容要求</h3>
-                <textarea id="speechRequirementsText" placeholder="请输入对这张PPT演讲的内容要求。例如：需要包含产品特性介绍，强调用户痛点和解决方案。越详细越好。最多1000字。AI将根据这些要求对您的演讲进行评分。"></textarea>
+                <div class="textarea-wrapper">
+                    <textarea id="speechRequirementsText" placeholder="请输入对这张PPT演讲的内容要求。例如：需要包含产品特性介绍，强调用户痛点和解决方案。越详细越好。最多4096字。AI将根据这些要求对您的演讲进行评分。" maxlength="4096" oninput="updateCharCount()"></textarea>
+                    <div class="char-count" id="charCount">0/4096</div>
+                </div>
                 <div class="button-row">
                     <button class="btn btn-cancel" onclick="cancelSpeechRequirements()">取消</button>
                     <button class="btn btn-save" onclick="saveSpeechRequirements()">保存</button>
@@ -1005,7 +1014,11 @@ const showSpeechRequirements = (slideIndex) => {
     
     if (requirementsPanel && textarea) {
         // 加载已有的演讲要求
-        textarea.value = slideRequirements[slideIndex] || '';
+        const currentRequirements = slideRequirements[slideIndex] || '';
+        textarea.value = currentRequirements;
+        
+        // 更新字数统计
+        updateCharCount();
         
         // 显示面板
         requirementsPanel.classList.add('show');
@@ -1014,6 +1027,26 @@ const showSpeechRequirements = (slideIndex) => {
         setTimeout(() => {
             textarea.focus();
         }, 300);
+    }
+};
+
+// 更新字数统计
+const updateCharCount = () => {
+    const textarea = document.getElementById('speechRequirementsText');
+    const charCount = document.getElementById('charCount');
+    
+    if (textarea && charCount) {
+        const currentLength = textarea.value.length;
+        charCount.textContent = `${currentLength}/4096`;
+        
+        // 如果接近限制，改变颜色
+        if (currentLength > 3900) {
+            charCount.style.color = '#ff4444';
+        } else if (currentLength > 3500) {
+            charCount.style.color = '#ff8800';
+        } else {
+            charCount.style.color = '#666';
+        }
     }
 };
 
@@ -1051,9 +1084,16 @@ const saveSpeechRequirements = () => {
         const requirements = textarea.value.trim();
         
         if (requirements) {
-            // 保存演讲要求
-            slideRequirements[selectedSlideIndex] = requirements;
-            console.log(`✅ 已保存PPT ${selectedSlideIndex} 的演讲要求:`, requirements);
+            // 应用4096字符限制并保存演讲要求
+            const truncatedRequirements = truncateText(requirements, 4096);
+            slideRequirements[selectedSlideIndex] = truncatedRequirements;
+            console.log(`✅ 已保存PPT ${selectedSlideIndex} 的演讲要求:`, truncatedRequirements.substring(0, 50) + '...');
+            
+            // 如果文本被截断，更新textarea显示
+            if (truncatedRequirements !== requirements) {
+                textarea.value = truncatedRequirements;
+                updateCharCount();
+            }
             
             // 可以在这里添加视觉反馈，比如显示保存成功的提示
             showSaveSuccessMessage();
@@ -1187,6 +1227,8 @@ const batchImportSlides = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.zip';
+    input.webkitdirectory = false; // 默认文件模式
+    input.multiple = true; // 允许多选
     
     input.onchange = async (e) => {
         const file = e.target.files[0];
@@ -1500,9 +1542,189 @@ const callAliyunSpeechAPI = async (audioBlob) => {
     });
 };
 
+// 切换导入下拉菜单
+const toggleImportDropdown = () => {
+    const dropdown = document.getElementById('importOptions');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+};
+
+// 批量导入文件夹
+const batchImportFolder = () => {
+    console.log('📁 开始批量导入文件夹');
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.webkitdirectory = true; // 文件夹模式
+    input.multiple = true;
+    
+    input.onchange = async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        // 隐藏下拉菜单
+        toggleImportDropdown();
+        
+        try {
+            await processFolderFiles(files);
+        } catch (error) {
+            console.error('❌ 文件夹导入失败:', error);
+            alert('文件夹导入失败: ' + error.message);
+        }
+    };
+    
+    input.click();
+};
+
+// 处理文件夹中的文件
+const processFolderFiles = async (files) => {
+    console.log(`📁 处理文件夹中的 ${files.length} 个文件`);
+    
+    // 收集图片和txt文件
+    const imageFiles = {};
+    const textFiles = {};
+    
+    // 支持的图片格式
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    
+    files.forEach(file => {
+        const fileName = file.name.toLowerCase();
+        const baseName = fileName.split('.')[0];
+        const extension = fileName.split('.').pop();
+        
+        if (imageExtensions.includes(extension)) {
+            // 如果已经有同名的图片，跳过（只选择第一个）
+            if (!imageFiles[baseName]) {
+                imageFiles[baseName] = file;
+            }
+        } else if (extension === 'txt') {
+            textFiles[baseName] = file;
+        }
+    });
+    
+    // 按文件名排序（保持原文件夹的排序）
+    const sortedImageNames = Object.keys(imageFiles).sort();
+    
+    console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
+    
+    if (sortedImageNames.length === 0) {
+        throw new Error('文件夹中没有找到支持的图片文件');
+    }
+    
+    // 清空现有的slides和requirements
+    slides.length = 0;
+    Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
+    
+    // 导入图片和对应的演讲要求
+    for (let i = 0; i < sortedImageNames.length; i++) {
+        const baseName = sortedImageNames[i];
+        const imageFile = imageFiles[baseName];
+        const textFile = textFiles[baseName];
+        
+        // 读取图片
+        const imageUrl = await fileToDataURL(imageFile);
+        slides.push(imageUrl);
+        
+        // 读取对应的演讲要求
+        if (textFile) {
+            const requirements = await readTextFile(textFile);
+            // 应用4096字符限制
+            slideRequirements[i] = truncateText(requirements, 4096);
+        }
+    }
+    
+    console.log(`✅ 成功导入 ${slides.length} 张PPT`);
+    
+    // 重新渲染缩略图
+    const overlay = document.querySelector('.slides-overlay');
+    if (overlay) {
+        renderThumbnails(overlay);
+    }
+    
+    // 显示成功提示
+    showImportSuccessMessage(slides.length);
+};
+
+// 显示导入成功消息
+const showImportSuccessMessage = (count) => {
+    const message = document.createElement('div');
+    message.className = 'success-message';
+    message.textContent = `✅ 成功导入 ${count} 张PPT`;
+    message.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #4CAF50;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        opacity: 0;
+        transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(message);
+    
+    // 动画显示
+    requestAnimationFrame(() => {
+        message.style.opacity = '1';
+        message.style.transform = 'translateX(-50%) translateY(-10px)';
+    });
+    
+    // 3秒后自动消失
+    setTimeout(() => {
+        message.style.opacity = '0';
+        message.style.transform = 'translateX(-50%) translateY(10px)';
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.parentNode.removeChild(message);
+            }
+        }, 300);
+    }, 3000);
+};
+
+// 将File对象转换为Data URL
+const fileToDataURL = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
+// 读取文本文件内容
+const readTextFile = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file, 'utf-8');
+    });
+};
+
+// 文本截断到指定字符数（4096字符限制）
+const truncateText = (text, maxLength = 4096) => {
+    if (!text || typeof text !== 'string') return '';
+    
+    if (text.length <= maxLength) {
+        return text;
+    }
+    
+    console.log(`📝 文本长度 ${text.length} 超过限制，截断到 ${maxLength} 字符`);
+    return text.substring(0, maxLength);
+};
+
 // 导出函数供全局使用
 window.cancelSpeechRequirements = cancelSpeechRequirements;
 window.saveSpeechRequirements = saveSpeechRequirements;
 window.batchExportSlides = batchExportSlides;
 window.batchImportSlides = batchImportSlides;
+window.toggleImportDropdown = toggleImportDropdown;
+window.batchImportFolder = batchImportFolder;
+window.updateCharCount = updateCharCount;
 
