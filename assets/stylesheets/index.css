@@ -257,6 +257,14 @@ body {
     background: #222222;
     border-radius: 12px;
     overflow: hidden;
+    cursor: pointer;
+    transition: border 0.3s ease, transform 0.2s ease;
+    border: 3px solid transparent;
+}
+
+.thumbnail.selected {
+    border: 3px solid #666AF6;
+    transform: scale(1.02);
 }
 
 .thumbnail img {
@@ -304,10 +312,98 @@ body {
     filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
 }
 
+/* 演讲内容要求输入区域 */
+.speech-requirements {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    border-top: 2px solid #666AF6;
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 1001;
+}
+
+.speech-requirements.show {
+    transform: translateY(0);
+}
+
+.speech-requirements h3 {
+    color: white;
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.speech-requirements textarea {
+    width: 100%;
+    min-height: 100px;
+    background: #2a2a2a;
+    border: 2px solid #444444;
+    border-radius: 8px;
+    color: white;
+    padding: 12px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.speech-requirements textarea:focus {
+    outline: none;
+    border-color: #666AF6;
+}
+
+.speech-requirements .button-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.speech-requirements .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.speech-requirements .btn-cancel {
+    background: #444444;
+    color: white;
+}
+
+.speech-requirements .btn-cancel:hover {
+    background: #555555;
+}
+
+.speech-requirements .btn-save {
+    background: #666AF6;
+    color: white;
+}
+
+.speech-requirements .btn-save:hover {
+    background: #5a5ce8;
+}
+
 @media screen and (max-width: 540px) {
     .thumbnails-container {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 15px;
+    }
+    
+    .speech-requirements {
+        padding: 15px;
+    }
+    
+    .speech-requirements textarea {
+        min-height: 80px;
+        font-size: 13px;
     }
 }
 

@@ -42,7 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
         'assets/slides/Day2-1.JPG', 'assets/slides/Day2-2.JPG', 
         // 'assets/slides/Day3-1.JPG', 'assets/slides/Day3-2.JPG', 'assets/slides/Day3-3.JPG', 'assets/slides/Day3-4.JPG', 'assets/slides/Day3-5.JPG', 'assets/slides/Day3-6.JPG', 'assets/slides/Day3-7.JPG', 'assets/slides/Day3-8.JPG', 'assets/slides/Day3-9.JPG', 'assets/slides/Day3-10.JPG', 'assets/slides/Day3-11.JPG', 
         // 'assets/slides/Day4-1.JPG', 'assets/slides/Day4-2.JPG', 'assets/slides/Day4-3.JPG', 'assets/slides/Day4-4.JPG', 'assets/slides/Day4-5.JPG', 'assets/slides/Day4-6.JPG', 
-    ]; 
+    ];
+    let selectedSlideIndex = -1; // 当前选中的PPT索引
+    let slideRequirements = {}; // 存储每张PPT的演讲要求 
     const uploadButton = document.querySelector('.action-button');
     
     // Create slides manager overlay
@@ -60,6 +62,25 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="thumbnails-container">
                 <div class="thumbnail add-slide">
                     <i class='bx bx-plus'></i>
+                </div>
+            </div>
+            
+            <!-- 演讲内容要求输入区域 -->
+            <div class="speech-requirements" id="speechRequirements">
+                <h3>
+                    <i class='bx bx-edit-alt'></i>
+                    演讲内容要求
+                </h3>
+                <textarea id="speechRequirementsText" placeholder="请输入对这张PPT演讲的具体要求，AI将根据这些要求对您的演讲进行评分...
+
+例如：
+- 需要包含产品特性介绍
+- 强调用户痛点和解决方案
+- 控制在1分钟内完成
+- 语调要有感染力"></textarea>
+                <div class="button-row">
+                    <button class="btn btn-cancel" onclick="cancelSpeechRequirements()">取消</button>
+                    <button class="btn btn-save" onclick="saveSpeechRequirements()">保存</button>
                 </div>
             </div>
         `;
@@ -82,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
         slides.forEach((slide, index) => {
             const thumbnail = document.createElement('div');
             thumbnail.className = 'thumbnail';
+            thumbnail.dataset.slideIndex = index;
             thumbnail.innerHTML = `
                 <img src="${slide}" alt="Slide ${index + 1}">
                 <button class="remove-slide" data-index="${index}">
@@ -127,13 +149,42 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add slide button handler
         overlay.querySelector('.add-slide').addEventListener('click', handleSlideUpload);
 
-        // Remove slide handler
+        // Thumbnail click handlers
         overlay.addEventListener('click', (e) => {
             const removeButton = e.target.closest('.remove-slide');
             if (removeButton) {
+                // Remove slide
                 const index = parseInt(removeButton.dataset.index);
                 slides.splice(index, 1);
+                // 如果删除的是当前选中的幻灯片，重置选中状态
+                if (selectedSlideIndex === index) {
+                    selectedSlideIndex = -1;
+                    hideSpeechRequirements();
+                } else if (selectedSlideIndex > index) {
+                    selectedSlideIndex--; // 调整索引
+                }
+                // 删除对应的演讲要求
+                delete slideRequirements[index];
+                // 重新调整slideRequirements的键值
+                const newRequirements = {};
+                Object.keys(slideRequirements).forEach(key => {
+                    const oldIndex = parseInt(key);
+                    if (oldIndex > index) {
+                        newRequirements[oldIndex - 1] = slideRequirements[key];
+                    } else {
+                        newRequirements[key] = slideRequirements[key];
+                    }
+                });
+                slideRequirements = newRequirements;
                 renderThumbnails(overlay);
+                return;
+            }
+
+            const thumbnail = e.target.closest('.thumbnail:not(.add-slide)');
+            if (thumbnail) {
+                // Select thumbnail
+                const index = parseInt(thumbnail.dataset.slideIndex);
+                selectSlide(index, overlay);
             }
         });
     });
@@ -534,10 +585,144 @@ document.addEventListener('DOMContentLoaded', function() {
     initSettingsPage();
     console.log('🚀 设置页面初始化完成');
     
+    // 初始化PPT选择功能
+    initSlideSelection();
+    
     // 初始化背景音乐
     initBackgroundMusic();
     
     // 添加用户交互监听器
     addUserInteractionListeners();
 });
+
+// PPT选择相关函数
+const initSlideSelection = () => {
+    console.log('🎯 初始化PPT选择功能');
+};
+
+// 选择PPT幻灯片
+const selectSlide = (index, overlay) => {
+    console.log(`🎯 选择PPT幻灯片: ${index}`);
+    
+    // 移除之前选中的状态
+    const allThumbnails = overlay.querySelectorAll('.thumbnail:not(.add-slide)');
+    allThumbnails.forEach(thumb => thumb.classList.remove('selected'));
+    
+    // 添加选中状态到当前缩略图
+    const selectedThumbnail = overlay.querySelector(`[data-slide-index="${index}"]`);
+    if (selectedThumbnail) {
+        selectedThumbnail.classList.add('selected');
+        selectedSlideIndex = index;
+        
+        // 显示演讲内容要求输入界面
+        showSpeechRequirements(index);
+    }
+};
+
+// 显示演讲内容要求输入界面
+const showSpeechRequirements = (slideIndex) => {
+    const requirementsPanel = document.getElementById('speechRequirements');
+    const textarea = document.getElementById('speechRequirementsText');
+    
+    if (requirementsPanel && textarea) {
+        // 加载已有的演讲要求
+        textarea.value = slideRequirements[slideIndex] || '';
+        
+        // 显示面板
+        requirementsPanel.classList.add('show');
+        
+        // 聚焦到文本框
+        setTimeout(() => {
+            textarea.focus();
+        }, 300);
+    }
+};
+
+// 隐藏演讲内容要求输入界面
+const hideSpeechRequirements = () => {
+    const requirementsPanel = document.getElementById('speechRequirements');
+    if (requirementsPanel) {
+        requirementsPanel.classList.remove('show');
+    }
+};
+
+// 取消演讲内容要求输入
+const cancelSpeechRequirements = () => {
+    console.log('🎯 取消演讲内容要求输入');
+    
+    // 清除选中状态
+    const allThumbnails = document.querySelectorAll('.thumbnail:not(.add-slide)');
+    allThumbnails.forEach(thumb => thumb.classList.remove('selected'));
+    
+    selectedSlideIndex = -1;
+    hideSpeechRequirements();
+};
+
+// 保存演讲内容要求
+const saveSpeechRequirements = () => {
+    console.log('🎯 保存演讲内容要求');
+    
+    if (selectedSlideIndex === -1) {
+        console.warn('⚠️ 没有选中的PPT');
+        return;
+    }
+    
+    const textarea = document.getElementById('speechRequirementsText');
+    if (textarea) {
+        const requirements = textarea.value.trim();
+        
+        if (requirements) {
+            // 保存演讲要求
+            slideRequirements[selectedSlideIndex] = requirements;
+            console.log(`✅ 已保存PPT ${selectedSlideIndex} 的演讲要求:`, requirements);
+            
+            // 可以在这里添加视觉反馈，比如显示保存成功的提示
+            showSaveSuccessMessage();
+        } else {
+            // 如果内容为空，删除该PPT的演讲要求
+            delete slideRequirements[selectedSlideIndex];
+            console.log(`🗑️ 已删除PPT ${selectedSlideIndex} 的演讲要求`);
+        }
+        
+        hideSpeechRequirements();
+        
+        // 清除选中状态
+        const allThumbnails = document.querySelectorAll('.thumbnail:not(.add-slide)');
+        allThumbnails.forEach(thumb => thumb.classList.remove('selected'));
+        selectedSlideIndex = -1;
+    }
+};
+
+// 显示保存成功消息
+const showSaveSuccessMessage = () => {
+    // 创建临时提示消息
+    const message = document.createElement('div');
+    message.textContent = '✅ 演讲要求已保存';
+    message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #666AF6;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    `;
+    
+    document.body.appendChild(message);
+    
+    // 2秒后自动移除
+    setTimeout(() => {
+        if (message.parentNode) {
+            message.parentNode.removeChild(message);
+        }
+    }, 2000);
+};
+
+// 导出函数供全局使用
+window.cancelSpeechRequirements = cancelSpeechRequirements;
+window.saveSpeechRequirements = saveSpeechRequirements;
 
