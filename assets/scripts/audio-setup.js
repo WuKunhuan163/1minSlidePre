@@ -465,16 +465,20 @@ const completeAudioStep5 = () => {
     // 直接返回设置主菜单，不自动进入AI设置
     // 延迟1秒后自动返回主菜单
     setTimeout(() => {
-        // 关闭当前录音设置overlay
-        const audioSetupOverlay = document.querySelector('.overlay');
-        if (audioSetupOverlay) {
-            audioSetupOverlay.remove();
-        }
-        
-        // 创建设置菜单overlay
+        // 创建设置菜单overlay并安全切换
         const settingsOverlay = createSettingsOverlay();
         if (typeof setupSettingsOverlayEvents === 'function') {
             setupSettingsOverlayEvents(settingsOverlay);
+        }
+        
+        // 使用overlay管理器安全切换
+        if (typeof overlayManager !== 'undefined') {
+            overlayManager.switchToOverlay(settingsOverlay);
+        } else {
+            // 备用方案：直接清理和添加
+            const existingOverlays = document.querySelectorAll('.slides-overlay, .overlay');
+            existingOverlays.forEach(overlay => overlay.remove());
+            document.body.appendChild(settingsOverlay);
         }
     }, 1000);
 };
@@ -2289,16 +2293,20 @@ const completeAIStep3 = () => {
                 content3.classList.add('completed');
             }
             
-            // 移除AI设置overlay
-            const aiSetupOverlay = document.querySelector('.overlay');
-            if (aiSetupOverlay) {
-                aiSetupOverlay.remove();
-            }
-            
-            // 创建设置菜单overlay
+            // 创建设置菜单overlay并安全切换
             const settingsOverlay = createSettingsOverlay();
             if (typeof setupSettingsOverlayEvents === 'function') {
                 setupSettingsOverlayEvents(settingsOverlay);
+            }
+            
+            // 使用overlay管理器安全切换
+            if (typeof overlayManager !== 'undefined') {
+                overlayManager.switchToOverlay(settingsOverlay);
+            } else {
+                // 备用方案：直接清理和添加
+                const existingOverlays = document.querySelectorAll('.slides-overlay, .overlay');
+                existingOverlays.forEach(overlay => overlay.remove());
+                document.body.appendChild(settingsOverlay);
             }
         };
     }

@@ -698,8 +698,8 @@ const initSettingsPage = () => {
         
         // 更新主菜单设置按钮的NEW标识
         updateMainSettingsButton();
-        
-        // 为设置按钮添加事件监听器
+    
+    // 为设置按钮添加事件监听器
     const settingsButton = document.querySelector('.settings-button');
     console.log('🔍 查找设置按钮:', settingsButton);
     console.log('🔍 当前录音状态:', simpleConfig.get('recordingEnabled'));
@@ -725,16 +725,38 @@ const initSettingsPage = () => {
 
 console.log('📱 设置页面模板已加载');
 
+// 统一的overlay管理系统
+const overlayManager = {
+    // 清除所有现有的overlay
+    clearAllOverlays() {
+        console.log('🧹 清理所有现有的overlay');
+        const existingOverlays = document.querySelectorAll('.slides-overlay, .overlay');
+        existingOverlays.forEach((overlay, index) => {
+            console.log(`🗑️ 移除overlay ${index + 1}:`, overlay.className);
+            overlay.remove();
+        });
+    },
+    
+    // 安全地切换到新的overlay
+    switchToOverlay(newOverlay) {
+        console.log('🔄 安全切换到新overlay');
+        this.clearAllOverlays();
+        if (newOverlay && !document.body.contains(newOverlay)) {
+            document.body.appendChild(newOverlay);
+        }
+    }
+};
+
 // 设置overlay事件监听器的统一函数
 const setupSettingsOverlayEvents = (overlay) => {
     
-    // 返回按钮事件
+            // 返回按钮事件
     const backButton = overlay.querySelector('.back-button');
     if (backButton) {
         backButton.addEventListener('click', () => {
-            console.log('🔙 点击设置页面的返回按钮，回到主菜单');
-            console.log('🔙 当前录音状态:', simpleConfig.get('recordingEnabled'));
-            overlay.remove();
+                console.log('🔙 点击设置页面的返回按钮，回到主菜单');
+                console.log('🔙 当前录音状态:', simpleConfig.get('recordingEnabled'));
+            overlayManager.clearAllOverlays(); // 使用统一的清理方法
         });
     }
     
@@ -746,14 +768,14 @@ const setupSettingsOverlayEvents = (overlay) => {
 const setupFullSettingsOverlayFunctionality = (overlay) => {
     
     // 获取所有必要的元素
-    const recordingToggle = overlay.querySelector('#recordingToggle');
-    const aiToggle = overlay.querySelector('#aiToggle');
-    const recordingSettings = overlay.querySelector('#recordingSettings');
-    const aiSettings = overlay.querySelector('#aiSettings');
-    
+            const recordingToggle = overlay.querySelector('#recordingToggle');
+            const aiToggle = overlay.querySelector('#aiToggle');
+            const recordingSettings = overlay.querySelector('#recordingSettings');
+            const aiSettings = overlay.querySelector('#aiSettings');
+            
     // 录音设置卡片点击事件（只为装饰，实际通过header进入设置）
-    const recordingCard = overlay.querySelector('.setting-card:first-child');
-    if (recordingCard) {
+            const recordingCard = overlay.querySelector('.setting-card:first-child');
+            if (recordingCard) {
         
         // 禁用toggle功能，只作装饰
         if (recordingToggle) {
@@ -778,9 +800,7 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
                     console.log('🔙 从录音设置返回');
                     const newSettingsOverlay = createSettingsOverlay();
                     setupSettingsOverlayEvents(newSettingsOverlay);
-                    setTimeout(() => {
-                        audioSetupOverlay.remove();
-                    }, 50);
+                    overlayManager.switchToOverlay(newSettingsOverlay);
                 });
             });
         }
@@ -814,9 +834,7 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
                         console.log('🔙 从AI设置返回');
                         const newSettingsOverlay = createSettingsOverlay();
                         setupSettingsOverlayEvents(newSettingsOverlay);
-                        setTimeout(() => {
-                            aiSetupOverlay.remove();
-                        }, 50);
+                        overlayManager.switchToOverlay(newSettingsOverlay);
                     });
                 }
             });
@@ -832,16 +850,16 @@ const updateOverlayFromSharedState = (overlay) => {
     
     const currentConfig = simpleConfig.getAll();
     const recordingToggle = overlay.querySelector('#recordingToggle');
-    const aiToggle = overlay.querySelector('#aiToggle');
+                        const aiToggle = overlay.querySelector('#aiToggle');
     const recordingSettings = overlay.querySelector('#recordingSettings');
-    const aiSettings = overlay.querySelector('#aiSettings');
+                            const aiSettings = overlay.querySelector('#aiSettings');
     const aiCard = overlay.querySelector('#aiCard');
     
     // AI卡片条件显示：只有在录音设置完成后才显示
     if (aiCard) {
         if (currentConfig.recordingEnabled) {
             aiCard.style.display = 'block';
-        } else {
+                    } else {
             aiCard.style.display = 'none';
         }
     }
@@ -858,16 +876,16 @@ const updateOverlayFromSharedState = (overlay) => {
     if (recordingSettings) {
         if (currentConfig.recordingEnabled) {
             recordingSettings.classList.add('expanded');
-        } else {
+                    } else {
             recordingSettings.classList.remove('expanded');
-        }
-    }
-    
+                    }
+            }
+            
     if (aiSettings) {
         if (currentConfig.aiEnabled) {
-            aiSettings.classList.add('expanded');
-        } else {
-            aiSettings.classList.remove('expanded');
+                    aiSettings.classList.add('expanded');
+                } else {
+                        aiSettings.classList.remove('expanded');
         }
     }
     
@@ -894,18 +912,18 @@ const updateOverlayFromSharedState = (overlay) => {
     if (currentConfig.aiEnabled) {
         setupAISettingsFieldCopy(overlay);
     }
-    
-    // 检测系统并显示音量设置卡片
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const effectsVolumeCard = overlay.querySelector('#effectsVolumeCard');
-    const backgroundMusicCard = overlay.querySelector('#backgroundMusicCard');
-    
-    if (!isIOS) {
-        // 非iOS系统显示音量设置卡片
-        if (effectsVolumeCard) effectsVolumeCard.style.display = 'block';
-        if (backgroundMusicCard) backgroundMusicCard.style.display = 'block';
-        initEffectsVolumeControl(overlay);
-        initBackgroundMusicVolumeControl(overlay);
+            
+            // 检测系统并显示音量设置卡片
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const effectsVolumeCard = overlay.querySelector('#effectsVolumeCard');
+            const backgroundMusicCard = overlay.querySelector('#backgroundMusicCard');
+            
+            if (!isIOS) {
+                // 非iOS系统显示音量设置卡片
+                if (effectsVolumeCard) effectsVolumeCard.style.display = 'block';
+                if (backgroundMusicCard) backgroundMusicCard.style.display = 'block';
+                initEffectsVolumeControl(overlay);
+                initBackgroundMusicVolumeControl(overlay);
     } else {
         // iOS系统隐藏音量设置卡片
         if (effectsVolumeCard) effectsVolumeCard.style.display = 'none';
@@ -913,8 +931,8 @@ const updateOverlayFromSharedState = (overlay) => {
     }
     
     // 更新其他UI状态
-    updateNewBadges(overlay);
-    updateConfigHints(overlay);
+            updateNewBadges(overlay);
+            updateConfigHints(overlay);
 };
 
 // 为主设置界面的字段添加复制功能并禁用输入
@@ -1072,3 +1090,9 @@ const setupAISettingsFieldCopy = (overlay) => {
     
     console.log('✅ AI设置界面字段复制功能已设置');
 };
+
+// 导出主要函数供外部使用
+window.createSettingsOverlay = createSettingsOverlay;
+window.setupSettingsOverlayEvents = setupSettingsOverlayEvents;
+window.initSettingsPage = initSettingsPage;
+window.overlayManager = overlayManager;
