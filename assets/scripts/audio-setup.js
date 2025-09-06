@@ -19,6 +19,14 @@ const createAudioSetupOverlay = () => {
                 <button class="btn btn-export" onclick="exportAudioConfig()">导出设置</button>
             </div>
         </div>
+        
+        <!-- 移动端进度条 -->
+        <div class="mobile-progress-container">
+            <div class="mobile-progress-bar">
+                <div class="mobile-progress-fill" id="audioProgressFill"></div>
+            </div>
+        </div>
+        
         <div class="audio-setup-container">
             <div class="setup-container">
                 
@@ -1311,6 +1319,9 @@ const showAudioStep = (stepNumber) => {
     
     currentAudioStep = stepNumber;
     
+    // 更新移动端进度条
+    updateMobileProgress(stepNumber, 5, 'audio');
+    
     // 检查是否需要触发自动验证（延迟执行以确保DOM更新完成）
     setTimeout(() => {
         if (stepAutoJumpManager && stepAutoJumpManager.canStepAutoJump(stepNumber)) {
@@ -1797,6 +1808,14 @@ const createAISetupOverlay = () => {
                 <button class="btn btn-export" onclick="exportAIConfig()">导出设置</button>
             </div>
         </div>
+        
+        <!-- 移动端进度条 -->
+        <div class="mobile-progress-container">
+            <div class="mobile-progress-bar">
+                <div class="mobile-progress-fill" id="aiProgressFill"></div>
+            </div>
+        </div>
+        
         <div class="audio-setup-container">
             <div class="setup-container">
                 
@@ -2181,6 +2200,9 @@ const showAIStep = (stepNumber) => {
     }
     
     currentAIStep = stepNumber;
+    
+    // 更新移动端进度条
+    updateMobileProgress(stepNumber, 3, 'ai');
 };
 
 // 控制AI步骤交互性 - 模仿录音设置的成功经验
@@ -2479,9 +2501,22 @@ const exportAIConfig = () => {
     URL.revokeObjectURL(link.href);
 };
 
+// 移动端进度条更新函数
+const updateMobileProgress = (stepNumber, totalSteps, progressType = 'audio') => {
+    const progressFillId = progressType === 'audio' ? 'audioProgressFill' : 'aiProgressFill';
+    const progressFill = document.getElementById(progressFillId);
+    
+    if (progressFill) {
+        const progressPercentage = (stepNumber / totalSteps) * 100;
+        progressFill.style.width = `${progressPercentage}%`;
+        console.log(`📱 更新${progressType}进度条: ${stepNumber}/${totalSteps} (${progressPercentage}%)`);
+    }
+};
+
 // 导出函数供外部调用
 window.createAudioSetupOverlay = createAudioSetupOverlay;
 window.createAISetupOverlay = createAISetupOverlay;
+window.updateMobileProgress = updateMobileProgress;
 window.initAudioSetup = initAudioSetup;
 
 // 导出智谱AI相关函数

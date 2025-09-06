@@ -1047,3 +1047,63 @@
     opacity: 0.6 !important;
     cursor: not-allowed !important;
 }
+
+/* 移动端竖屏模式样式 */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+    /* 隐藏步骤圆圈和连接线 */
+    .step-circle,
+    .step-line {
+        display: none !important;
+    }
+    
+    /* 调整步骤内容布局，移除左边距 */
+    .setup-step {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    .step-content {
+        margin-left: 0 !important;
+        padding-left: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* 减小setup container的最小宽度 */
+    .setup-container {
+        min-width: 320px !important;
+    }
+}
+
+/* 进度条样式 */
+.mobile-progress-container {
+    display: none;
+    width: 100%;
+    padding: 0 20px;
+    margin-bottom: 20px;
+}
+
+.mobile-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #000;
+    border: 2px solid #666AF6;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.mobile-progress-fill {
+    height: 100%;
+    background: #666AF6;
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+
+/* 在移动端竖屏显示进度条 */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+    .mobile-progress-container {
+        display: block !important;
+    }
+}
