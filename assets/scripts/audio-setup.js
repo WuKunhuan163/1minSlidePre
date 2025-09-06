@@ -1366,7 +1366,7 @@ const disableNonCurrentStepInteractions = (currentStep) => {
 
 // 导入配置 - 支持文件和剪切板
 const importAudioConfig = async () => {
-    const choice = confirm('选择导入方式：\n确定 = 从剪切板导入\n取消 = 从json导入');
+    const choice = confirm('选择导入方式：\n确定 = 从剪切板导入\n取消 = 从JSON导入');
     
     if (choice) {
         // 从剪切板导入
@@ -1391,12 +1391,12 @@ const importAudioConfig = async () => {
             }
         }
     } else {
-        // 从json导入
+        // 从JSON导入
         importAudioConfigFromFile();
     }
 };
 
-// 从json导入配置
+// 从JSON导入配置
 const importAudioConfigFromFile = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -1409,7 +1409,7 @@ const importAudioConfigFromFile = () => {
                 try {
                     const config = JSON.parse(e.target.result);
                     simpleConfig.setAll(config);
-                    alert('配置从json导入成功！');
+                    alert('配置从JSON导入成功！');
                     // 重新加载当前配置到表单
                     loadCurrentConfig();
                 } catch (error) {
