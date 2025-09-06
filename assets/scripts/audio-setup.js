@@ -1275,6 +1275,50 @@ const downloadDebugLogs = () => {
 // 手动触发日志下载的全局函数
 window.downloadDebugLogs = downloadDebugLogs;
 
+// 重置所有步骤为待验证状态
+const resetAllStepsToRevalidation = () => {
+    console.log('🔄 重置所有步骤为待验证状态');
+    
+    // 重置所有步骤圆圈为pending状态
+    document.querySelectorAll('.step-circle').forEach((circle, index) => {
+        circle.classList.remove('active', 'completed');
+        circle.classList.add('pending');
+    });
+    
+    // 清除所有步骤的状态信息
+    for (let i = 1; i <= 5; i++) {
+        const statusElement = document.getElementById(`audio-step${i}-status`);
+        if (statusElement) {
+            statusElement.textContent = '';
+            statusElement.className = '';
+            statusElement.style.display = 'none';
+        }
+    }
+    
+    // 特殊处理第五步的录音结果和按钮
+    const transcriptionResult = document.getElementById('transcriptionResult');
+    if (transcriptionResult) {
+        transcriptionResult.textContent = '';
+        transcriptionResult.className = 'transcription-result';
+    }
+    
+    const completeButton = document.getElementById('completeSetupButton');
+    const downloadButton = document.getElementById('downloadRecordingButton');
+    if (completeButton) completeButton.style.display = 'none';
+    if (downloadButton) downloadButton.style.display = 'none';
+    
+    // 重置录音按钮状态
+    const recordButton = document.getElementById('recordButton');
+    if (recordButton) {
+        recordButton.innerHTML = '<i class="bx bx-microphone"></i> 开始录音';
+        recordButton.classList.remove('recording');
+        recordButton.classList.add('btn-record');
+    }
+    
+    // 重置波形颜色
+    updateWaveformColor(null);
+};
+
 const showAudioStep = (stepNumber, allowAutoJump = true) => {
     logToFile(`🔄 显示音频设置步骤 ${stepNumber}, 允许自动跳转: ${allowAutoJump}`);
     
@@ -1466,6 +1510,7 @@ const importAudioConfig = async () => {
             stepAutoJumpManager = originalAutoJumpManager;
             
             // 回到第1步并重新开始自动跳转流程
+            resetAllStepsToRevalidation(); // 重置所有步骤为待验证状态
             showAudioStep(1, false); // 先显示第1步，不触发自动跳转
             setTimeout(() => {
                 console.log('📥 导入配置完成，从第1步重新开始自动跳转');
@@ -1517,6 +1562,7 @@ const importAudioConfigFromFile = () => {
                     stepAutoJumpManager = originalAutoJumpManager;
                     
                     // 回到第1步并重新开始自动跳转流程
+                    resetAllStepsToRevalidation(); // 重置所有步骤为待验证状态
                     showAudioStep(1, false); // 先显示第1步，不触发自动跳转
                     setTimeout(() => {
                         console.log('📥 导入配置完成，从第1步重新开始自动跳转');
