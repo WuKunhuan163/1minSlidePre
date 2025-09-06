@@ -304,7 +304,7 @@ const completeAudioStep1 = () => {
     simpleConfig.markSettingTested('recording_step1');
     
     console.log('🔄 准备跳转到步骤2');
-    showAudioStep(2);
+    showAudioStep(2, false); // 手动跳转，禁用自动跳转
     return true;
 };
 
@@ -343,7 +343,7 @@ const validateAudioStep2 = () => {
         }
         
     // 立即跳转到下一步，无需等待
-    showAudioStep(3);
+    showAudioStep(3, false); // 手动跳转，禁用自动跳转
     return true;
 };
 
@@ -370,7 +370,7 @@ const completeAudioStep3 = () => {
     simpleConfig.markSettingTested('recording_step3');
     
     console.log('🔄 准备跳转到步骤4');
-    showAudioStep(4);
+    showAudioStep(4, false); // 手动跳转，禁用自动跳转
     return true;
 };
 
@@ -423,7 +423,7 @@ const validateAudioStep4 = async () => {
         console.log('✅ 步骤4内容状态已更新为completed');
     }
     
-    showAudioStep(5);
+    showAudioStep(5, false); // 手动跳转，禁用自动跳转
     return true;
 };
 
@@ -480,7 +480,7 @@ const completeAudioStep5 = () => {
 };
 
 const goBackToAudioStep = (stepNumber) => {
-    showAudioStep(stepNumber);
+    showAudioStep(stepNumber, false); // 手动返回，禁用自动跳转
 };
 
 // 录音功能实现
@@ -1817,7 +1817,7 @@ const createStepAutoJumpManager = () => {
                 console.log(`⏭️ 执行步骤${stepNumber}(${stepConfig.name})自动跳转`);
                 
                 // 确保当前步骤可见
-                showAudioStep(stepNumber);
+                showAudioStep(stepNumber, false); // 自动跳转过程中禁用递归自动跳转
                 
                 // 等待DOM更新
                 await new Promise(resolve => setTimeout(resolve, 300));
@@ -1847,7 +1847,7 @@ const createStepAutoJumpManager = () => {
                 if (!this.canStepAutoJump(step)) {
                     console.log(`⏹️ 步骤${step}不能自动跳转，停止连跳`);
                     // 显示当前应该停留的步骤
-                    showAudioStep(step);
+                    showAudioStep(step, false); // 停止自动跳转时禁用递归自动跳转
                     break;
                 }
                 
