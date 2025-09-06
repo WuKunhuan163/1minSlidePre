@@ -350,15 +350,12 @@ const completeAudioStep3 = () => {
     if (circle3) {
         circle3.classList.remove('pending');
         circle3.classList.add('completed');
-        console.log('✅ 步骤3圆圈状态已更新为completed');
     }
     if (line3) {
         line3.classList.add('completed');
-        console.log('✅ 步骤3线条状态已更新为completed');
     }
     if (content3) {
         content3.classList.add('completed');
-        console.log('✅ 步骤3内容状态已更新为completed');
     }
     
     // 标记步骤3为已测试
@@ -1073,7 +1070,20 @@ const recognizeAudio = async (pcmData) => {
         if (error.message.includes('Failed to fetch')) {
             errorMessage = '网络连接失败，请检查网络状态';
         } else if (error.message.includes('API调用失败')) {
-            errorMessage = 'API服务暂时不可用，请稍后重试';
+            // 解析具体的阿里云API错误
+            if (error.message.includes('APPKEY_NOT_EXIST')) {
+                errorMessage = 'App Key不存在，请检查录音设置中的App Key是否正确';
+            } else if (error.message.includes('ACCESS_DENIED')) {
+                errorMessage = 'AccessKey权限不足，请检查AccessKey ID和Secret是否正确';
+            } else if (error.message.includes('INVALID_TOKEN')) {
+                errorMessage = 'Token无效，请检查录音设置中的AccessKey配置';
+            } else if (error.message.includes('QUOTA_EXCEED')) {
+                errorMessage = '阿里云API调用次数已超限，请稍后重试或升级套餐';
+            } else if (error.message.includes('INVALID_PARAMETER')) {
+                errorMessage = '请求参数错误，请检查录音设置配置';
+            } else {
+                errorMessage = 'API调用失败，请检查录音设置中的配置信息';
+            }
         } else if (error.message && error.message !== '识别失败') {
             errorMessage = '识别失败：' + error.message;
         }
@@ -1208,6 +1218,44 @@ const showAudioStep = (stepNumber) => {
         step.classList.remove('current-step', 'visible');
     });
     
+    // 清除后续步骤的状态信息
+    for (let i = stepNumber + 1; i <= 5; i++) {
+        const statusElement = document.getElementById(`audio-step${i}-status`);
+        if (statusElement) {
+            statusElement.textContent = '';
+            statusElement.className = '';
+            statusElement.style.display = 'none';
+            console.log(`🧹 清除步骤${i}的状态信息`);
+        }
+        
+        // 清除特定步骤的特殊状态
+        if (i === 5) {
+            // 清除第五步的录音结果
+            const transcriptionResult = document.getElementById('transcriptionResult');
+            if (transcriptionResult) {
+                transcriptionResult.textContent = '';
+                transcriptionResult.className = 'transcription-result';
+            }
+            
+            // 隐藏完成设置和下载按钮
+            const completeButton = document.getElementById('completeSetupButton');
+            const downloadButton = document.getElementById('downloadRecordingButton');
+            if (completeButton) completeButton.style.display = 'none';
+            if (downloadButton) downloadButton.style.display = 'none';
+            
+            // 重置录音按钮状态
+            const recordButton = document.getElementById('recordButton');
+            if (recordButton) {
+                recordButton.innerHTML = '<i class="bx bx-microphone"></i> 开始录音';
+                recordButton.classList.remove('recording');
+                recordButton.classList.add('btn-record');
+            }
+            
+            // 重置波形颜色
+            updateWaveformColor(null);
+        }
+    }
+    
     // 高亮指定步骤并设置为visible
     const targetStep = document.getElementById(`audio-step${stepNumber}`);
     if (targetStep) {
@@ -1262,6 +1310,14 @@ const showAudioStep = (stepNumber) => {
     disableNonCurrentStepInteractions(stepNumber);
     
     currentAudioStep = stepNumber;
+    
+    // 检查是否需要触发自动验证（延迟执行以确保DOM更新完成）
+    setTimeout(() => {
+        if (stepAutoJumpManager && stepAutoJumpManager.canStepAutoJump(stepNumber)) {
+            console.log(`🚀 步骤${stepNumber}可以自动验证，开始执行`);
+            autoJumpFromStep(stepNumber);
+        }
+    }, 500);
 };
 
 // 控制步骤交互性 - 使用CSS状态类而不是禁用元素
@@ -1299,7 +1355,7 @@ const disableNonCurrentStepInteractions = (currentStep) => {
 
 // 导入配置 - 支持文件和剪切板
 const importAudioConfig = async () => {
-    const choice = confirm('选择导入方式：\n确定 = 从剪切板导入\n取消 = 从文件导入');
+    const choice = confirm('选择导入方式：\n确定 = 从剪切板导入\n取消 = 从json导入');
     
     if (choice) {
         // 从剪切板导入
@@ -1324,12 +1380,12 @@ const importAudioConfig = async () => {
             }
         }
     } else {
-        // 从文件导入
+        // 从json导入
         importAudioConfigFromFile();
     }
 };
 
-// 从文件导入配置
+// 从json导入配置
 const importAudioConfigFromFile = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -1342,7 +1398,7 @@ const importAudioConfigFromFile = () => {
                 try {
                     const config = JSON.parse(e.target.result);
                     simpleConfig.setAll(config);
-                    alert('配置从文件导入成功！');
+                    alert('配置从json导入成功！');
                     // 重新加载当前配置到表单
                     loadCurrentConfig();
                 } catch (error) {
