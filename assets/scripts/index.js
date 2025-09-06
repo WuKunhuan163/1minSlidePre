@@ -526,9 +526,13 @@ const addUserInteractionListeners = () => {
 
 // 确保DOM加载完成后再初始化设置页面
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM加载完成，开始初始化');
+    console.log('🚀 当前时间:', new Date().toLocaleTimeString());
+    
     // 初始化设置页面
     initAudioSetup();
     initSettingsPage();
+    console.log('🚀 设置页面初始化完成');
     
     // 初始化背景音乐
     initBackgroundMusic();

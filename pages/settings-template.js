@@ -15,11 +15,14 @@ const createSettingsOverlay = () => {
             <h2>系统设置</h2>
         </div>
         <div class="settings-container">
-            <div class="setting-card" id="recordingCard">
+            <div class="setting-card clickable-card" id="recordingCard">
                 <div class="new-badge" id="recordingNewBadge" style="display: none;">NEW</div>
                 <div class="setting-card-header">
                     <i class='bx bx-microphone'></i>
                     <h3>录音文字识别</h3>
+                    <div class="config-hint" id="recordingConfigHint" style="display: none;">
+                        <span>点击重新配置</span>
+                    </div>
                     <div class="setting-toggle">
                         <input type="checkbox" id="recordingToggle" class="toggle-input">
                         <label for="recordingToggle" class="toggle-label"></label>
@@ -31,21 +34,24 @@ const createSettingsOverlay = () => {
                         <input type="text" id="appKey" placeholder="请输入阿里云App Key">
                     </div>
                     <div class="setting-field">
-                        <label>Access Key ID</label>
+                        <label>AccessKey ID</label>
                         <input type="text" id="accessKeyId" placeholder="请输入Access Key ID">
                     </div>
                     <div class="setting-field">
-                        <label>Access Key Secret</label>
+                        <label>AccessKey Secret</label>
                         <input type="password" id="accessKeySecret" placeholder="请输入Access Key Secret">
                     </div>
                 </div>
             </div>
 
-            <div class="setting-card" id="aiCard">
+            <div class="setting-card clickable-card" id="aiCard">
                 <div class="new-badge" id="aiNewBadge" style="display: none;">NEW</div>
                 <div class="setting-card-header">
                     <i class='bx bx-brain'></i>
                     <h3>智谱AI评分</h3>
+                    <div class="config-hint" id="aiConfigHint" style="display: none;">
+                        <span>点击重新配置</span>
+                    </div>
                     <div class="setting-toggle">
                         <input type="checkbox" id="aiToggle" class="toggle-input">
                         <label for="aiToggle" class="toggle-label"></label>
@@ -125,6 +131,27 @@ const settingsStyles = `
 
 .setting-card:hover .setting-card-header {
     background: #666AF666;
+}
+
+.setting-card.clickable-card {
+    cursor: pointer;
+}
+
+.config-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: white;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    margin-right: 10px;
+    font-weight: 500;
+}
+
+.setting-card.clickable-card:hover .config-hint {
+    opacity: 1;
+    transform: translateX(-2px);
 }
 
 .volume-card:hover .setting-card-header {
@@ -621,6 +648,49 @@ const updateMainSettingsButton = () => {
     }
 };
 
+// 更新配置提示
+const updateConfigHints = (overlay) => {
+    const recordingConfigHint = overlay.querySelector('#recordingConfigHint');
+    const aiConfigHint = overlay.querySelector('#aiConfigHint');
+    const currentConfig = simpleConfig.getAll();
+    
+    console.log('🔍 更新配置提示');
+    console.log('录音功能状态:', currentConfig.recordingEnabled);
+    console.log('智谱AI功能状态:', currentConfig.aiEnabled);
+    console.log('录音配置提示元素:', recordingConfigHint);
+    console.log('智谱AI配置提示元素:', aiConfigHint);
+    
+    // 如果录音功能已启用，显示重新配置提示
+    if (currentConfig.recordingEnabled) {
+        if (recordingConfigHint) {
+            recordingConfigHint.style.display = 'flex';
+            console.log('✅ 显示录音配置提示');
+        } else {
+            console.log('❌ 录音配置提示元素未找到');
+        }
+    } else {
+        if (recordingConfigHint) {
+            recordingConfigHint.style.display = 'none';
+            console.log('❌ 隐藏录音配置提示（录音功能未启用）');
+        }
+    }
+    
+    // 如果智谱AI功能已启用，显示重新配置提示
+    if (currentConfig.aiEnabled) {
+        if (aiConfigHint) {
+            aiConfigHint.style.display = 'flex';
+            console.log('✅ 显示智谱AI配置提示');
+        } else {
+            console.log('❌ 智谱AI配置提示元素未找到');
+        }
+    } else {
+        if (aiConfigHint) {
+            aiConfigHint.style.display = 'none';
+            console.log('❌ 隐藏智谱AI配置提示（智谱AI功能未启用）');
+        }
+    }
+};
+
 // 初始化设置页面功能
 const initSettingsPage = () => {
     try {
@@ -631,12 +701,21 @@ const initSettingsPage = () => {
     
     // 为设置按钮添加事件监听器
     const settingsButton = document.querySelector('.settings-button');
+    console.log('🔍 查找设置按钮:', settingsButton);
+    console.log('🔍 当前录音状态:', simpleConfig.get('recordingEnabled'));
+    console.log('🔍 页面加载时间:', new Date().toLocaleTimeString());
+    
     if (settingsButton) {
+        console.log('✅ 设置按钮找到，添加点击事件监听器');
         settingsButton.addEventListener('click', () => {
+            console.log('🖱️ 设置按钮被点击，创建设置覆盖层');
             const overlay = createSettingsOverlay();
+            console.log('✅ 设置覆盖层已创建:', overlay);
             
             // 返回按钮事件
             overlay.querySelector('.back-button').addEventListener('click', () => {
+                console.log('🔙 点击设置页面的返回按钮，回到主菜单');
+                console.log('🔙 当前录音状态:', simpleConfig.get('recordingEnabled'));
                 overlay.remove();
             });
             
@@ -648,27 +727,77 @@ const initSettingsPage = () => {
             
             // 录音设置卡片整体点击事件
             const recordingCard = overlay.querySelector('.setting-card:first-child');
-            recordingCard.addEventListener('click', (e) => {
+            console.log('🔍 查找录音设置卡片:', recordingCard);
+            console.log('📋 所有设置卡片:', overlay.querySelectorAll('.setting-card'));
+            
+            if (recordingCard) {
+                console.log('✅ 录音设置卡片找到，添加点击事件');
+                
+                // 手动添加clickable-card类（以防万一）
+                recordingCard.classList.add('clickable-card');
+                
+                // 添加hover调试事件
+                recordingCard.addEventListener('mouseenter', () => {
+                    console.log('🖱️ 鼠标悬停在录音设置卡片上');
+                    console.log('录音卡片元素:', recordingCard);
+                    console.log('录音功能状态:', simpleConfig.get('recordingEnabled'));
+                });
+                
+                recordingCard.addEventListener('mouseleave', () => {
+                    console.log('🖱️ 鼠标离开录音设置卡片');
+                });
+                
+                recordingCard.addEventListener('click', (e) => {
+                console.log('🖱️ 录音设置卡片被点击');
+                console.log('点击目标:', e.target);
+                console.log('是否点击toggle:', e.target.closest('.setting-toggle'));
+                
                 // 如果点击的不是toggle开关本身，则进入详细设置
                 if (!e.target.closest('.setting-toggle')) {
-                    if (!simpleConfig.get('recordingEnabled')) {
-                        overlay.remove(); // 关闭当前设置页
-                        const audioSetupOverlay = createAudioSetupOverlay(); // 打开详细设置
-                        
-                        // 添加返回按钮事件 - 返回设置页面
-                        audioSetupOverlay.querySelector('.back-button').addEventListener('click', () => {
-                            audioSetupOverlay.remove(); // 关闭录音设置页
-                            // 重新打开设置页面
-                            setTimeout(() => {
-                                const settingsButton = document.querySelector('.settings-button');
-                                if (settingsButton) {
-                                    settingsButton.click(); // 重新触发设置页面打开
-                                }
-                            }, 100);
-                        });
+                    console.log('✅ 不是点击toggle，准备进入详细设置');
+                    console.log('📊 当前录音状态:', simpleConfig.get('recordingEnabled'));
+                    console.log('📊 完整配置:', simpleConfig.getAll());
+                    console.log('📊 是否有recordingEnabled:', simpleConfig.get('recordingEnabled') !== undefined);
+                    console.log('📊 recordingEnabled类型:', typeof simpleConfig.get('recordingEnabled'));
+                    
+                    // 检查是否有任何阻止进入的条件
+                    const recordingEnabled = simpleConfig.get('recordingEnabled');
+                    if (recordingEnabled === true) {
+                        console.log('🔍 录音功能已启用，应该允许重新配置');
+                    } else if (recordingEnabled === false) {
+                        console.log('🔍 录音功能未启用，应该允许首次配置');
+                    } else {
+                        console.log('🔍 录音功能状态未定义，应该允许配置');
                     }
+                    
+                    // 无论录音功能是否已启用，都可以进入详细设置页面重新配置
+                    console.log('🔄 关闭当前设置页，打开详细设置');
+                    overlay.remove(); // 关闭当前设置页
+                    console.log('✅ 当前设置页已关闭');
+                    
+                    const audioSetupOverlay = createAudioSetupOverlay(); // 打开详细设置
+                    console.log('✅ 详细设置页面已创建:', audioSetupOverlay);
+                    
+                    // 添加返回按钮事件 - 返回设置页面
+                    audioSetupOverlay.querySelector('.back-button').addEventListener('click', () => {
+                        console.log('🔙 点击返回按钮，关闭详细设置页');
+                        audioSetupOverlay.remove(); // 关闭录音设置页
+                        // 重新打开设置页面
+                        setTimeout(() => {
+                            console.log('🔄 重新打开设置页面');
+                            const settingsButton = document.querySelector('.settings-button');
+                            if (settingsButton) {
+                                settingsButton.click(); // 重新触发设置页面打开
+                            }
+                        }, 100);
+                    });
+                } else {
+                    console.log('❌ 点击了toggle开关，不进入详细设置');
                 }
-            });
+                });
+            } else {
+                console.log('❌ 录音设置卡片未找到');
+            }
             
             recordingToggle.addEventListener('change', () => {
                 if (recordingToggle.checked) {
@@ -719,6 +848,67 @@ const initSettingsPage = () => {
                 }
             });
             
+            // 智谱AI设置卡片整体点击事件
+            const aiCard = overlay.querySelector('#aiCard');
+            if (aiCard) {
+                console.log('✅ 智谱AI设置卡片找到，添加点击事件');
+                
+                // 手动添加clickable-card类
+                aiCard.classList.add('clickable-card');
+                
+                aiCard.addEventListener('click', (e) => {
+                    console.log('🖱️ 智谱AI设置卡片被点击');
+                    console.log('点击目标:', e.target);
+                    console.log('是否点击toggle:', e.target.closest('.setting-toggle'));
+                    
+                    // 如果点击的不是toggle开关本身，则进入详细设置
+                    if (!e.target.closest('.setting-toggle')) {
+                        console.log('✅ 不是点击toggle，准备进入智谱AI详细设置');
+                        console.log('📊 当前智谱AI状态:', simpleConfig.get('aiEnabled'));
+                        
+                        // 测试createAISetupOverlay函数是否存在
+                        console.log('🔍 检查createAISetupOverlay函数:', typeof createAISetupOverlay);
+                        console.log('🔍 检查window.createAISetupOverlay函数:', typeof window.createAISetupOverlay);
+                        
+                        // 无论智谱AI功能是否已启用，都可以进入详细设置页面重新配置
+                        console.log('🔄 关闭当前设置页，打开智谱AI详细设置');
+                        overlay.remove(); // 关闭当前设置页
+                        console.log('✅ 当前设置页已关闭');
+                        
+                        let aiSetupOverlay;
+                        try {
+                            aiSetupOverlay = createAISetupOverlay(); // 打开智谱AI详细设置
+                            console.log('✅ 智谱AI详细设置页面已创建:', aiSetupOverlay);
+                        } catch (error) {
+                            console.error('❌ 创建智谱AI设置页面失败:', error);
+                            console.error('错误堆栈:', error.stack);
+                            alert('创建智谱AI设置页面失败: ' + error.message);
+                            return;
+                        }
+                        
+                        // 添加返回按钮事件 - 返回设置页面
+                        if (aiSetupOverlay && aiSetupOverlay.querySelector('.back-button')) {
+                            aiSetupOverlay.querySelector('.back-button').addEventListener('click', () => {
+                            console.log('🔙 点击返回按钮，关闭智谱AI详细设置页');
+                            aiSetupOverlay.remove(); // 关闭智谱AI设置页
+                            // 重新打开设置页面
+                            setTimeout(() => {
+                                console.log('🔄 重新打开设置页面');
+                                const settingsButton = document.querySelector('.settings-button');
+                                if (settingsButton) {
+                                    settingsButton.click(); // 重新触发设置页面打开
+                                }
+                            }, 100);
+                            });
+                        }
+                    } else {
+                        console.log('❌ 点击了toggle开关，不进入详细设置');
+                    }
+                });
+            } else {
+                console.log('❌ 智谱AI设置卡片未找到');
+            }
+            
             aiToggle.addEventListener('change', () => {
                 if (aiToggle.checked) {
                     aiSettings.classList.add('expanded');
@@ -758,6 +948,32 @@ const initSettingsPage = () => {
             // 更新NEW标识显示
             updateNewBadges(overlay);
             
+            // 更新配置提示
+            updateConfigHints(overlay);
+            
+            // 手动显示配置提示（如果录音功能已启用）
+            if (currentConfig.recordingEnabled) {
+                const recordingConfigHint = overlay.querySelector('#recordingConfigHint');
+                console.log('🔍 手动查找配置提示元素:', recordingConfigHint);
+                if (recordingConfigHint) {
+                    recordingConfigHint.style.display = 'flex';
+                    console.log('✅ 手动显示配置提示');
+                } else {
+                    console.log('❌ 配置提示元素未找到，手动创建');
+                    // 手动创建配置提示元素
+                    const recordingHeader = overlay.querySelector('#recordingCard .setting-card-header h3');
+                    if (recordingHeader) {
+                        const configHint = document.createElement('div');
+                        configHint.className = 'config-hint';
+                        configHint.id = 'recordingConfigHint';
+                        configHint.style.display = 'flex';
+                        configHint.innerHTML = '<span>点击重新配置</span>';
+                        recordingHeader.parentNode.insertBefore(configHint, recordingHeader.nextSibling);
+                        console.log('✅ 配置提示元素已手动创建');
+                    }
+                }
+            }
+            
             if (recordingToggle.checked) recordingSettings.classList.add('expanded');
             if (aiToggle.checked) aiSettings.classList.add('expanded');
             
@@ -766,6 +982,8 @@ const initSettingsPage = () => {
             overlay.querySelector('#accessKeySecret').value = currentConfig.accessKeySecret || '';
             overlay.querySelector('#zhipuApiKey').value = currentConfig.zhipuApiKey || '';
         });
+    } else {
+        console.warn('设置按钮未找到');
     }
     } catch (error) {
         console.error('❌ 设置页面初始化失败:', error);

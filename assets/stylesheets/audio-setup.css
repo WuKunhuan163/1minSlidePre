@@ -283,7 +283,10 @@
 #audio-step1-status,
 #audio-step2-status,
 #audio-step3-status,
-#audio-step4-status {
+#audio-step4-status,
+#ai-step1-status,
+#ai-step2-status,
+#ai-step3-status {
     margin-top: 15px;
     padding: 10px;
     border-radius: 6px;
@@ -609,4 +612,211 @@
     white-space: pre-wrap;
     max-width: 100%;
     overflow-wrap: break-word;
+}
+
+/* 成功按钮样式 */
+.setup-step .btn.btn-success {
+    background: #81C784 !important; /* 绿色成功按钮 */
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.setup-step .btn.btn-success:hover {
+    background: #66BB6A !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 二级按钮样式 */
+.setup-step .btn.btn-secondary {
+    background: #666AF6 !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.setup-step .btn.btn-secondary:hover {
+    background: #5a5ee6 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 智谱AI聊天界面样式 */
+.ai-chat-test-area {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(102, 106, 246, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(102, 106, 246, 0.2);
+}
+
+/* AI思考中的动画效果 */
+.message.ai-message.thinking .message-content {
+    position: relative;
+    color: rgba(102, 106, 246, 0.8);
+    font-style: italic;
+}
+
+.message.ai-message.thinking .message-content::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    text-align: left;
+    animation: thinking 1.5s infinite;
+}
+
+@keyframes thinking {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+    100% { content: ''; }
+}
+
+.chatbot-container {
+    max-width: 100%;
+    margin: 0 auto;
+    background: #222;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.chatbot-header {
+    background: #333;
+    padding: 15px 20px;
+    border-bottom: 1px solid #444;
+}
+
+.chatbot-header h4 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.chatbot-messages {
+    height: 300px;
+    overflow-y: auto;
+    padding: 20px;
+    background: #1a1a1a;
+}
+
+.message {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.message.user-message {
+    align-items: flex-end;
+}
+
+.message.ai-message {
+    align-items: flex-start;
+}
+
+.message-content {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.user-message .message-content {
+    background: #666AF6;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.ai-message .message-content {
+    background: #333;
+    color: white;
+    border: 1px solid #444;
+    border-bottom-left-radius: 4px;
+}
+
+.ai-message.error .message-content {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.5);
+    color: #FFAB91;
+}
+
+.chatbot-input {
+    display: flex;
+    padding: 15px 20px;
+    background: #2a2a2a;
+    border-top: 1px solid #444;
+    gap: 10px;
+}
+
+.chatbot-input input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #333;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.chatbot-input input:focus {
+    border-color: #666AF6;
+}
+
+.chatbot-input input::placeholder {
+    color: #888;
+}
+
+.chatbot-input button {
+    padding: 10px 20px;
+    background: #666AF6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.chatbot-input button:hover {
+    background: #5a5ee6;
+    transform: translateY(-1px);
+}
+
+.chatbot-input button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 聊天消息滚动条样式 */
+.chatbot-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chatbot-messages::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+.chatbot-messages::-webkit-scrollbar-thumb {
+    background: #666AF6;
+    border-radius: 3px;
+}
+
+.chatbot-messages::-webkit-scrollbar-thumb:hover {
+    background: #5a5ee6;
 }

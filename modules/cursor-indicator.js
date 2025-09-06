@@ -78,6 +78,30 @@ class CursorIndicator {
             .action-button {
                 cursor: pointer !important;
             }
+            
+            /* 在设置页面区域显示正常光标 */
+            .slides-overlay,
+            .slides-overlay *,
+            .settings-container,
+            .settings-container *,
+            .setting-card,
+            .setting-card *,
+            .audio-setup-container,
+            .audio-setup-container * {
+                cursor: auto !important;
+            }
+            
+            .setting-card.clickable-card,
+            .btn,
+            .button,
+            button,
+            input,
+            select,
+            textarea,
+            a,
+            .back-button {
+                cursor: pointer !important;
+            }
         `;
         
         document.head.appendChild(style);
@@ -109,7 +133,11 @@ class CursorIndicator {
             this.hide();
         });
         
-        // 点击事件（已移除特效）
+        // 点击事件调试
+        document.addEventListener('click', (e) => {
+            console.log('🖱️ 全局点击事件:', e.target);
+            console.log('点击位置:', e.clientX, e.clientY);
+        });
     }
 
     updatePosition(x, y) {
