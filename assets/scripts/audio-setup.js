@@ -1218,9 +1218,57 @@ const openAISetup = () => {
     }
 };
 
+// 本地日志记录函数
+const logToFile = (message) => {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    
+    // 添加到全局日志数组
+    if (!window.debugLogs) window.debugLogs = [];
+    window.debugLogs.push(logMessage);
+    
+    // 同时输出到控制台
+    console.log(logMessage);
+    
+    // 如果日志太多，保存到文件并清空
+    if (window.debugLogs.length > 50) {
+        downloadDebugLogs();
+    }
+};
+
+// 下载调试日志
+const downloadDebugLogs = () => {
+    if (!window.debugLogs || window.debugLogs.length === 0) {
+        alert('没有调试日志可下载');
+        return;
+    }
+    
+    const logContent = window.debugLogs.join('\n');
+    const blob = new Blob([logContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audio-setup-debug-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.log`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert(`已下载调试日志，包含${window.debugLogs.length}条记录`);
+    
+    // 清空日志数组
+    window.debugLogs = [];
+};
+
+// 手动触发日志下载的全局函数
+window.downloadDebugLogs = downloadDebugLogs;
+
 const showAudioStep = (stepNumber, allowAutoJump = true) => {
-    console.log(`🔄 显示音频设置步骤 ${stepNumber}, 允许自动跳转: ${allowAutoJump}`);
-    console.trace(`📍 showAudioStep调用栈:`); // 显示调用栈
+    logToFile(`🔄 显示音频设置步骤 ${stepNumber}, 允许自动跳转: ${allowAutoJump}`);
+    
+    // 获取调用栈信息
+    const stack = new Error().stack;
+    logToFile(`📍 showAudioStep调用栈: ${stack}`);
     
     // 移除所有步骤的当前状态和visible状态
     document.querySelectorAll('.setup-step').forEach(step => {
@@ -1373,10 +1421,14 @@ const disableNonCurrentStepInteractions = (currentStep) => {
 
 // 导入配置 - 支持文件和剪切板
 const importAudioConfig = async () => {
-    console.log(`📥📥📥 importAudioConfig被调用`);
-    console.trace(`📍 importAudioConfig调用栈:`); // 显示调用栈
+    logToFile(`📥📥📥 importAudioConfig被调用`);
+    
+    // 获取调用栈信息
+    const stack = new Error().stack;
+    logToFile(`📍 importAudioConfig调用栈: ${stack}`);
     
     const choice = confirm('选择导入方式：\n确定 = 从剪切板导入\n取消 = 从JSON导入');
+    logToFile(`🤔 用户选择: ${choice ? '剪切板导入' : 'JSON文件导入'}`);
     
     if (choice) {
         // 从剪切板导入
@@ -1411,18 +1463,23 @@ const importAudioConfig = async () => {
         }
     } else {
         // 从JSON导入
+        logToFile(`📁 调用importAudioConfigFromFile`);
         importAudioConfigFromFile();
     }
 };
 
 // 从JSON导入配置
 const importAudioConfigFromFile = () => {
+    logToFile(`📁📁📁 importAudioConfigFromFile被调用`);
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
     input.onchange = (e) => {
+        logToFile(`📄 文件选择器onChange事件触发`);
         const file = e.target.files[0];
         if (file) {
+            logToFile(`✅ 用户选择了文件: ${file.name}`);
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -1510,8 +1567,11 @@ const showAudioStatus = (elementId, message, type) => {
 
 // 初始化录音设置功能
 const initAudioSetup = () => {
-    console.log('🎤🎤🎤 initAudioSetup被调用 - 录音设置详细界面已加载');
-    console.trace(`📍 initAudioSetup调用栈:`); // 显示调用栈
+    logToFile('🎤🎤🎤 initAudioSetup被调用 - 录音设置详细界面已加载');
+    
+    // 获取调用栈信息
+    const stack = new Error().stack;
+    logToFile(`📍 initAudioSetup调用栈: ${stack}`);
     
     // 确保第一步初始化为可见状态和active状态
     setTimeout(() => {
@@ -1796,8 +1856,11 @@ let stepAutoJumpManager = null;
 
 // 从指定步骤开始自动跳转的全局函数
 const autoJumpFromStep = async (startStep) => {
-    console.log(`🚀🚀🚀 autoJumpFromStep被调用，startStep=${startStep}`);
-    console.trace(`📍 autoJumpFromStep调用栈:`); // 显示调用栈
+    logToFile(`🚀🚀🚀 autoJumpFromStep被调用，startStep=${startStep}`);
+    
+    // 获取调用栈信息
+    const stack = new Error().stack;
+    logToFile(`📍 autoJumpFromStep调用栈: ${stack}`);
     
     if (!stepAutoJumpManager) {
         stepAutoJumpManager = createStepAutoJumpManager();
