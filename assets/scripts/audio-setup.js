@@ -1218,8 +1218,8 @@ const openAISetup = () => {
     }
 };
 
-const showAudioStep = (stepNumber) => {
-    console.log(`🔄 显示音频设置步骤 ${stepNumber}`);
+const showAudioStep = (stepNumber, allowAutoJump = true) => {
+    console.log(`🔄 显示音频设置步骤 ${stepNumber}, 允许自动跳转: ${allowAutoJump}`);
     
     // 移除所有步骤的当前状态和visible状态
     document.querySelectorAll('.setup-step').forEach(step => {
@@ -1323,14 +1323,18 @@ const showAudioStep = (stepNumber) => {
     updateMobileProgress(stepNumber, 5, 'audio');
     
     // 检查是否需要触发自动验证（延迟执行以确保DOM更新完成）
-    setTimeout(() => {
-        if (stepAutoJumpManager && stepAutoJumpManager.canStepAutoJump(stepNumber)) {
-            console.log(`🚀 步骤${stepNumber}可以自动验证，开始执行`);
-            autoJumpFromStep(stepNumber);
-        } else {
-            console.log(`⏸️ 步骤${stepNumber}不满足自动跳转条件或自动跳转已禁用`);
-        }
-    }, 500);
+    if (allowAutoJump) {
+        setTimeout(() => {
+            if (stepAutoJumpManager && stepAutoJumpManager.canStepAutoJump(stepNumber)) {
+                console.log(`🚀 步骤${stepNumber}可以自动验证，开始执行`);
+                autoJumpFromStep(stepNumber);
+            } else {
+                console.log(`⏸️ 步骤${stepNumber}不满足自动跳转条件或自动跳转已禁用`);
+            }
+        }, 500);
+    } else {
+        console.log(`🚫 步骤${stepNumber}禁用自动跳转`);
+    }
 };
 
 // 控制步骤交互性 - 使用CSS状态类而不是禁用元素
@@ -1513,7 +1517,7 @@ const initAudioSetup = () => {
             
             // 设置第一步为当前步骤
             console.log('🎯 初始化时设置第一步为当前步骤');
-            showAudioStep(1);
+            showAudioStep(1, false); // 初始化时不触发自动跳转
             
             // 额外确保第一步的step-content有active类
             setTimeout(() => {
