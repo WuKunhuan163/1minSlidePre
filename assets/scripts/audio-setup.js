@@ -1220,6 +1220,9 @@ const openAISetup = () => {
 
 // 本地日志记录函数
 const logToFile = (message) => {
+    // 防止在下载过程中记录日志导致无限循环
+    if (window.isDownloadingLogs) return;
+    
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}`;
     
@@ -1231,33 +1234,42 @@ const logToFile = (message) => {
     console.log(logMessage);
     
     // 如果日志太多，保存到文件并清空
-    if (window.debugLogs.length > 50) {
+    if (window.debugLogs.length > 100) { // 增加阈值到100
         downloadDebugLogs();
     }
 };
 
 // 下载调试日志
 const downloadDebugLogs = () => {
-    if (!window.debugLogs || window.debugLogs.length === 0) {
-        alert('没有调试日志可下载');
-        return;
+    // 设置下载标志，防止无限循环
+    window.isDownloadingLogs = true;
+    
+    try {
+        if (!window.debugLogs || window.debugLogs.length === 0) {
+            console.log('没有调试日志可下载');
+            return;
+        }
+        
+        const logCount = window.debugLogs.length;
+        const logContent = window.debugLogs.join('\n');
+        const blob = new Blob([logContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `audio-setup-debug-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.log`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log(`已下载调试日志，包含${logCount}条记录`);
+        
+        // 清空日志数组
+        window.debugLogs = [];
+    } finally {
+        // 重置下载标志
+        window.isDownloadingLogs = false;
     }
-    
-    const logContent = window.debugLogs.join('\n');
-    const blob = new Blob([logContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `audio-setup-debug-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.log`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    alert(`已下载调试日志，包含${window.debugLogs.length}条记录`);
-    
-    // 清空日志数组
-    window.debugLogs = [];
 };
 
 // 手动触发日志下载的全局函数
