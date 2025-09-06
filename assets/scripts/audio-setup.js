@@ -261,10 +261,10 @@ const fillSavedConfig = () => {
 // 录音设置步骤逻辑
 let currentAudioStep = 1;
 
-// 录音相关变量
-let mediaRecorder = null;
-let audioChunks = [];
-let audioContext = null;
+// 录音相关变量 (audio-setup专用)
+let audioSetupMediaRecorder = null;
+let audioSetupAudioChunks = [];
+let audioSetupAudioContext = null;
 let analyser = null;
 let microphone = null;
 let dataArray = null;
@@ -595,15 +595,15 @@ const setupRecordingWithStream = async (stream) => {
         console.log('🔧 设置录音流...');
         
         // 创建AudioContext
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        audioSource = audioContext.createMediaStreamSource(stream);
+        audioSetupAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioSource = audioSetupAudioContext.createMediaStreamSource(stream);
         
         // 重置音频缓冲区
         audioBuffer = [];
         
         // 设置音频处理
         const bufferSize = 4096;
-        scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+        scriptProcessor = audioSetupAudioContext.createScriptProcessor(bufferSize, 1, 1);
         
         scriptProcessor.onaudioprocess = (event) => {
             if (isRecording) {
@@ -625,7 +625,7 @@ const setupRecordingWithStream = async (stream) => {
         
         // 连接音频处理链
         audioSource.connect(scriptProcessor);
-        scriptProcessor.connect(audioContext.destination);
+        scriptProcessor.connect(audioSetupAudioContext.destination);
         
         // 设置音峰图（使用原有的实现）
         await setupWaveform(stream);
@@ -718,9 +718,9 @@ const stopRecording = async () => {
         if (microphone) {
             microphone.disconnect();
         }
-        if (audioContext) {
-            audioContext.close();
-            audioContext = null;
+        if (audioSetupAudioContext) {
+            audioSetupAudioContext.close();
+            audioSetupAudioContext = null;
         }
         
         // 更新UI
@@ -763,9 +763,9 @@ const setupWaveform = async (stream) => {
     updateWaveformColor(null);
     
     // 创建音频上下文
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioContext.createAnalyser();
-    microphone = audioContext.createMediaStreamSource(stream);
+    audioSetupAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioSetupAudioContext.createAnalyser();
+    microphone = audioSetupAudioContext.createMediaStreamSource(stream);
     
     analyser.fftSize = 256;
     const bufferLength = analyser.frequencyBinCount;
@@ -864,7 +864,7 @@ const setupWaveform = async (stream) => {
 
 // MP3编码功能
 const encodeToMp3 = (pcmData) => {
-    const sampleRate = audioContext ? audioContext.sampleRate : 44100;
+    const sampleRate = audioSetupAudioContext ? audioSetupAudioContext.sampleRate : 44100;
     const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128); // 1个声道, 采样率, 128kbps
     const pcmInt16 = convertFloat32ToInt16(pcmData);
     const mp3Data = [];
@@ -995,7 +995,7 @@ const recognizeAudio = async (pcmData) => {
         console.log('🔄 使用Token进行语音识别...');
         
         // 重采样到16kHz（阿里云API要求）- 模仿vercel_server实现
-        const originalSampleRate = audioContext ? audioContext.sampleRate : 44100; // 获取实际采样率
+        const originalSampleRate = audioSetupAudioContext ? audioSetupAudioContext.sampleRate : 44100; // 获取实际采样率
         const targetSampleRate = 16000;   // 阿里云API要求16kHz
         const resampledData = resampleAudio(pcmData, originalSampleRate, targetSampleRate);
         
