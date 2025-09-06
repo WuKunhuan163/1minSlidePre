@@ -849,12 +849,12 @@ const saveSpeechRequirements = () => {
 const showSaveSuccessMessage = () => {
     // 创建临时提示消息
     const message = document.createElement('div');
-    message.textContent = '演讲要求已保存';
+    message.textContent = '✅ 演讲要求已保存';
     message.style.cssText = `
         position: fixed;
-        top: 50%;
+        bottom: 30px;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translateX(-50%) translateY(100px);
         background: #666AF6;
         color: white;
         padding: 12px 24px;
@@ -862,16 +862,31 @@ const showSaveSuccessMessage = () => {
         z-index: 10000;
         font-size: 14px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        opacity: 0;
+        transition: all 0.4s ease;
     `;
     
     document.body.appendChild(message);
     
-    // 2秒后自动移除
+    // 延迟一帧，让浏览器应用初始样式
+    requestAnimationFrame(() => {
+        // 从底部渐变升上来
+        message.style.transform = 'translateX(-50%) translateY(0)';
+        message.style.opacity = '1';
+    });
+    
+    // 2.5秒后开始渐变下去
     setTimeout(() => {
-        if (message.parentNode) {
-            message.parentNode.removeChild(message);
-        }
-    }, 2000);
+        message.style.transform = 'translateX(-50%) translateY(100px)';
+        message.style.opacity = '0';
+        
+        // 动画完成后移除元素
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.parentNode.removeChild(message);
+            }
+        }, 400);
+    }, 2500);
 };
 
 // 批量导出PPT和演讲要求
