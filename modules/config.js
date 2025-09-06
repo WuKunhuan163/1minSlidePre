@@ -71,6 +71,11 @@ class SimpleConfig {
         this.saveConfig();
     }
 
+    isSettingTested(settingName) {
+        const status = this.config.settingsStatus || {};
+        return status[settingName + 'Tested'] === true;
+    }
+
     isSettingNew(settingName) {
         const status = this.config.settingsStatus || {};
         return !status[settingName + 'Tested'];

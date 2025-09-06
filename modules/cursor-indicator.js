@@ -135,8 +135,6 @@ class CursorIndicator {
         
         // 点击事件调试
         document.addEventListener('click', (e) => {
-            console.log('🖱️ 全局点击事件:', e.target);
-            console.log('点击位置:', e.clientX, e.clientY);
         });
     }
 

@@ -280,26 +280,23 @@
     transform: none !important;
 }
 
-#audio-step1-status,
-#audio-step2-status,
-#audio-step3-status,
-#audio-step4-status,
-#ai-step1-status,
-#ai-step2-status,
-#ai-step3-status {
+/* 统一的步骤状态样式类 */
+.step-status {
     margin-top: 15px;
     padding: 10px;
     border-radius: 6px;
     display: none;
 }
 
-.status-success {
+/* 成功状态样式 - 应用到外层容器 */
+.step-status.success {
     background: rgba(76, 175, 80, 0.2); /* 绿色背景 */
     border: 1px solid #66BB6A; /* 绿色边框 */
     color: #81C784; /* 绿色文字 */
 }
 
-.status-error {
+/* 错误状态样式 - 应用到外层容器 */
+.step-status.error {
     background: rgba(255, 107, 107, 0.2); /* 增加背景透明度 */
     border: 1px solid #FF8A80; /* 更亮的红色边框 */
     color: #FFAB91; /* 更亮的红色文字 */
@@ -309,10 +306,34 @@
     overflow-wrap: break-word;
 }
 
-.status-processing {
+/* 处理中状态样式 - 应用到外层容器 */
+.step-status.processing {
     background: rgba(102, 106, 246, 0.2); /* 增加背景透明度 */
     border: 1px solid #9C27B0; /* 更亮的紫色边框 */
     color: #CE93D8; /* 更亮的紫色文字 */
+}
+
+/* 保留旧的内层类以防兼容性问题 */
+.status-success {
+    background: transparent;
+    border: none;
+    color: inherit;
+}
+
+.status-error {
+    background: transparent;
+    border: none;
+    color: inherit;
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.status-processing {
+    background: transparent;
+    border: none;
+    color: inherit;
 }
 
 /* 脉动动画 */
@@ -483,45 +504,19 @@
     transform: translateY(-2px) !important;
 }
 
-/* 录音测试区域样式 */
-.recording-test-area {
-    margin-top: 30px;
-    padding: 20px;
-    background: rgba(102, 106, 246, 0.05);
-    border-radius: 12px;
-    border: 1px solid rgba(102, 106, 246, 0.2);
+/* 录音测试区域样式已移除 */
+
+/* 录音按钮样式 */
+#recordButton {
+    text-align: center !important;
 }
 
-.recording-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.btn-record {
-    background: #333 !important;
-    color: white !important;
-    border: none !important;
-    padding: 12px 24px !important;
-    border-radius: 25px !important;
-    font-size: 16px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-record:hover {
-    background: #666AF6 !important;
-    transform: translateY(-2px) !important;
-}
-
+/* 录音按钮在录音状态时的特殊样式 */
 .btn-record.recording {
     background: #ff6b6b !important;
+    color: white !important;
     animation: pulse-recording 1.5s infinite;
+    box-sizing: border-box !important; /* 确保box-shadow不影响布局 */
 }
 
 @keyframes pulse-recording {
@@ -529,7 +524,7 @@
         box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
     }
     70% {
-        box-shadow: 0 0 0 10px rgba(255, 107, 107, 0);
+        box-shadow: 0 0 0 6px rgba(255, 107, 107, 0); /* 减小扩展范围从10px到6px */
     }
     100% {
         box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
@@ -616,7 +611,7 @@
 
 /* 成功按钮样式 */
 .setup-step .btn.btn-success {
-    background: #81C784 !important; /* 绿色成功按钮 */
+    background: #28a745 !important; /* 更深的绿色 */
     color: white !important;
     border: none !important;
     padding: 10px 20px !important;
@@ -627,7 +622,7 @@
 }
 
 .setup-step .btn.btn-success:hover {
-    background: #66BB6A !important;
+    background: #218838 !important; /* hover时更深的绿色 */
     color: white !important;
     transform: translateY(-2px) !important;
 }
@@ -683,7 +678,7 @@
 
 .chatbot-container {
     max-width: 100%;
-    margin: 0 auto;
+    margin: 0 auto 30px auto;
     background: #222;
     border-radius: 12px;
     overflow: hidden;
@@ -819,4 +814,235 @@
 
 .chatbot-messages::-webkit-scrollbar-thumb:hover {
     background: #5a5ee6;
+}
+
+/* 新的转录容器样式 - 参考vercel_server */
+.transcription-container {
+    background: #ffffff;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+/* 细进度条样式 */
+.progress-container-thin {
+    width: 100%;
+    height: 4px;
+    background: #f8f9fa;
+    position: relative;
+}
+
+.progress-bar-thin {
+    width: 100%;
+    height: 100%;
+    background: #e9ecef;
+    position: relative;
+}
+
+.progress-fill-thin {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #666AF6, #764ba2);
+}
+
+/* 重写音轨峰图样式 - 参考vercel_server */
+.waveform-container {
+    width: 100%;
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    display: block;
+}
+
+.waveform-svg {
+    display: block;
+    width: 100%;
+    height: 30px;
+}
+
+.waveform-background {
+    fill: #e9ecef;
+    width: 100%;
+    height: 100%;
+}
+
+.waveform-bar {
+    fill: #6c757d; /* 默认灰色 */
+    transition: fill 0.3s ease;
+}
+
+.waveform-progress-mask {
+    fill: rgba(108, 117, 125, 0.3);
+}
+
+/* 转录结果区域样式 - 适配暗色主题 */
+.transcription-result {
+    background: #2a2a2a !important;
+    border-radius: 0 0 12px 12px !important;
+    padding: 20px !important;
+    min-height: 120px !important;
+    font-size: 16px !important;
+    color: #ffffff !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    border: none !important;
+    margin-top: 0 !important;
+}
+
+/* 自定义滚动条 */
+.transcription-result::-webkit-scrollbar {
+    width: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.transcription-result::-webkit-scrollbar-track {
+    background: #333333;
+    border-radius: 4px;
+}
+
+.transcription-result::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #666AF6, #764ba2);
+    border-radius: 4px;
+}
+
+.transcription-result::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6a3d9a);
+}
+
+.transcription-result:hover::-webkit-scrollbar {
+    opacity: 1;
+}
+
+/* 录音文本框状态样式 */
+.transcription-result.success {
+    color: white !important; /* 白色文字 */
+}
+
+.transcription-result.error {
+    color: white !important; /* 白色文字 */
+}
+
+/* 录音控制按钮区域样式已移除 */
+
+/* 状态相关的波形样式 */
+.setup-step.current-step .waveform-background {
+    fill: rgba(255, 193, 7, 0.1);
+}
+
+/* 录音中状态 - 红色 */
+.recording .waveform-bar {
+    fill: #dc3545;
+}
+
+/* 处理中状态 - 橙色/黄色 */
+.processing .waveform-bar {
+    fill: #ffc107;
+}
+
+/* 错误状态 - 红色 */
+.error .waveform-bar {
+    fill: #dc3545;
+}
+
+/* 当前步骤状态 - 紫色 */
+.setup-step.current-step .waveform-bar {
+    fill: #666AF6;
+}
+
+.setup-step.current-step .waveform-progress-mask {
+    fill: rgba(102, 106, 246, 0.3);
+}
+
+.setup-step.completed .waveform-background {
+    fill: rgba(76, 175, 80, 0.1);
+}
+
+.setup-step.completed .waveform-bar {
+    fill: #4CAF50;
+}
+
+.setup-step.completed .waveform-progress-mask {
+    fill: rgba(76, 175, 80, 0.3);
+}
+
+.setup-step.completed .progress-fill-thin {
+    background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+
+/* 步骤状态控制 - 参考vercel_server的实现 */
+
+/* 待处理状态 - 保持原有外观，只是不允许交互 */
+.step-content.pending {
+    opacity: 0.6;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* 待处理状态的输入框保持原有样式，不改变背景色 */
+.step-content.pending input,
+.step-content.pending select,
+.step-content.pending textarea {
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    /* 明确保持原有样式 */
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #f8f8f8 !important;
+}
+
+/* 激活状态 */
+.step-content.active {
+    opacity: 1;
+    user-select: auto;
+    pointer-events: auto;
+}
+
+.step-content.active input,
+.step-content.active select,
+.step-content.active textarea,
+.step-content.active button {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    cursor: pointer !important;
+}
+
+/* 完成状态 - 不改变输入框样式，保持美观 */
+.step-content.completed {
+    opacity: 0.9;
+    user-select: none;
+}
+
+/* 完成状态的输入框保持原样，不disable */
+.step-content.completed input,
+.step-content.completed select,
+.step-content.completed textarea {
+    /* 明确保持原有样式，防止浏览器默认disabled样式 */
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #f8f8f8 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+/* 返回按钮在所有状态下都可用 */
+.step-content .btn-back {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    cursor: pointer !important;
+}
+
+/* 非激活状态的按钮和输入框 */
+.step-content:not(.active) .btn:not(.btn-back),
+.step-content:not(.active) input {
+    pointer-events: none !important;
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
 }
