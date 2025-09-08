@@ -261,12 +261,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     window.renderThumbnails(document.querySelector('.slides-overlay'));
                     
-                    // 如果是第一张PPT，自动触发测试下载
-                    if (slides.length === 1) {
-                        setTimeout(() => {
-                            testDownloadFirstSlide();
-                        }, 1000);
-                    }
+                    // 如果是第一张PPT，自动触发测试下载（已注释，以后可能有用）
+                    // if (slides.length === 1) {
+                    //     setTimeout(() => {
+                    //         testDownloadFirstSlide();
+                    //     }, 1000);
+                    // }
                 };
                 reader.readAsDataURL(file);
             });
@@ -393,12 +393,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 显示成功消息
                     showMessage(`成功添加 ${addedCount} 张PPT`, 'info');
                     
-                    // 测试功能：自动下载第一张PPT进行验证
-                    if (slides.length > 0) {
-                        setTimeout(() => {
-                            testDownloadFirstSlide();
-                        }, 1000);
-                    }
+                    // 测试功能：自动下载第一张PPT进行验证（已注释，以后可能有用）
+                    // if (slides.length > 0) {
+                    //     setTimeout(() => {
+                    //         testDownloadFirstSlide();
+                    //     }, 1000);
+                    // }
                 
             } catch (error) {
                 console.error('❌ 拖拽上传处理失败:', error);

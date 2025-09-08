@@ -1219,7 +1219,7 @@
 .mobile-progress-container {
     display: none;
     width: 100%;
-    padding: 0 20px;
+    padding: 0 20px 0 30px; /* 左边距增加10px，将进度条往右移动避免挡住内容框 */
     margin-bottom: 20px;
 }
 
