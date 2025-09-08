@@ -205,12 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="action-button-wrapper">
                         <button class="rect-button btn btn-clear" onclick="clearAllSlides(); this.blur();">清空PPT</button>
                     </div>
-                    <div class="action-button-wrapper">
-                        <button class="rect-button btn btn-test" onclick="manualTestDownload(); this.blur();">测试下载</button>
-                    </div>
-                    <div class="action-button-wrapper">
-                        <button class="rect-button btn btn-download-all" onclick="batchDownloadAllSlides(); this.blur();">下载所有</button>
-                    </div>
                 </div>
             </div>
             <div class="content-container">
