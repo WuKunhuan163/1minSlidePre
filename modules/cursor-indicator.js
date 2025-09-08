@@ -99,8 +99,8 @@ class CursorIndicator {
             .settings-container *,
             .setting-card,
             .setting-card *,
-            .audio-setup-container,
-            .audio-setup-container * {
+            .setup-container,
+            .setup-container * {
                 cursor: auto !important;
             }
             

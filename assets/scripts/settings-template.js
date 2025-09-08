@@ -16,13 +16,11 @@ const createSettingsOverlay = () => {
         </div>
         <div class="settings-container">
             <div class="setting-card clickable-card" id="recordingCard">
-                <div class="new-badge" id="recordingNewBadge" style="display: none;">NEW</div>
+                <div class="new-badge badge-base" id="recordingNewBadge" style="display: none;">NEW</div>
+                <div class="reconfig-badge badge-base" id="recordingReconfigBadge" style="display: none;">点击重新配置</div>
                 <div class="setting-card-header">
                     <i class='bx bx-microphone'></i>
                     <h3>录音文字识别</h3>
-                    <div class="config-hint" id="recordingConfigHint" style="display: none;">
-                        <span>点击重新配置</span>
-                    </div>
                     <div class="setting-toggle">
                         <input type="checkbox" id="recordingToggle" class="toggle-input">
                         <label for="recordingToggle" class="toggle-label"></label>
@@ -45,13 +43,11 @@ const createSettingsOverlay = () => {
             </div>
 
             <div class="setting-card clickable-card" id="aiCard">
-                <div class="new-badge" id="aiNewBadge" style="display: none;">NEW</div>
+                <div class="new-badge badge-base" id="aiNewBadge" style="display: none;">NEW</div>
+                <div class="reconfig-badge badge-base" id="aiReconfigBadge" style="display: none;">点击重新配置</div>
                 <div class="setting-card-header">
                     <i class='bx bx-brain'></i>
                     <h3>智谱AI评分</h3>
-                    <div class="config-hint" id="aiConfigHint" style="display: none;">
-                        <span>点击重新配置</span>
-                    </div>
                     <div class="setting-toggle">
                         <input type="checkbox" id="aiToggle" class="toggle-input">
                         <label for="aiToggle" class="toggle-label"></label>
@@ -99,10 +95,38 @@ const createSettingsOverlay = () => {
 const settingsStyles = `
 .settings-container {
     max-width: 600px;
-    margin: 0 auto;
+    margin: 0 60px;
+    overflow-y: scroll; 
+    padding: 10px;
+}
+
+/* 设置页面滚动条样式 */
+.settings-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.settings-container::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+.settings-container::-webkit-scrollbar-thumb {
+    background: #666AF6;
+    border-radius: 3px;
+}
+
+.settings-container::-webkit-scrollbar-thumb:hover {
+    background: #5a5ee6;
+}
+
+@media (max-width: 500px) {
+    .settings-container {
+        margin: 0 auto;
+    }
 }
 
 .setting-card {
+    width: 100%;
+    min-width: 300px;
     background: #1a1a1a;
     margin-bottom: 20px;
     overflow: visible;
@@ -137,22 +161,6 @@ const settingsStyles = `
     cursor: pointer;
 }
 
-.config-hint {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 14px;
-    color: white;
-    opacity: 0.8;
-    transition: all 0.3s ease;
-    margin-right: 10px;
-    font-weight: 500;
-}
-
-.setting-card.clickable-card:hover .config-hint {
-    opacity: 1;
-    transform: translateX(-2px);
-}
 
 .volume-card:hover .setting-card-header {
     background: #222 !important;
@@ -173,6 +181,7 @@ const settingsStyles = `
 }
 
 .setting-toggle {
+    margin-left: 20px;
     position: relative;
 }
 
@@ -337,7 +346,7 @@ const settingsStyles = `
 
 .inline-volume-control {
     flex: 1;
-    padding: 0 20px;
+    padding: 0 0 0 20px;
 }
 
 .inline-volume-slider {
@@ -396,21 +405,39 @@ const settingsStyles = `
     transform: scale(1.1);
 }
 
-.new-badge {
+/* 通用badge基础样式 */
+.badge-base {
     position: absolute;
-    top: -5px;
-    left: -5px;
-    background: #ff4444;
     color: white;
     font-size: 10px;
     font-weight: bold;
     padding: 4px 8px;
     border-radius: 12px;
     z-index: 10;
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+/* NEW badge样式 */
+.new-badge {
+    top: -5px;
+    left: -5px;
+    background: #ff4444;
     animation: newBadgePulse 2s infinite;
     box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
 }
 
+/* 重新配置badge样式 */
+.reconfig-badge {
+    top: -5px;
+    left: -5px;
+    background: #666AF6;
+    animation: reconfigBadgePulse 2s infinite;
+    box-shadow: 0 2px 8px rgba(102, 106, 246, 0.4);
+}
+
+/* NEW badge动画 */
 @keyframes newBadgePulse {
     0%, 100% { 
         transform: scale(1); 
@@ -422,6 +449,19 @@ const settingsStyles = `
     }
 }
 
+/* 重新配置badge动画 */
+@keyframes reconfigBadgePulse {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 2px 8px rgba(102, 106, 246, 0.4);
+    }
+    50% { 
+        transform: scale(1.1); 
+        box-shadow: 0 4px 16px rgba(102, 106, 246, 0.8);
+    }
+}
+
+/* 主菜单NEW badge样式 */
 .main-new-badge {
     position: absolute;
     top: -8px;
@@ -602,19 +642,34 @@ const initBackgroundMusicVolumeControl = (overlay) => {
 
 // 更新NEW标识显示
 const updateNewBadges = (overlay) => {
-    const recordingBadge = overlay.querySelector('#recordingNewBadge');
-    const aiBadge = overlay.querySelector('#aiNewBadge');
+    const recordingNewBadge = overlay.querySelector('#recordingNewBadge');
+    const aiNewBadge = overlay.querySelector('#aiNewBadge');
+    const recordingReconfigBadge = overlay.querySelector('#recordingReconfigBadge');
+    const aiReconfigBadge = overlay.querySelector('#aiReconfigBadge');
+    const currentConfig = simpleConfig.getAll();
     
+    // 录音功能badge逻辑：如果是新功能显示NEW，如果已配置显示重新配置
     if (simpleConfig.isSettingNew('recording')) {
-        recordingBadge.style.display = 'block';
+        recordingNewBadge.style.display = 'block';
+        recordingReconfigBadge.style.display = 'none';
+    } else if (currentConfig.recordingEnabled) {
+        recordingNewBadge.style.display = 'none';
+        recordingReconfigBadge.style.display = 'block';
     } else {
-        recordingBadge.style.display = 'none';
+        recordingNewBadge.style.display = 'none';
+        recordingReconfigBadge.style.display = 'none';
     }
     
+    // 智谱AI功能badge逻辑：如果是新功能显示NEW，如果已配置显示重新配置
     if (simpleConfig.isSettingNew('ai')) {
-        aiBadge.style.display = 'block';
+        aiNewBadge.style.display = 'block';
+        aiReconfigBadge.style.display = 'none';
+    } else if (currentConfig.aiEnabled) {
+        aiNewBadge.style.display = 'none';
+        aiReconfigBadge.style.display = 'block';
     } else {
-        aiBadge.style.display = 'none';
+        aiNewBadge.style.display = 'none';
+        aiReconfigBadge.style.display = 'none';
     }
 };
 
@@ -648,48 +703,6 @@ const updateMainSettingsButton = () => {
     }
 };
 
-// 更新配置提示
-const updateConfigHints = (overlay) => {
-    const recordingConfigHint = overlay.querySelector('#recordingConfigHint');
-    const aiConfigHint = overlay.querySelector('#aiConfigHint');
-    const currentConfig = simpleConfig.getAll();
-    
-    console.log('🔍 更新配置提示');
-    console.log('录音功能状态:', currentConfig.recordingEnabled);
-    console.log('智谱AI功能状态:', currentConfig.aiEnabled);
-    console.log('录音配置提示元素:', recordingConfigHint);
-    console.log('智谱AI配置提示元素:', aiConfigHint);
-    
-    // 如果录音功能已启用，显示重新配置提示
-    if (currentConfig.recordingEnabled) {
-        if (recordingConfigHint) {
-            recordingConfigHint.style.display = 'flex';
-            console.log('✅ 显示录音配置提示');
-        } else {
-            console.log('❌ 录音配置提示元素未找到');
-        }
-    } else {
-        if (recordingConfigHint) {
-            recordingConfigHint.style.display = 'none';
-            console.log('❌ 隐藏录音配置提示（录音功能未启用）');
-        }
-    }
-    
-    // 如果智谱AI功能已启用，显示重新配置提示
-    if (currentConfig.aiEnabled) {
-        if (aiConfigHint) {
-            aiConfigHint.style.display = 'flex';
-            console.log('✅ 显示智谱AI配置提示');
-        } else {
-            console.log('❌ 智谱AI配置提示元素未找到');
-        }
-    } else {
-        if (aiConfigHint) {
-            aiConfigHint.style.display = 'none';
-            console.log('❌ 隐藏智谱AI配置提示（智谱AI功能未启用）');
-        }
-    }
-};
 
 // 初始化设置页面功能
 const initSettingsPage = () => {
@@ -930,9 +943,8 @@ const updateOverlayFromSharedState = (overlay) => {
         if (backgroundMusicCard) backgroundMusicCard.style.display = 'none';
     }
     
-    // 更新其他UI状态
-            updateNewBadges(overlay);
-            updateConfigHints(overlay);
+        // 更新其他UI状态
+        updateNewBadges(overlay);
 };
 
 // 为主设置界面的字段添加复制功能并禁用输入

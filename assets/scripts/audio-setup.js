@@ -15,30 +15,23 @@ const createAudioSetupOverlay = () => {
             <h2>录音文字识别设置</h2>
             <!-- 导入导出设置移到header -->
             <div class="config-actions">
-                <button class="btn btn-import" onclick="importAudioConfig()">导入设置</button>
-                <button class="btn btn-export" onclick="exportAudioConfig()">导出设置</button>
+                <button class="rect-button btn btn-import" onclick="importAudioConfig()">导入设置</button>
+                <button class="rect-button btn btn-export" onclick="exportAudioConfig()">导出设置</button>
             </div>
         </div>
         
-        <!-- 移动端进度条 -->
-        <div class="mobile-progress-container">
-            <div class="mobile-progress-bar">
-                <div class="mobile-progress-fill" id="audioProgressFill"></div>
-            </div>
-        </div>
         
-        <div class="audio-setup-container">
-            <div class="setup-container">
-                
-                <div class="setup-flow">
+        <div class="setup-container">
+            <div class="setup-flow">
                 <!-- Step 1: 启用服务 -->
                 <div class="setup-step visible current-step" id="audio-step1">
                     <div class="step-circle pending" id="audio-step1-circle">1</div>
                     <div class="step-line" id="audio-step1-line"></div>
                     <div class="step-content" id="audio-step1-content">
+                        <div class="mobile-step-indicator">第1/5步</div>
                         <div class="step-title">启用智能语音交互服务</div>
                         <div class="step-image">
-                            <img src="assets/images/settings/step_1_enable_service.png" alt="启用服务示意图" style="width: 100%; max-width: 800px; height: auto; margin: 15px 0; border-radius: 8px;">
+                            <img src="assets/images/settings/step_1_enable_service.png" alt="启用服务示意图" style="width: 100%; max-width: 600px; height: auto; margin: 15px 0; border-radius: 8px;">
                         </div>
                         <div class="step-description">
                             启用阿里云智能语音交互服务，为语音识别功能做准备。
@@ -48,7 +41,7 @@ const createAudioSetupOverlay = () => {
                             2. 如果是首次使用，点击"立即开通"按钮<br>
                             3. 根据提示完成服务开通流程
                         </div>
-                        <button class="btn btn-primary" onclick="completeAudioStep1()">完成服务启用</button>
+                        <button class="btn btn-primary normal-button" onclick="completeAudioStep1()">完成服务启用</button>
                         <div id="audio-step1-status" class="step-status"></div>
                     </div>
                 </div>
@@ -58,16 +51,17 @@ const createAudioSetupOverlay = () => {
                     <div class="step-circle pending" id="audio-step2-circle">2</div>
                     <div class="step-line" id="audio-step2-line"></div>
                     <div class="step-content" id="audio-step2-content">
+                        <div class="mobile-step-indicator">第2/5步</div>
                         <div class="step-title">获取并配置 AppKey</div>
                         <div class="step-image">
-                            <img src="assets/images/settings/step_2_get_appkey.png" alt="创建应用获取AppKey示意图" style="width: 100%; max-width: 800px; height: auto; margin: 15px 0; border-radius: 8px;">
+                            <img src="assets/images/settings/step_2_get_appkey.png" alt="创建应用获取AppKey示意图" style="width: 100%; max-width: 600px; height: auto; margin: 15px 0; border-radius: 8px;">
                         </div>
                         <div class="step-description">
                             创建项目并获取项目的AppKey。
                             <br><br>
                             <strong>操作步骤：</strong><br>
                             1. 前往<a href="https://nls-portal.console.aliyun.com/applist" target="_blank">全部项目</a>页面<br>
-                            2. 创建一个新项目，然后在列表中找到它<br>
+                            2. 创建新项目，在列表中找到它<br>
                             3. 点击项目名称进入项目详情<br>
                             4. 在项目详情页面找到并复制AppKey<br>
                             5. 将AppKey粘贴到下方输入框中
@@ -79,8 +73,8 @@ const createAudioSetupOverlay = () => {
                             </div>
                             <input type="text" id="audioAppKey" name="appkey" autocomplete="username" placeholder="从阿里云控制台项目中获取的AppKey">
                         </div>
-                        <button class="btn btn-back" onclick="goBackToAudioStep(1)">上一步</button>
-                        <button class="btn btn-primary" onclick="validateAudioStep2()">验证 AppKey</button>
+                        <button class="btn btn-back normal-button" onclick="goBackToAudioStep(1)">上一步</button>
+                        <button class="btn btn-primary normal-button" onclick="validateAudioStep2()">验证 AppKey</button>
                         <div id="audio-step2-status" class="step-status"></div>
                     </div>
                 </div>
@@ -90,9 +84,10 @@ const createAudioSetupOverlay = () => {
                     <div class="step-circle pending" id="audio-step3-circle">3</div>
                     <div class="step-line" id="audio-step3-line"></div>
                     <div class="step-content" id="audio-step3-content">
+                        <div class="mobile-step-indicator">第3/5步</div>
                         <div class="step-title">创建RAM用户</div>
                         <div class="step-image">
-                            <img src="assets/images/settings/step_3_create_user.png" alt="创建RAM用户示意图" style="width: 100%; max-width: 800px; height: auto; margin: 15px 0; border-radius: 8px;">
+                            <img src="assets/images/settings/step_3_create_user.png" alt="创建RAM用户示意图" style="width: 100%; max-width: 600px; height: auto; margin: 15px 0; border-radius: 8px;">
                         </div>
                         <div class="step-description">
                             创建RAM用户，用于后续的AccessKey配置。
@@ -100,10 +95,10 @@ const createAudioSetupOverlay = () => {
                             <strong>操作步骤：</strong><br>
                             1. 前往<a href="https://ram.console.aliyun.com/overview?activeTab=workflow" target="_blank">RAM控制台工作流程</a><br>
                             2. 选择"创建初始用户"下方的"账号管理员"选项<br>
-                            3. 点击"执行配置"并完成个人身份验证
+                            3. 点击"执行配置"完成验证
                         </div>
-                        <button class="btn btn-back" onclick="goBackToAudioStep(2)">上一步</button>
-                        <button class="btn btn-primary" onclick="completeAudioStep3()">完成用户创建</button>
+                        <button class="btn btn-back normal-button" onclick="goBackToAudioStep(2)">上一步</button>
+                        <button class="btn btn-primary normal-button" onclick="completeAudioStep3()">完成用户创建</button>
                         <div id="audio-step3-status" class="step-status"></div>
                     </div>
                 </div>
@@ -113,19 +108,20 @@ const createAudioSetupOverlay = () => {
                     <div class="step-circle pending" id="audio-step4-circle">4</div>
                     <div class="step-line" id="audio-step4-line"></div>
                     <div class="step-content" id="audio-step4-content">
+                        <div class="mobile-step-indicator">第4/5步</div>
                         <div class="step-title">配置 AccessKey</div>
                         <div class="step-image">
-                            <img src="assets/images/settings/step_4_accesskey.png" alt="创建AccessKey示意图" style="width: 100%; max-width: 800px; height: auto; margin: 15px 0; border-radius: 8px;">
+                            <img src="assets/images/settings/step_4_accesskey.png" alt="创建AccessKey示意图" style="width: 100%; max-width: 600px; height: auto; margin: 15px 0; border-radius: 8px;">
                         </div>
                         <div class="step-description">
-                            创建并配置AccessKey用于API调用认证。
+                            创建并配置AccessKey用于服务认证。
                             <br><br>
                             <strong>操作步骤：</strong><br>
                             1. 前往<a href="https://ram.console.aliyun.com/users" target="_blank">RAM用户管理</a>页面<br>
-                            2. 找到刚创建的用户，点击"添加权限"<br>
-                            3. 搜索并添加"AliyunNLSFullAccess"权限<br>
+                            2. 找到刚创建的用户，点击添加权限<br>
+                            3. 搜索并添加 "AliyunNLSFullAccess" 权限<br>
                             4. 点击用户名进入详情页，创建AccessKey<br>
-                            5. 填写下方的AccessKey信息并点击验证
+                            5. 填写下方的AccessKey信息
                         </div>
                         
                         <div class="form-group">
@@ -144,8 +140,8 @@ const createAudioSetupOverlay = () => {
                             </div>
                             <input type="password" id="audioAccessKeySecret" name="accesskeysecret" autocomplete="current-password" placeholder="RAM用户的Access Key Secret">
                         </div>
-                        <button class="btn btn-back" onclick="goBackToAudioStep(3)">上一步</button>
-                        <button class="btn btn-primary" onclick="validateAudioStep4()">验证 AccessKey</button>
+                        <button class="btn btn-back normal-button" onclick="goBackToAudioStep(3)">上一步</button>
+                        <button class="btn btn-primary normal-button" onclick="validateAudioStep4()">验证 AccessKey</button>
                         <div id="audio-step4-status" class="step-status"></div>
                     </div>
                 </div>
@@ -154,15 +150,16 @@ const createAudioSetupOverlay = () => {
                 <div class="setup-step pending" id="audio-step5">
                     <div class="step-circle pending" id="audio-step5-circle">5</div>
                     <div class="step-content" id="audio-step5-content">
+                        <div class="mobile-step-indicator">第5/5步</div>
                         <div class="step-title">录音功能测试</div>
                         <div class="step-description">
                             测试录音功能和语音识别效果，确保系统正常工作。
                             <br><br>
                             <strong>测试说明：</strong><br>
-                            1. 点击"开始录音"按钮开始录音<br>
+                            1. 点击"开始"按钮开始录音<br>
                             2. 清晰地说话5-10秒钟<br>
-                            3. 系统将自动识别您的语音并显示结果<br>
-                            4. 如果识别失败，可点击"重新识别"按钮重试
+                            3. 系统将识别您的语音并显示结果<br>
+                            4. 如果识别失败，重试
                         </div>
                         
                         <!-- 转录容器 -->
@@ -191,20 +188,19 @@ const createAudioSetupOverlay = () => {
                             </div>
                         </div>
                         
-                        <button class="btn btn-back" onclick="goBackToAudioStep(4)">上一步</button>
-                        <button class="btn btn-primary" id="recordButton" onclick="toggleRecording()">
-                            开始录音
+                        <button class="btn btn-back normal-button" onclick="goBackToAudioStep(4)">上一步</button>
+                        <button class="btn btn-primary normal-button" id="recordButton" onclick="toggleRecording()">
+                            开始
                         </button>
-                        <button class="btn btn-primary" id="downloadRecordingButton" onclick="downloadRecording()" style="display: none;">
-                            下载录音
+                        <button class="btn btn-primary normal-button" id="downloadRecordingButton" onclick="downloadRecording()" style="display: none;">
+                            下载
                         </button>
-                        <button class="btn btn-success" id="completeSetupButton" onclick="completeAudioStep5()" style="display: none;">完成设置</button>
+                        <button class="btn btn-success normal-button" id="completeSetupButton" onclick="completeAudioStep5()" style="display: none;">完成设置</button>
                         
                         <!-- 录音结果状态显示 -->
                         <div id="audio-step5-status" class="step-status"></div>
                     </div>
                 </div>
-            </div>
             </div>
         </div>
     `;
@@ -937,6 +933,13 @@ const downloadRecording = () => {
         console.warn('⚠️ 没有可下载的录音');
         return;
     }
+
+    // 禁用下载按钮
+    const downloadBtn = document.getElementById('downloadRecordingButton');
+    if (downloadBtn) {
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = '下载中...';
+    }
     
     const url = URL.createObjectURL(lastRecordedAudio);
     const a = document.createElement('a');
@@ -948,6 +951,12 @@ const downloadRecording = () => {
     URL.revokeObjectURL(url);
     
     console.log('📥 录音下载完成');
+    setTimeout(() => {
+        if (downloadBtn) {
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = '下载';
+        }
+    }, 1000);
 };
 
 const recognizeAudio = async (pcmData) => {
@@ -1131,19 +1140,19 @@ const audioSetupRetryRecognition = async () => {
 const updateRecordingUI = (recording) => {
     const recordButton = document.getElementById('recordButton');
     if (recording) {
-        recordButton.innerHTML = '停止录音';
+        recordButton.innerHTML = '停止';
         recordButton.classList.remove('btn-primary');
-        recordButton.classList.add('btn-record', 'recording');
+        recordButton.classList.add('btn-record', 'recording', 'normal-button');
     } else {
         // 检查是否已经有录音结果，如果有则显示"重新录音"
         const completeButton = document.getElementById('completeSetupButton');
         if (completeButton && completeButton.style.display !== 'none') {
             recordButton.innerHTML = '重新录音';
     } else {
-        recordButton.innerHTML = '开始录音';
+        recordButton.innerHTML = '开始';
         }
         recordButton.classList.remove('btn-record', 'recording');
-        recordButton.classList.add('btn-primary');
+        recordButton.classList.add('btn-primary', 'normal-button');
     }
 };
 
@@ -1314,9 +1323,9 @@ const resetAllStepsToRevalidation = () => {
     // 重置录音按钮状态
     const recordButton = document.getElementById('recordButton');
     if (recordButton) {
-        recordButton.innerHTML = '<i class="bx bx-microphone"></i> 开始录音';
+        recordButton.innerHTML = '开始';
         recordButton.classList.remove('recording');
-        recordButton.classList.add('btn-record');
+        recordButton.classList.add('btn-record', 'normal-button');
     }
     
     // 重置波形颜色
@@ -1363,9 +1372,9 @@ const showAudioStep = (stepNumber, allowAutoJump = true) => {
             // 重置录音按钮状态
             const recordButton = document.getElementById('recordButton');
             if (recordButton) {
-                recordButton.innerHTML = '<i class="bx bx-microphone"></i> 开始录音';
+                recordButton.innerHTML = '开始';
                 recordButton.classList.remove('recording');
-                recordButton.classList.add('btn-record');
+                recordButton.classList.add('btn-record', 'normal-button');
             }
             
             // 重置波形颜色
@@ -1381,7 +1390,7 @@ const showAudioStep = (stepNumber, allowAutoJump = true) => {
         
         // 自动滚动到当前步骤
         setTimeout(() => {
-            const container = targetStep.closest('.audio-setup-container');
+            const container = targetStep.closest('.setup-container');
             const stepCircle = targetStep.querySelector('.step-circle');
             
             if (container && stepCircle) {
@@ -1983,30 +1992,23 @@ const createAISetupOverlay = () => {
             <h2>智谱AI评分设置</h2>
             <!-- 导入导出设置移到header -->
             <div class="config-actions">
-                <button class="btn btn-import" onclick="importAIConfig()">导入设置</button>
-                <button class="btn btn-export" onclick="exportAIConfig()">导出设置</button>
+                <button class="rect-button btn btn-import" onclick="importAIConfig()">导入设置</button>
+                <button class="rect-button btn btn-export" onclick="exportAIConfig()">导出设置</button>
             </div>
         </div>
         
-        <!-- 移动端进度条 -->
-        <div class="mobile-progress-container">
-            <div class="mobile-progress-bar">
-                <div class="mobile-progress-fill" id="aiProgressFill"></div>
-            </div>
-        </div>
         
-        <div class="audio-setup-container">
-            <div class="setup-container">
-                
-                <div class="setup-flow">
+        <div class="setup-container">
+            <div class="setup-flow">
                 <!-- Step 1: 注册智谱AI -->
                 <div class="setup-step visible current-step" id="ai-step1">
                     <div class="step-circle pending" id="ai-step1-circle">1</div>
                     <div class="step-line" id="ai-step1-line"></div>
                     <div class="step-content" id="ai-step1-content">
+                        <div class="mobile-step-indicator">第1/3步</div>
                         <div class="step-title">注册智谱AI账号</div>
                         <div class="step-image">
-                            <img src="assets/images/settings/step_6_zhipu_api.png" alt="智谱AI注册示意图" style="width: 100%; max-width: 800px; height: auto; margin: 15px 0; border-radius: 8px;">
+                            <img src="assets/images/settings/step_6_zhipu_api.png" alt="智谱AI注册示意图" style="width: 100%; max-width: 600px; height: auto; margin: 15px 0; border-radius: 8px;">
                         </div>
                         <div class="step-description">
                             注册智谱AI账号并获取API访问权限。
@@ -2016,7 +2018,7 @@ const createAISetupOverlay = () => {
                             2. 如果没有账号，点击注册新账号<br>
                             3. 完成账号注册和实名认证
                         </div>
-                        <button class="btn btn-primary" onclick="completeAIStep1()">完成账号注册</button>
+                        <button class="btn btn-primary normal-button" onclick="completeAIStep1()">完成账号注册</button>
                         <div id="ai-step1-status"></div>
                     </div>
                 </div>
@@ -2026,6 +2028,7 @@ const createAISetupOverlay = () => {
                     <div class="step-circle pending" id="ai-step2-circle">2</div>
                     <div class="step-line" id="ai-step2-line"></div>
                     <div class="step-content" id="ai-step2-content">
+                        <div class="mobile-step-indicator">第2/3步</div>
                         <div class="step-title">获取API Key</div>
                         <div class="step-description">
                             创建并获取智谱AI的API Key。
@@ -2044,8 +2047,8 @@ const createAISetupOverlay = () => {
                             </div>
                             <input type="password" id="aiApiKey" placeholder="从智谱AI控制台获取的API Key">
                         </div>
-                        <button class="btn btn-back" onclick="goBackToAIStep(1)">上一步</button>
-                        <button class="btn btn-primary" onclick="validateAIStep2()">验证 API Key</button>
+                        <button class="btn btn-back normal-button" onclick="goBackToAIStep(1)">上一步</button>
+                        <button class="btn btn-primary normal-button" onclick="validateAIStep2()">验证 API Key</button>
                         <div id="ai-step2-status"></div>
                     </div>
                 </div>
@@ -2054,6 +2057,7 @@ const createAISetupOverlay = () => {
                 <div class="setup-step pending" id="ai-step3">
                     <div class="step-circle pending" id="ai-step3-circle">3</div>
                     <div class="step-content" id="ai-step3-content">
+                        <div class="mobile-step-indicator">第3/3步</div>
                         <div class="step-title">测试AI对话功能</div>
                         <div class="step-description">
                             测试智谱AI的对话功能，确保API正常工作。
@@ -2075,12 +2079,11 @@ const createAISetupOverlay = () => {
                             </div>
                         </div>
                         
-                        <button class="btn btn-back" onclick="goBackToAIStep(2)">上一步</button>
-                        <button class="btn btn-success" id="completeAISetupButton" onclick="completeAIStep3()" style="display: none;">完成设置</button>
+                        <button class="btn btn-back normal-button" onclick="goBackToAIStep(2)">上一步</button>
+                        <button class="btn btn-success normal-button" id="completeAISetupButton" onclick="completeAIStep3()" style="display: none;">完成设置</button>
                         <div id="ai-step3-status"></div>
                     </div>
                 </div>
-            </div>
             </div>
         </div>
     `;
@@ -2332,7 +2335,7 @@ const showAIStep = (stepNumber) => {
         
         // 自动滚动到当前步骤
         setTimeout(() => {
-            const container = targetStep.closest('.audio-setup-container');
+            const container = targetStep.closest('.setup-container');
             const stepCircle = targetStep.querySelector('.step-circle');
             
             if (container && stepCircle) {

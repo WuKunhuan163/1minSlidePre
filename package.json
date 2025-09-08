@@ -1,31 +1,25 @@
 {
   "name": "1min-slide-presentation",
   "version": "1.0.0",
-  "description": "1分钟幻灯片演示应用 - 支持录音和AI功能",
+  "description": "1分钟即兴演讲练习系统",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js --dev",
-    "https": "node server.js --https",
-    "http": "node server.js",
-    "build": "echo 'Build completed'",
-    "serve": "npx http-server . -p 3000 -o"
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "express": "^4.18.2",
+    "ffmpeg": "^0.0.4"
   },
   "keywords": [
     "presentation",
-    "slide",
-    "voice-recognition",
-    "aliyun",
-    "ai",
-    "speech-to-text"
+    "speech",
+    "recording",
+    "audio",
+    "video"
   ],
   "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "express": "^4.18.2",
-    "https": "^1.0.0"
-  },
-  "devDependencies": {
-    "http-server": "^14.1.1"
-  }
+  "license": "MIT"
 }

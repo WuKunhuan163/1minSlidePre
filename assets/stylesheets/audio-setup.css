@@ -1,21 +1,26 @@
 /* Audio Setup Styles - 录音设置样式 */
 
-.audio-setup-container {
+.setup-container {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 10px;
     position: relative;
     overflow-y: auto;
     height: calc(100vh - 120px); /* 减去header高度 */
 }
 
-/* Setup Container - 包含所有步骤内容 */
+@media (max-width: 500px) {
+    .setup-container {
+        margin: 0 auto;
+    }
+}
+
 .setup-container {
     display: flex;
     flex-direction: column;
     gap: 30px;
     position: relative;
-    min-width: 600px;
+    width: 90%;
 }
 
 /* Header中的导入导出按钮 */
@@ -36,21 +41,7 @@
 
 .btn-import,
 .btn-export {
-    background: #333;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-import:hover,
-.btn-export:hover {
-    background: #666AF6;
-    color: white;
-    transform: translateY(-2px);
+    padding: 8px 16px;  /* 覆盖rect-button的padding */
 }
 
 .setup-flow {
@@ -241,39 +232,9 @@
     box-shadow: 0 0 0 0.2rem rgba(102, 106, 246, 0.25);
 }
 
-.btn {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    margin-right: 10px;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-}
+/* .btn-primary基础样式已移除，现在使用normal-button + 特定颜色覆盖 */
 
-.btn-primary {
-    background: #666AF6;
-    color: white;
-    border: none;
-}
-
-.btn-primary:hover {
-    background: #5a5de6;
-    transform: translateY(-2px);
-}
-
-.btn-back {
-    background: #6c757d;
-    color: white;
-    border: none;
-}
-
-.btn-back:hover {
-    background: #545b62;
-    transform: translateY(-2px);
-}
+/* .btn-back基础样式已移除，现在使用normal-button + 特定样式 */
 
 .btn:disabled {
     opacity: 0.5;
@@ -468,41 +429,22 @@
     pointer-events: none;
 }
 
-/* 重写按钮样式 */
+/* 重写按钮样式 - 只覆盖颜色，其他继承自normal-button */
 .setup-step .btn.btn-primary {
     background: #333 !important; /* 默认黑色 */
-    color: white !important;
-    border: none !important;
-    padding: 10px 20px !important;
-    border-radius: 8px !important;
-    font-size: 14px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
 }
 
 .setup-step .btn.btn-primary:hover {
     background: #666AF6 !important; /* hover时紫色 */
-    color: white !important;
-    transform: translateY(-2px) !important;
 }
 
-/* 上一步按钮样式 */
+/* 上一步按钮样式 - 只覆盖需要的样式，其他继承自normal-button */
 .setup-step .btn.btn-back {
     background: #333 !important; /* 默认黑色 */
-    color: white !important;
-    border: none !important;
-    padding: 10px 20px !important;
-    border-radius: 8px !important;
-    font-size: 14px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    margin-right: 10px !important;
 }
 
 .setup-step .btn.btn-back:hover {
     background: #ff6b6b !important; /* hover时红色 */
-    color: white !important;
-    transform: translateY(-2px) !important;
 }
 
 /* 录音测试区域样式已移除 */
@@ -610,34 +552,21 @@
     overflow-wrap: break-word;
 }
 
-/* 成功按钮样式 */
+/* 成功按钮样式 - 只覆盖颜色，其他继承自normal-button */
 .setup-step .btn.btn-success {
     background: #28a745 !important; /* 更深的绿色 */
-    color: white !important;
-    border: none !important;
-    padding: 10px 20px !important;
-    border-radius: 8px !important;
-    font-size: 14px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
 }
 
 .setup-step .btn.btn-success:hover {
     background: #218838 !important; /* hover时更深的绿色 */
-    color: white !important;
-    transform: translateY(-2px) !important;
 }
 
-/* 二级按钮样式 */
+/* 二级按钮样式 - 只覆盖颜色和尺寸，其他继承自normal-button */
 .setup-step .btn.btn-secondary {
     background: #666AF6 !important;
-    color: white !important;
-    border: none !important;
     padding: 8px 16px !important;
     border-radius: 6px !important;
     font-size: 12px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
 }
 
 .setup-step .btn.btn-secondary:hover {
@@ -1022,6 +951,223 @@
 }
 
 /* 完成状态的输入框保持原样，不disable */
+
+/* 录音测试界面样式 */
+.audio-test-section {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.section-description {
+    color: #ccc;
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.audio-visualizer {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+    position: relative;
+}
+
+#audioCanvas {
+    background: #000;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+}
+
+.visualizer-status {
+    color: #ccc;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.audio-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    align-items: center;
+}
+
+.audio-controls .audio-test-btn {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.audio-test-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: #333333;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.audio-test-btn:hover {
+    background-color: #666AF6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(102, 106, 246, 0.4);
+}
+
+.setup-complete-btn {
+    background-color: #28a745 !important;
+}
+
+.setup-complete-btn:hover {
+    background-color: #218838 !important;
+}
+
+/* 录音测试界面的波峰图样式 */
+.audio-test-section .waveform-bar {
+    fill: #666AF6; /* 紫色波峰 */
+    transition: fill 0.3s ease;
+}
+
+.audio-test-section .waveform-background {
+    fill: #ffffff; /* 白色背景，和进度条一样 */
+}
+
+/* 录音测试完成状态 - 绿色波峰图 */
+.audio-test-section.completed .waveform-bar {
+    fill: #4CAF50; /* 绿色波峰 */
+}
+
+.audio-test-section.completed .progress-fill-thin {
+    background: linear-gradient(90deg, #4CAF50, #66BB6A); /* 绿色进度条 */
+}
+
+.audio-test-section .waveform-progress-mask {
+    fill: rgba(102, 106, 246, 0.3); /* 紫色半透明遮罩 */
+}
+
+
+.audio-info {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-label {
+    color: #ccc;
+    font-weight: 500;
+}
+
+.info-value {
+    color: #fff;
+    font-weight: bold;
+}
+
+/* 录像测试界面样式 */
+.video-test-section {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.video-preview {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+    position: relative;
+    min-height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#videoPreview {
+    border-radius: 4px;
+    max-width: 100%;
+    height: auto;
+    display: none;
+}
+
+.preview-status {
+    color: #ccc;
+    font-size: 16px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.video-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.video-info {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 768px) {
+    .audio-test-section,
+    .video-test-section {
+        padding: 10px;
+    }
+    
+    #audioCanvas {
+        width: 100%;
+        max-width: 400px;
+        height: 80px;
+    }
+    
+    .audio-controls,
+    .video-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .audio-controls .rect-button,
+    .video-controls .rect-button {
+        width: 200px;
+    }
+    
+    .video-preview {
+        min-height: 250px;
+    }
+    
+    #videoPreview {
+        width: 100%;
+        max-width: 300px;
+    }
+}
 .step-content.completed input,
 .step-content.completed select,
 .step-content.completed textarea {
@@ -1033,12 +1179,6 @@
     cursor: not-allowed !important;
 }
 
-/* 返回按钮在所有状态下都可用 */
-.step-content .btn-back {
-    pointer-events: auto !important;
-    opacity: 1 !important;
-    cursor: pointer !important;
-}
 
 /* 非激活状态的按钮和输入框 */
 .step-content:not(.active) .btn:not(.btn-back),
@@ -1065,7 +1205,7 @@
     .step-content {
         margin-left: 0 !important;
         padding-left: 20px !important;
-        width: 100% !important;
+        /* width: 100% !important; */
         max-width: 100% !important;
     }
     
@@ -1101,9 +1241,49 @@
     border-radius: 2px;
 }
 
-/* 在移动端竖屏显示进度条 */
-@media screen and (max-width: 768px) and (orientation: portrait) {
-    .mobile-progress-container {
+/* 移动端步骤指示器 */
+.mobile-step-indicator {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: #666AF6;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 10;
+}
+
+/* 步骤按钮布局 */
+.step-content {
+    position: relative;
+}
+
+/* 步骤按钮容器 - 为每个步骤的按钮区域添加flex布局 */
+.step-content .btn {
+    margin-right: 5px;
+    margin-bottom: 10px;
+}
+
+/* 完成设置按钮独占一行 - 只在显示时应用，不覆盖display:none */
+.step-content #completeSetupButton:not([style*="display: none"]),
+.step-content #completeAISetupButton:not([style*="display: none"]) {
+    display: block !important;
+    margin-right: 0;
+    margin-top: 10px;
+    width: 100%;
+}
+
+/* 在移动端显示步骤指示器 */
+@media screen and (max-width: 768px) {
+    .mobile-step-indicator {
         display: block !important;
+    }
+    
+    /* 确保step-content有relative定位以支持绝对定位的指示器 */
+    .step-content {
+        position: relative;
     }
 }
