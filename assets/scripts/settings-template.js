@@ -1277,8 +1277,8 @@ const setupAISettingsFieldCopy = (overlay) => {
 
 // 录音设备设置相关变量
 let currentAudioStream = null;
-let audioContext = null;
-let analyser = null;
+let micTestAudioContext = null;
+let micTestAnalyser = null;
 let volumeAnimationId = null;
 
 // 初始化录音设备设置
@@ -1393,12 +1393,12 @@ const testMicrophone = async () => {
         currentAudioStream = await navigator.mediaDevices.getUserMedia(constraints);
         
         // 创建音频分析器
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioContext.createAnalyser();
-        const source = audioContext.createMediaStreamSource(currentAudioStream);
+        micTestAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        micTestAnalyser = micTestAudioContext.createAnalyser();
+        const source = micTestAudioContext.createMediaStreamSource(currentAudioStream);
         
-        analyser.fftSize = 256;
-        source.connect(analyser);
+        micTestAnalyser.fftSize = 256;
+        source.connect(micTestAnalyser);
         
         // 开始音量监测
         startVolumeMonitoring();
@@ -1417,15 +1417,15 @@ const startVolumeMonitoring = () => {
     const volumeFill = document.getElementById('volumeFill');
     const volumeText = document.getElementById('volumeText');
     
-    if (!analyser || !volumeFill || !volumeText) return;
+    if (!micTestAnalyser || !volumeFill || !volumeText) return;
     
-    const bufferLength = analyser.frequencyBinCount;
+    const bufferLength = micTestAnalyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
     const updateVolume = () => {
-        if (!analyser) return;
+        if (!micTestAnalyser) return;
         
-        analyser.getByteFrequencyData(dataArray);
+        micTestAnalyser.getByteFrequencyData(dataArray);
         
         // 计算平均音量
         let sum = 0;
@@ -1458,10 +1458,10 @@ const stopMicrophoneTest = () => {
     }
     
     // 关闭音频上下文
-    if (audioContext) {
-        audioContext.close();
-        audioContext = null;
-        analyser = null;
+    if (micTestAudioContext) {
+        micTestAudioContext.close();
+        micTestAudioContext = null;
+        micTestAnalyser = null;
     }
     
     // 停止动画
