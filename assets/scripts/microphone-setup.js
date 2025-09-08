@@ -158,7 +158,7 @@ const requestMicrophonePermission = async () => {
         micStatus.style.color = '#28a745';
         
         // 检测音频设备
-        await detectAudioDevices();
+        await detectMicrophoneDevices();
         
         // 显示设备列表
         if (deviceSection) {
@@ -210,7 +210,7 @@ const requestMicrophonePermission = async () => {
 };
 
 // 检测音频输入设备
-const detectAudioDevices = async () => {
+const detectMicrophoneDevices = async () => {
     console.log('🔍 检测音频输入设备...');
     
     try {
