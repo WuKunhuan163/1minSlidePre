@@ -879,8 +879,8 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
             const aiSettings = overlay.querySelector('#aiSettings');
             const audioInputSelect = overlay.querySelector('#audioInputSelect');
             
-    // 录音设置卡片点击事件（只为装饰，实际通过header进入设置）
-            const recordingCard = overlay.querySelector('.setting-card:first-child');
+    // 录音文字识别设置卡片点击事件（只为装饰，实际通过header进入设置）
+            const recordingCard = overlay.querySelector('#recordingCard');
             if (recordingCard) {
         
         // 禁用toggle功能，只作装饰
