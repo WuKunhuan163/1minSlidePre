@@ -16,35 +16,18 @@ const createSettingsOverlay = () => {
         </div>
         <div class="settings-container">
             <div class="setting-card clickable-card" id="microphoneCard">
-                <div class="new-badge badge-base" id="microphoneNewBadge" style="display: none;">NEW</div>
+                <div class="new-badge badge-base" id="microphoneNewBadge">NEW</div>
                 <div class="reconfig-badge badge-base" id="microphoneReconfigBadge" style="display: none;">点击重新配置</div>
                 <div class="setting-card-header">
                     <i class='bx bx-microphone-alt'></i>
-                    <h3>录音设备设置</h3>
+                    <h3>录音设备</h3>
                     <div class="setting-toggle">
-                        <input type="checkbox" id="microphoneToggle" class="toggle-input">
+                        <input type="checkbox" id="microphoneToggle" class="toggle-input" disabled>
                         <label for="microphoneToggle" class="toggle-label"></label>
                     </div>
                 </div>
                 <div class="setting-card-content" id="microphoneSettings">
-                    <div class="setting-field">
-                        <label>音频输入设备</label>
-                        <select id="audioInputSelect" class="device-select">
-                            <option value="">检测中...</option>
-                        </select>
-                    </div>
-                    <div class="setting-field">
-                        <label>音频测试</label>
-                        <div class="audio-test-section" id="audioTestSection">
-                            <button class="test-button" id="micTestButton" onclick="testMicrophone()">测试麦克风</button>
-                            <div class="volume-meter" id="volumeMeter" style="display: none;">
-                                <div class="volume-bar">
-                                    <div class="volume-fill" id="volumeFill"></div>
-                                </div>
-                                <span class="volume-text" id="volumeText">音量: 0%</span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- 内容将由overlay处理 -->
                 </div>
             </div>
 
@@ -929,39 +912,20 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
         }
     }
     
-    // 录音设备设置卡片点击事件
+    // 录音设备卡片点击事件
     const microphoneCard = overlay.querySelector('#microphoneCard');
     if (microphoneCard) {
         const microphoneHeader = microphoneCard.querySelector('.setting-card-header');
         if (microphoneHeader) {
             microphoneHeader.addEventListener('click', (e) => {
-                console.log('🖱️ 录音设备设置header被点击');
+                console.log('🖱️ 录音设备header被点击');
                 
-                // 切换展开状态
-                if (microphoneSettings) {
-                    microphoneSettings.classList.toggle('expanded');
-                }
+                // 进入录音设备设置页面
+                console.log('🔄 进入录音设备设置页面');
+                overlay.remove();
+                const microphoneSetupOverlay = createMicrophoneSetupOverlay();
                 
-                // 如果展开，初始化设备检测
-                if (microphoneSettings && microphoneSettings.classList.contains('expanded')) {
-                    initMicrophoneSettings();
-                }
-            });
-        }
-        
-        // 录音设备切换开关事件
-        if (microphoneToggle) {
-            microphoneToggle.addEventListener('change', () => {
-                console.log('🎤 录音设备开关状态改变:', microphoneToggle.checked);
-                saveMicrophoneConfig();
-            });
-        }
-        
-        // 设备选择变更事件
-        if (audioInputSelect) {
-            audioInputSelect.addEventListener('change', () => {
-                console.log('🎤 音频输入设备变更:', audioInputSelect.value);
-                saveMicrophoneConfig();
+                // 不需要返回事件，因为已在createMicrophoneSetupOverlay中处理
             });
         }
     }
@@ -1018,60 +982,9 @@ const updateOverlayFromSharedState = (overlay) => {
     const recordingCard = overlay.querySelector('#recordingCard');
     const aiCard = overlay.querySelector('#aiCard');
     
-    // 检查录音设备设置状态
-    const microphoneConfig = localStorage.getItem('microphoneConfig');
-    let microphoneEnabled = false;
-    if (microphoneConfig) {
-        const config = JSON.parse(microphoneConfig);
-        microphoneEnabled = config.enabled || false;
-        
-        // 更新录音设备toggle状态
-        if (microphoneToggle) {
-            microphoneToggle.checked = microphoneEnabled;
-        }
-    }
-    
-    // 录音文字识别卡片条件显示：只有在录音设备设置完成后才显示
-    if (recordingCard) {
-        if (microphoneEnabled) {
-            recordingCard.style.display = 'block';
-        } else {
-            recordingCard.style.display = 'none';
-        }
-    }
-    
-    // AI卡片条件显示：只有在录音设置完成后才显示
-    if (aiCard) {
-        if (currentConfig.recordingEnabled) {
-            aiCard.style.display = 'block';
-                    } else {
-            aiCard.style.display = 'none';
-        }
-    }
-    
-    // 更新toggle状态（纯装饰）
-    if (recordingToggle) {
-        recordingToggle.checked = currentConfig.recordingEnabled || false;
-    }
-    if (aiToggle) {
-        aiToggle.checked = currentConfig.aiEnabled || false;
-    }
-    
-    // 更新展开状态
-    if (recordingSettings) {
-        if (currentConfig.recordingEnabled) {
-            recordingSettings.classList.add('expanded');
-                    } else {
-            recordingSettings.classList.remove('expanded');
-                    }
-            }
-            
-    if (aiSettings) {
-        if (currentConfig.aiEnabled) {
-                    aiSettings.classList.add('expanded');
-                } else {
-                        aiSettings.classList.remove('expanded');
-        }
+    // 使用新的设置管理器刷新显示
+    if (window.refreshSettingsDisplay) {
+        window.refreshSettingsDisplay();
     }
     
     // 更新配置字段值
