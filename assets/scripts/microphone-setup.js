@@ -25,8 +25,9 @@ const createMicrophoneSetupOverlay = () => {
                 <!-- Step 1: 请求麦克风权限 -->
                 <div class="setup-step visible current-step" id="mic-step1">
                     <div class="step-circle pending" id="mic-step1-circle">1</div>
+                    <div class="step-line" id="mic-step1-line"></div>
                     <div class="step-content" id="mic-step1-content">
-                        <div class="mobile-step-indicator">第1/1步</div>
+                        <div class="mobile-step-indicator">第1/2步</div>
                         <div class="step-title">请求麦克风权限</div>
                         <div class="step-description">
                             为了使用录音功能，需要获取浏览器的麦克风访问权限。
@@ -57,12 +58,44 @@ const createMicrophoneSetupOverlay = () => {
                         <button class="btn btn-primary normal-button" id="requestPermissionButton" onclick="requestMicrophonePermission()">
                             请求麦克风权限
                         </button>
+                        <button class="btn btn-primary normal-button" id="nextToStep2Button" onclick="goToStep2()" style="display: none;">
+                            下一步
+                        </button>
+                        
+                        <!-- 状态显示 -->
+                        <div id="mic-step1-status" class="step-status"></div>
+                    </div>
+                </div>
+
+                <!-- Step 2: 录音测试 -->
+                <div class="setup-step pending" id="mic-step2">
+                    <div class="step-circle pending" id="mic-step2-circle">2</div>
+                    <div class="step-content" id="mic-step2-content">
+                        <div class="mobile-step-indicator">第2/2步</div>
+                        <div class="step-title">录音功能测试</div>
+                        <div class="step-description">
+                            测试录音功能，确保麦克风正常工作并能够录制音频。
+                            <br><br>
+                            <strong>测试说明：</strong><br>
+                            1. 点击"开始录音"按钮开始测试<br>
+                            2. 对着麦克风清晰地说话10秒钟<br>
+                            3. 系统将分析录音质量并显示结果<br>
+                            4. 录音测试通过后即可完成设置
+                        </div>
+                        
+                        <!-- 录音接口容器 -->
+                        <div id="recordingTestContainer"></div>
+                        
+                        <button class="btn btn-back normal-button" onclick="goBackToStep1()">上一步</button>
+                        <button class="btn btn-primary normal-button" id="startRecordingTestButton" onclick="startRecordingTest()">
+                            开始录音
+                        </button>
                         <button class="btn btn-success normal-button" id="completeMicSetupButton" onclick="completeMicrophoneSetup()" style="display: none;">
                             完成设置
                         </button>
                         
                         <!-- 状态显示 -->
-                        <div id="mic-step1-status" class="step-status"></div>
+                        <div id="mic-step2-status" class="step-status"></div>
                     </div>
                 </div>
             </div>
@@ -91,6 +124,7 @@ const createMicrophoneSetupOverlay = () => {
 // 录音设备设置相关变量
 let micSetupStream = null;
 let detectedDevices = [];
+let recordingInterface = null;
 
 // 请求麦克风权限
 const requestMicrophonePermission = async () => {
@@ -131,9 +165,10 @@ const requestMicrophonePermission = async () => {
             deviceSection.style.display = 'block';
         }
         
-        // 显示完成按钮
-        if (completeButton) {
-            completeButton.style.display = 'inline-block';
+        // 显示下一步按钮
+        const nextButton = document.getElementById('nextToStep2Button');
+        if (nextButton) {
+            nextButton.style.display = 'inline-block';
         }
         
         // 隐藏请求按钮
@@ -286,9 +321,141 @@ const exportMicrophoneConfig = () => {
     alert('导出功能开发中...');
 };
 
+// 进入第二步
+const goToStep2 = () => {
+    console.log('➡️ 进入第二步：录音测试');
+    
+    // 隐藏第一步，显示第二步
+    const step1 = document.getElementById('mic-step1');
+    const step2 = document.getElementById('mic-step2');
+    
+    if (step1) {
+        step1.classList.remove('current-step');
+        step1.classList.add('completed');
+    }
+    
+    if (step2) {
+        step2.classList.remove('pending');
+        step2.classList.add('visible', 'current-step');
+    }
+    
+    // 初始化录音接口
+    initRecordingInterface();
+};
+
+// 返回第一步
+const goBackToStep1 = () => {
+    console.log('⬅️ 返回第一步：请求麦克风权限');
+    
+    const step1 = document.getElementById('mic-step1');
+    const step2 = document.getElementById('mic-step2');
+    
+    if (step1) {
+        step1.classList.remove('completed');
+        step1.classList.add('current-step');
+    }
+    
+    if (step2) {
+        step2.classList.remove('visible', 'current-step');
+        step2.classList.add('pending');
+    }
+    
+    // 销毁录音接口
+    if (recordingInterface) {
+        recordingInterface.destroy();
+        recordingInterface = null;
+    }
+};
+
+// 初始化录音接口
+const initRecordingInterface = () => {
+    console.log('🎛️ 初始化录音接口...');
+    
+    try {
+        recordingInterface = new RecordingInterface('recordingTestContainer', {
+            recordingDuration: 10, // 10秒录音
+            waveformBars: 100, // 100个波峰条
+            colorStyle: 'purple', // 紫色风格
+            textPlaceholder: '录音测试结果将显示在此处...'
+        });
+        
+        console.log('✅ 录音接口初始化完成');
+        
+    } catch (error) {
+        console.error('❌ 录音接口初始化失败:', error);
+        updateStepStatus('mic-step2', 'error', '❌ 录音接口初始化失败');
+    }
+};
+
+// 开始录音测试
+const startRecordingTest = async () => {
+    console.log('🎤 开始录音测试...');
+    
+    const startButton = document.getElementById('startRecordingTestButton');
+    const completeButton = document.getElementById('completeMicSetupButton');
+    
+    if (!recordingInterface) {
+        console.error('❌ 录音接口未初始化');
+        return;
+    }
+    
+    try {
+        // 更新按钮状态
+        if (startButton) {
+            startButton.disabled = true;
+            startButton.textContent = '录音中...';
+        }
+        
+        // 获取音频流
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                sampleRate: { ideal: 44100 },
+                channelCount: { ideal: 1 }
+            }
+        });
+        
+        // 开始录音
+        await recordingInterface.startRecording(stream);
+        
+        // 录音完成后的处理
+        setTimeout(() => {
+            console.log('✅ 录音测试完成');
+            
+            // 更新按钮状态
+            if (startButton) {
+                startButton.disabled = false;
+                startButton.textContent = '重新录音';
+            }
+            
+            // 显示完成按钮
+            if (completeButton) {
+                completeButton.style.display = 'inline-block';
+            }
+            
+            // 更新步骤状态
+            updateStepStatus('mic-step2', 'completed', '✅ 录音测试成功');
+            
+        }, 11000); // 录音时长 + 1秒处理时间
+        
+    } catch (error) {
+        console.error('❌ 录音测试失败:', error);
+        
+        // 恢复按钮状态
+        if (startButton) {
+            startButton.disabled = false;
+            startButton.textContent = '重试录音';
+        }
+        
+        updateStepStatus('mic-step2', 'error', '❌ 录音测试失败: ' + error.message);
+    }
+};
+
 // 导出主要函数供外部使用
 window.createMicrophoneSetupOverlay = createMicrophoneSetupOverlay;
 window.requestMicrophonePermission = requestMicrophonePermission;
 window.completeMicrophoneSetup = completeMicrophoneSetup;
 window.importMicrophoneConfig = importMicrophoneConfig;
 window.exportMicrophoneConfig = exportMicrophoneConfig;
+window.goToStep2 = goToStep2;
+window.goBackToStep1 = goBackToStep1;
+window.startRecordingTest = startRecordingTest;

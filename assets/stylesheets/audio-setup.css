@@ -1385,6 +1385,34 @@
     font-style: italic;
 }
 
+/* 可复用录音接口容器样式 */
+.recording-interface {
+    background: #ffffff;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 0;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+/* 不同颜色风格 */
+
+.recording-interface.color-purple .progress-fill-thin {
+    background: linear-gradient(90deg, #666AF6, #764ba2);
+}
+
+.recording-interface.color-purple .waveform-bar {
+    fill: #666AF6;
+}
+
+.recording-interface.color-green .progress-fill-thin {
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.recording-interface.color-green .waveform-bar {
+    fill: #28a745;
+}
+
 /* 在移动端显示步骤指示器 */
 @media screen and (max-width: 768px) {
     .mobile-step-indicator {
