@@ -15,7 +15,40 @@ const createSettingsOverlay = () => {
             <h2>系统设置</h2>
         </div>
         <div class="settings-container">
-            <div class="setting-card clickable-card" id="recordingCard">
+            <div class="setting-card clickable-card" id="microphoneCard">
+                <div class="new-badge badge-base" id="microphoneNewBadge" style="display: none;">NEW</div>
+                <div class="reconfig-badge badge-base" id="microphoneReconfigBadge" style="display: none;">点击重新配置</div>
+                <div class="setting-card-header">
+                    <i class='bx bx-microphone-alt'></i>
+                    <h3>录音设备设置</h3>
+                    <div class="setting-toggle">
+                        <input type="checkbox" id="microphoneToggle" class="toggle-input">
+                        <label for="microphoneToggle" class="toggle-label"></label>
+                    </div>
+                </div>
+                <div class="setting-card-content" id="microphoneSettings">
+                    <div class="setting-field">
+                        <label>音频输入设备</label>
+                        <select id="audioInputSelect" class="device-select">
+                            <option value="">检测中...</option>
+                        </select>
+                    </div>
+                    <div class="setting-field">
+                        <label>音频测试</label>
+                        <div class="audio-test-section" id="audioTestSection">
+                            <button class="test-button" id="micTestButton" onclick="testMicrophone()">测试麦克风</button>
+                            <div class="volume-meter" id="volumeMeter" style="display: none;">
+                                <div class="volume-bar">
+                                    <div class="volume-fill" id="volumeFill"></div>
+                                </div>
+                                <span class="volume-text" id="volumeText">音量: 0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-card clickable-card" id="recordingCard" style="display: none;">
                 <div class="new-badge badge-base" id="recordingNewBadge" style="display: none;">NEW</div>
                 <div class="reconfig-badge badge-base" id="recordingReconfigBadge" style="display: none;">点击重新配置</div>
                 <div class="setting-card-header">
@@ -405,6 +438,80 @@ const settingsStyles = `
     transform: scale(1.1);
 }
 
+/* 录音设备设置样式 */
+.device-select {
+    width: 100%;
+    padding: 12px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    padding-right: 40px;
+}
+
+.device-select:focus {
+    outline: none;
+    border-color: #666AF6;
+}
+
+.device-select option {
+    background: #333;
+    color: white;
+}
+
+.audio-test-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.volume-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.volume-bar {
+    flex: 1;
+    height: 8px;
+    background: #333;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.volume-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+    width: 0%;
+    transition: width 0.1s ease;
+    border-radius: 4px;
+}
+
+.volume-text {
+    color: #ccc;
+    font-size: 12px;
+    min-width: 60px;
+}
+
+.audio-test-section.testing .test-button {
+    background: #dc3545;
+    color: white;
+}
+
+.audio-test-section.testing .test-button:hover {
+    background: #c82333;
+}
+
 /* 通用badge基础样式 */
 .badge-base {
     position: absolute;
@@ -781,10 +888,13 @@ const setupSettingsOverlayEvents = (overlay) => {
 const setupFullSettingsOverlayFunctionality = (overlay) => {
     
     // 获取所有必要的元素
+            const microphoneToggle = overlay.querySelector('#microphoneToggle');
             const recordingToggle = overlay.querySelector('#recordingToggle');
             const aiToggle = overlay.querySelector('#aiToggle');
+            const microphoneSettings = overlay.querySelector('#microphoneSettings');
             const recordingSettings = overlay.querySelector('#recordingSettings');
             const aiSettings = overlay.querySelector('#aiSettings');
+            const audioInputSelect = overlay.querySelector('#audioInputSelect');
             
     // 录音设置卡片点击事件（只为装饰，实际通过header进入设置）
             const recordingCard = overlay.querySelector('.setting-card:first-child');
@@ -815,6 +925,43 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
                     setupSettingsOverlayEvents(newSettingsOverlay);
                     overlayManager.switchToOverlay(newSettingsOverlay);
                 });
+            });
+        }
+    }
+    
+    // 录音设备设置卡片点击事件
+    const microphoneCard = overlay.querySelector('#microphoneCard');
+    if (microphoneCard) {
+        const microphoneHeader = microphoneCard.querySelector('.setting-card-header');
+        if (microphoneHeader) {
+            microphoneHeader.addEventListener('click', (e) => {
+                console.log('🖱️ 录音设备设置header被点击');
+                
+                // 切换展开状态
+                if (microphoneSettings) {
+                    microphoneSettings.classList.toggle('expanded');
+                }
+                
+                // 如果展开，初始化设备检测
+                if (microphoneSettings && microphoneSettings.classList.contains('expanded')) {
+                    initMicrophoneSettings();
+                }
+            });
+        }
+        
+        // 录音设备切换开关事件
+        if (microphoneToggle) {
+            microphoneToggle.addEventListener('change', () => {
+                console.log('🎤 录音设备开关状态改变:', microphoneToggle.checked);
+                saveMicrophoneConfig();
+            });
+        }
+        
+        // 设备选择变更事件
+        if (audioInputSelect) {
+            audioInputSelect.addEventListener('change', () => {
+                console.log('🎤 音频输入设备变更:', audioInputSelect.value);
+                saveMicrophoneConfig();
             });
         }
     }
@@ -862,11 +1009,36 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
 const updateOverlayFromSharedState = (overlay) => {
     
     const currentConfig = simpleConfig.getAll();
+    const microphoneToggle = overlay.querySelector('#microphoneToggle');
     const recordingToggle = overlay.querySelector('#recordingToggle');
                         const aiToggle = overlay.querySelector('#aiToggle');
+    const microphoneSettings = overlay.querySelector('#microphoneSettings');
     const recordingSettings = overlay.querySelector('#recordingSettings');
                             const aiSettings = overlay.querySelector('#aiSettings');
+    const recordingCard = overlay.querySelector('#recordingCard');
     const aiCard = overlay.querySelector('#aiCard');
+    
+    // 检查录音设备设置状态
+    const microphoneConfig = localStorage.getItem('microphoneConfig');
+    let microphoneEnabled = false;
+    if (microphoneConfig) {
+        const config = JSON.parse(microphoneConfig);
+        microphoneEnabled = config.enabled || false;
+        
+        // 更新录音设备toggle状态
+        if (microphoneToggle) {
+            microphoneToggle.checked = microphoneEnabled;
+        }
+    }
+    
+    // 录音文字识别卡片条件显示：只有在录音设备设置完成后才显示
+    if (recordingCard) {
+        if (microphoneEnabled) {
+            recordingCard.style.display = 'block';
+        } else {
+            recordingCard.style.display = 'none';
+        }
+    }
     
     // AI卡片条件显示：只有在录音设置完成后才显示
     if (aiCard) {
@@ -1103,8 +1275,261 @@ const setupAISettingsFieldCopy = (overlay) => {
     console.log('✅ AI设置界面字段复制功能已设置');
 };
 
+// 录音设备设置相关变量
+let currentAudioStream = null;
+let audioContext = null;
+let analyser = null;
+let volumeAnimationId = null;
+
+// 初始化录音设备设置
+const initMicrophoneSettings = async () => {
+    console.log('🎤 初始化录音设备设置...');
+    
+    try {
+        // 检测音频设备
+        await detectAudioDevices();
+        
+        // 检查录音设备设置状态
+        const microphoneConfig = localStorage.getItem('microphoneConfig');
+        if (microphoneConfig) {
+            const config = JSON.parse(microphoneConfig);
+            const microphoneToggle = document.getElementById('microphoneToggle');
+            const audioInputSelect = document.getElementById('audioInputSelect');
+            
+            if (microphoneToggle) {
+                microphoneToggle.checked = config.enabled || false;
+            }
+            
+            if (audioInputSelect && config.selectedDeviceId) {
+                audioInputSelect.value = config.selectedDeviceId;
+            }
+            
+            // 如果已配置，显示录音文字识别卡片
+            if (config.enabled) {
+                showRecordingCard();
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ 初始化录音设备设置失败:', error);
+    }
+};
+
+// 检测音频输入设备
+const detectAudioDevices = async () => {
+    console.log('🔍 检测音频输入设备...');
+    
+    try {
+        // 请求麦克风权限
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        
+        // 枚举设备
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+        
+        const select = document.getElementById('audioInputSelect');
+        if (select) {
+            select.innerHTML = '';
+            
+            if (audioInputs.length === 0) {
+                select.innerHTML = '<option value="">未检测到音频输入设备</option>';
+                return;
+            }
+            
+            audioInputs.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.textContent = device.label || `麦克风 ${index + 1}`;
+                select.appendChild(option);
+            });
+            
+            // 默认选择第一个设备
+            if (audioInputs.length > 0) {
+                select.value = audioInputs[0].deviceId;
+            }
+        }
+        
+        console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
+        
+    } catch (error) {
+        console.error('❌ 检测音频设备失败:', error);
+        const select = document.getElementById('audioInputSelect');
+        if (select) {
+            select.innerHTML = '<option value="">检测失败，请检查麦克风权限</option>';
+        }
+        throw error;
+    }
+};
+
+// 测试麦克风
+const testMicrophone = async () => {
+    const testButton = document.getElementById('micTestButton');
+    const volumeMeter = document.getElementById('volumeMeter');
+    const audioTestSection = document.getElementById('audioTestSection');
+    const audioInputSelect = document.getElementById('audioInputSelect');
+    
+    if (!testButton || !volumeMeter || !audioTestSection) return;
+    
+    if (audioTestSection.classList.contains('testing')) {
+        // 停止测试
+        stopMicrophoneTest();
+        return;
+    }
+    
+    try {
+        // 开始测试
+        audioTestSection.classList.add('testing');
+        testButton.textContent = '停止测试';
+        volumeMeter.style.display = 'flex';
+        
+        // 获取选中的设备
+        const selectedDeviceId = audioInputSelect ? audioInputSelect.value : '';
+        
+        const constraints = {
+            audio: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true
+        };
+        
+        currentAudioStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        // 创建音频分析器
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(currentAudioStream);
+        
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        
+        // 开始音量监测
+        startVolumeMonitoring();
+        
+        console.log('✅ 麦克风测试开始');
+        
+    } catch (error) {
+        console.error('❌ 麦克风测试失败:', error);
+        stopMicrophoneTest();
+        alert('麦克风测试失败: ' + error.message);
+    }
+};
+
+// 开始音量监测
+const startVolumeMonitoring = () => {
+    const volumeFill = document.getElementById('volumeFill');
+    const volumeText = document.getElementById('volumeText');
+    
+    if (!analyser || !volumeFill || !volumeText) return;
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    const updateVolume = () => {
+        if (!analyser) return;
+        
+        analyser.getByteFrequencyData(dataArray);
+        
+        // 计算平均音量
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+        const volume = Math.round((average / 255) * 100);
+        
+        // 更新显示
+        volumeFill.style.width = volume + '%';
+        volumeText.textContent = `音量: ${volume}%`;
+        
+        volumeAnimationId = requestAnimationFrame(updateVolume);
+    };
+    
+    updateVolume();
+};
+
+// 停止麦克风测试
+const stopMicrophoneTest = () => {
+    const testButton = document.getElementById('micTestButton');
+    const volumeMeter = document.getElementById('volumeMeter');
+    const audioTestSection = document.getElementById('audioTestSection');
+    
+    // 停止音频流
+    if (currentAudioStream) {
+        currentAudioStream.getTracks().forEach(track => track.stop());
+        currentAudioStream = null;
+    }
+    
+    // 关闭音频上下文
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+        analyser = null;
+    }
+    
+    // 停止动画
+    if (volumeAnimationId) {
+        cancelAnimationFrame(volumeAnimationId);
+        volumeAnimationId = null;
+    }
+    
+    // 更新UI
+    if (audioTestSection) audioTestSection.classList.remove('testing');
+    if (testButton) testButton.textContent = '测试麦克风';
+    if (volumeMeter) volumeMeter.style.display = 'none';
+    
+    console.log('✅ 麦克风测试已停止');
+};
+
+// 保存录音设备配置
+const saveMicrophoneConfig = () => {
+    const microphoneToggle = document.getElementById('microphoneToggle');
+    const audioInputSelect = document.getElementById('audioInputSelect');
+    
+    if (!microphoneToggle || !audioInputSelect) return;
+    
+    const config = {
+        enabled: microphoneToggle.checked,
+        selectedDeviceId: audioInputSelect.value,
+        selectedDeviceName: audioInputSelect.options[audioInputSelect.selectedIndex]?.text || '',
+        timestamp: Date.now()
+    };
+    
+    localStorage.setItem('microphoneConfig', JSON.stringify(config));
+    
+    // 如果启用，显示录音文字识别卡片
+    if (config.enabled) {
+        showRecordingCard();
+    } else {
+        hideRecordingCard();
+    }
+    
+    console.log('✅ 录音设备配置已保存', config);
+};
+
+// 显示录音文字识别卡片
+const showRecordingCard = () => {
+    const recordingCard = document.getElementById('recordingCard');
+    if (recordingCard) {
+        recordingCard.style.display = 'block';
+        // 添加一个小动画效果
+        setTimeout(() => {
+            recordingCard.style.opacity = '1';
+            recordingCard.style.transform = 'translateY(0)';
+        }, 100);
+    }
+};
+
+// 隐藏录音文字识别卡片
+const hideRecordingCard = () => {
+    const recordingCard = document.getElementById('recordingCard');
+    if (recordingCard) {
+        recordingCard.style.display = 'none';
+    }
+};
+
 // 导出主要函数供外部使用
 window.createSettingsOverlay = createSettingsOverlay;
 window.setupSettingsOverlayEvents = setupSettingsOverlayEvents;
 window.initSettingsPage = initSettingsPage;
 window.overlayManager = overlayManager;
+window.testMicrophone = testMicrophone;
+window.initMicrophoneSettings = initMicrophoneSettings;
+window.saveMicrophoneConfig = saveMicrophoneConfig;
