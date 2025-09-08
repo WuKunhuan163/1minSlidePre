@@ -9,6 +9,24 @@
     height: calc(100vh - 120px); /* 减去header高度 */
 }
 
+/* 设置界面滚动条样式 - 统一使用紫色风格 */
+.setup-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.setup-container::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+.setup-container::-webkit-scrollbar-thumb {
+    background: #666AF6;
+    border-radius: 3px;
+}
+
+.setup-container::-webkit-scrollbar-thumb:hover {
+    background: #5a5ee6;
+}
+
 @media (max-width: 500px) {
     .setup-container {
         margin: 0 auto;
@@ -1219,7 +1237,7 @@
 .mobile-progress-container {
     display: none;
     width: 100%;
-    padding: 0 20px 0 30px; /* 左边距增加10px，将进度条往右移动避免挡住内容框 */
+    padding: 0 20px;
     margin-bottom: 20px;
 }
 
