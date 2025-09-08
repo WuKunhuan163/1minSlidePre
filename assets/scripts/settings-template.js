@@ -19,7 +19,7 @@ const createSettingsOverlay = () => {
                 <div class="new-badge badge-base" id="microphoneNewBadge">NEW</div>
                 <div class="reconfig-badge badge-base" id="microphoneReconfigBadge" style="display: none;">点击重新配置</div>
                 <div class="setting-card-header">
-                    <i class='bx bx-microphone-alt'></i>
+                    <i class='bx bx-devices'></i>
                     <h3>录音设备</h3>
                     <div class="setting-toggle">
                         <input type="checkbox" id="microphoneToggle" class="toggle-input" disabled>
