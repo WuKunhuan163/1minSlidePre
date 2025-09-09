@@ -30,18 +30,16 @@ class CameraSetupManager {
                 title: '请求摄像头权限',
                 content: {
                     description: `
-                        为了录制视频，需要获取摄像头访问权限。
+                        需要摄像头权限以录制视频。
                         <br><br>
-                        系统正在自动请求摄像头权限，请在浏览器弹出的权限对话框中点击"允许"。
-                        <br><br>
-                        权限获取成功后，将自动检测可用的摄像头设备并进入下一步。
+                        请在弹出的权限对话框中点击"允许"。
                     `,
                     custom: () => this.generatePermissionInterface()
                 },
                 buttons: [
                     {
                         id: 'requestBtn',
-                        text: '请求摄像头权限',
+                        text: '请求权限',
                         type: 'secondary',
                         onClick: () => this.requestCameraPermission(),
                         show: false  // 默认隐藏，只在权限失败时显示
@@ -56,12 +54,7 @@ class CameraSetupManager {
                 title: '摄像头设备选择',
                 content: {
                     description: `
-                        选择要使用的摄像头设备并测试预览功能。
-                        <br><br>
-                        <strong>操作说明：</strong><br>
-                        1. 从下方选择要使用的摄像头设备<br>
-                        2. 查看摄像头预览确保画面正常<br>
-                        3. 确认设备工作正常后进入下一步
+                        选择摄像头设备并确认预览正常。
                     `,
                     custom: () => this.generateDeviceSelectionInterface()
                 },
@@ -90,7 +83,7 @@ class CameraSetupManager {
                 title: '演讲者模式设置',
                 content: {
                     description: `
-                        配置演讲者在录屏中的显示位置和大小。
+                        配置演讲者在录屏中的位置和大小。
                         <br><br>
                         <div class="speaker-settings">
                             <div class="setting-group">

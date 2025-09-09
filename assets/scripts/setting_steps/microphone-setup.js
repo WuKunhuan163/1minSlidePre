@@ -42,11 +42,9 @@ class MicrophoneSetupManager {
                 title: '请求麦克风权限',
                 content: {
                     description: `
-                        为了使用录音功能，需要获取浏览器的麦克风访问权限。
+                        需要麦克风权限以录制音频。
                         <br><br>
-                        系统正在自动请求麦克风权限，请在浏览器弹出的权限对话框中点击"允许"。
-                        <br><br>
-                        权限获取成功后，将自动检测可用的音频输入设备并进入下一步。
+                        请在弹出的权限对话框中点击"允许"。
                     `,
                     custom: () => this.generatePermissionInterface()
                 },
