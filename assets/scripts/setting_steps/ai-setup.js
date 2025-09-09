@@ -15,6 +15,7 @@ class AISetupManager {
         // AI测试相关变量
         this.apiTestCompleted = false;
         this.chatHistory = [];
+        this.autoTestSent = false; // 防止重复发送自动测试消息
         
         // 初始化步骤配置
         this.initializeSteps();
@@ -370,14 +371,29 @@ class AISetupManager {
             }
         ];
         
-        // 延迟自动发送测试消息进行验证
-        setTimeout(() => {
-            this.autoSendTestMessage();
-        }, 1000);
+        // 只在第一次初始化时发送自动测试消息
+        if (!this.autoTestSent) {
+            console.log('🤖 准备发送自动测试消息...');
+            // 延迟自动发送测试消息进行验证
+            setTimeout(() => {
+                if (!this.autoTestSent) { // 再次检查，防止竞态条件
+                    this.autoSendTestMessage();
+                }
+            }, 1000);
+        } else {
+            console.log('🤖 自动测试消息已发送过，跳过');
+        }
     }
 
     // 自动发送测试消息进行验证
     async autoSendTestMessage() {
+        // 防止重复发送
+        if (this.autoTestSent) {
+            console.log('🤖 自动测试消息已发送过，跳过重复发送');
+            return;
+        }
+        
+        this.autoTestSent = true; // 标记为已发送
         console.log('🤖 自动发送测试消息进行API验证');
         
         const messagesContainer = document.getElementById('chatbotMessages');
@@ -433,6 +449,9 @@ class AISetupManager {
             
             this.addMessageToChat('抱歉，自动验证遇到了问题：' + error.message, 'ai');
             this.stepManager.showStepStatus('step3', 'AI自动验证失败：' + error.message, 'error');
+            
+            // 重置自动测试标志，允许用户手动重试或重新进入步骤
+            this.autoTestSent = false;
         }
     }
 
