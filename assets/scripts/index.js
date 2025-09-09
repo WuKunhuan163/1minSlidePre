@@ -119,10 +119,11 @@ const loadPresetSlides = async () => {
                 const imageResponse = await fetch(preset.image);
                 if (imageResponse.ok) {
                     const imageBlob = await imageResponse.blob();
-                    const imageUrl = URL.createObjectURL(imageBlob);
+                    // 使用Data URL而不是Blob URL，确保页面刷新后仍然有效
+                    const imageUrl = await blobToDataURL(imageBlob);
                     slides.push(imageUrl);
                     
-                    console.log(`✅ 已加载图片: ${preset.name}`);
+                    console.log(`✅ 已加载图片: ${preset.name} (使用Data URL)`);
                 } else {
                     console.warn(`⚠️ 无法加载图片: ${preset.image}`);
                     continue;
@@ -202,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const selectHeader = customSelect.querySelector('.select-header');
     const selectedValue = customSelect.querySelector('.selected-value');
     const modeOptions = customSelect.querySelectorAll('.mode-option');
-    let selectedTime = 10 / 60; // 临时调整为10秒测试 
+    let presentationTime = 10 / 60; // 临时调整为10秒测试 
 
     let isIOSFunction = () => {
         const userAgent = window.navigator.userAgent;
@@ -219,7 +220,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     modeOptions.forEach(option => {
         option.addEventListener('click', () => {
-            selectedTime = 10 / 60; // 临时调整为10秒 (10/60分钟)
+            // 根据选择的模式设置录音时长
+            const modeText = option.textContent;
+            if (modeText.includes('1分钟')) {
+                presentationTime = 1;
+            } else if (modeText.includes('30秒')) {
+                presentationTime = 0.5;
+            } else if (modeText.includes('2分钟')) {
+                presentationTime = 2;
+            } else {
+                presentationTime = 1; // 默认1分钟
+            }
             selectedValue.textContent = option.textContent;
             customSelect.classList.remove('open');
         });
@@ -463,7 +474,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         const imageUrl = await blobToDataURL(file);
                         slides.push(imageUrl);
                         addedCount++;
-                        console.log(`✅ 添加图片: ${file.name}`);
+                        console.log(`✅ 添加图片: ${file.name} (使用Data URL)`);
                     } catch (error) {
                         console.warn(`⚠️ 处理图片失败: ${file.name}`, error);
                     }
@@ -1244,13 +1255,13 @@ window.getVideoStream = getVideoStream;
         const updateTimer = () => {
             if (!isActive) return;
             const currentTime = (Date.now() - startTime) / 1000;
-            const totalTime = selectedTime * 60;
+            const totalTime = presentationTime * 60;
             const progress = Math.min((currentTime / totalTime) * 100, 100);
             timerDisplay.textContent = formatTime(currentTime);
             progressBar.style.width = `${progress}%`;
             if (isActive) {
             if (currentTime >= totalTime && !endWarned) {
-                console.log(`⏰ 演讲时间到! 实际时长: ${totalTime}秒 (${selectedTime}分钟)`);
+                console.log(`⏰ 演讲时间到! 实际时长: ${totalTime}秒 (${presentationTime}分钟)`);
                 endWarned = true;
                     if (!effectsMuted) {
                         endSound.volume = effectsVolume * effectsVolume; // 平方权重 
@@ -1334,7 +1345,7 @@ window.getVideoStream = getVideoStream;
             await startRecording();
             
             startTime = Date.now();
-            console.log(`🎬 演讲开始! 预设时长: ${selectedTime * 60}秒 (${selectedTime}分钟)`);
+            console.log(`🎬 演讲开始! 预设时长: ${presentationTime * 60}秒 (${presentationTime}分钟)`);
             timerInterval = setInterval(updateTimer, 100);
             if (overlay) {
                 recordStopButton.addEventListener('click', async () => {

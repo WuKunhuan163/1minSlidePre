@@ -6,7 +6,10 @@
 class SettingsStepManager {
     constructor(options) {
         this.settingId = options.settingId; // 设置用例的唯一标识
-        this.title = options.title; // 设置用例的标题
+        
+        // 统一生成标题：如果没有提供标题，则自动从settingsManager获取
+        this.title = options.title || this.generateTitle(options.settingId);
+        
         this.steps = options.steps || []; // 步骤配置数组
         this.currentStepIndex = 0; // 当前步骤索引
         this.overlay = null; // overlay元素引用
@@ -17,6 +20,23 @@ class SettingsStepManager {
         // 步骤完成状态存储
         this.completionKey = `${this.settingId}_completion_status`;
         this.loadCompletionStatus();
+    }
+
+    // 统一的标题生成方法
+    generateTitle(settingId) {
+        // 首先尝试从全局设置管理器获取标题
+        if (window.settingsManager?.generateSettingTitle) {
+            try {
+                const generatedTitle = window.settingsManager.generateSettingTitle(settingId);
+                if (generatedTitle && generatedTitle !== '设置') {
+                    console.log(`✅ 从settingsManager生成标题: ${generatedTitle} (settingId: ${settingId})`);
+                    return generatedTitle;
+                }
+            } catch (error) {
+                console.warn(`⚠️ 从settingsManager生成标题失败: ${error.message}`);
+            }
+        }
+        return "设置";
     }
 
     /**
@@ -763,7 +783,7 @@ class SettingsStepManager {
      * @param {number} waitTime - 等待时间（毫秒），默认2000ms
      * @param {boolean} autoAdvance - 是否自动跳转，默认true
      */
-    async showStepWarningAndAdvance(stepId, message, waitTime = 2000, autoAdvance = true) {
+    async showStepWarning(stepId, message, waitTime = 2000) {
         console.log(`⚠️ 显示步骤警告: ${stepId}, 消息: ${message}, 等待: ${waitTime}ms, 自动跳转: ${autoAdvance}`);
         
         // 显示警告状态
@@ -771,34 +791,6 @@ class SettingsStepManager {
         
         // 等待指定时间
         await new Promise(resolve => setTimeout(resolve, waitTime));
-        
-        if (autoAdvance) {
-            // 找到当前步骤的索引
-            const currentStepIndex = this.steps.findIndex(step => step.id === stepId);
-            
-            if (currentStepIndex >= 0 && currentStepIndex < this.steps.length - 1) {
-                // 标记当前步骤为完成（即使有警告）
-                this.markStepCompleted(stepId, true);
-                
-                // 跳转到下一步
-                this.goToStep(currentStepIndex + 1);
-                console.log(`✅ 警告等待完成，已跳转到步骤 ${currentStepIndex + 2}`);
-            } else {
-                console.log(`⚠️ 已是最后一步或步骤索引无效，无法自动跳转`);
-            }
-        } else {
-            console.log(`⚠️ 警告等待完成，但不自动跳转`);
-        }
-    }
-
-    /**
-     * 显示步骤警告但不跳转（用于有验证函数的步骤）
-     * @param {string} stepId - 步骤ID
-     * @param {string} message - 警告消息
-     * @param {number} waitTime - 等待时间（毫秒），默认1000ms
-     */
-    async showStepWarningOnly(stepId, message, waitTime = 1000) {
-        return this.showStepWarningAndAdvance(stepId, message, waitTime, false);
     }
 
     // 显示步骤状态信息

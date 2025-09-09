@@ -124,10 +124,9 @@ class MicrophoneSetupManager {
 
     // 创建设置界面
     createSetup() {
-        // 创建步骤管理器实例
+        // 创建步骤管理器实例（标题将由SettingsStepManager统一生成）
         this.stepManager = new SettingsStepManager({
             settingId: this.settingId,
-            title: '录音设置',
             steps: this.steps,
             config: this.config,
             onComplete: () => this.handleSetupComplete(),
@@ -1170,9 +1169,40 @@ class MicrophoneSetupManager {
         const audioTestSection = document.getElementById('audioTestSection');
         
         if (transcriptionResult) {
-            // 显示录音信息（简化版）
-            const duration = 10; // 固定10秒录音时长
+            // 显示录音信息（从音频文件读取实际时长）
+            let duration = 10; // 默认值
             const size = (audioBlob.size / 1024).toFixed(1); // KB
+            
+            // 尝试从音频文件读取实际时长
+            try {
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audioElement = new Audio(audioUrl);
+                
+                // 等待音频元数据加载完成
+                await new Promise((resolve, reject) => {
+                    audioElement.onloadedmetadata = () => {
+                        if (audioElement.duration && audioElement.duration !== Infinity && !isNaN(audioElement.duration)) {
+                            duration = Math.round(audioElement.duration);
+                            console.log(`✅ 从音频文件读取到实际时长: ${duration}秒`);
+                        }
+                        URL.revokeObjectURL(audioUrl);
+                        resolve();
+                    };
+                    audioElement.onerror = () => {
+                        console.warn('⚠️ 音频元数据加载失败，使用默认时长');
+                        URL.revokeObjectURL(audioUrl);
+                        resolve(); // 即使失败也继续，使用默认值
+                    };
+                    // 设置超时，避免无限等待
+                    setTimeout(() => {
+                        console.warn('⚠️ 音频元数据加载超时，使用默认时长');
+                        URL.revokeObjectURL(audioUrl);
+                        resolve();
+                    }, 2000);
+                });
+            } catch (error) {
+                console.warn('⚠️ 读取音频时长失败，使用默认值:', error);
+            }
             
             // 先只显示转换状态
             transcriptionResult.innerHTML = `
@@ -1212,6 +1242,36 @@ class MicrophoneSetupManager {
                 const audioUrl = URL.createObjectURL(mp3Blob);
                 const fileFormat = mp3Blob !== audioBlob ? 'MP3' : 'WAV';
                 
+                // 从转换后的音频文件读取实际时长
+                let duration = 10; // 默认值
+                try {
+                    const audioElement = new Audio(audioUrl);
+                    
+                    // 等待音频元数据加载完成
+                    await new Promise((resolve) => {
+                        audioElement.onloadedmetadata = () => {
+                            if (audioElement.duration && audioElement.duration !== Infinity && !isNaN(audioElement.duration)) {
+                                duration = Math.round(audioElement.duration);
+                                console.log(`✅ 从${fileFormat}文件读取到实际时长: ${duration}秒`);
+                            } else {
+                                console.warn('⚠️ 音频时长无效，使用默认值10秒');
+                            }
+                            resolve();
+                        };
+                        audioElement.onerror = () => {
+                            console.warn('⚠️ 音频元数据加载失败，使用默认时长10秒');
+                            resolve();
+                        };
+                        // 设置超时，避免无限等待
+                        setTimeout(() => {
+                            console.warn('⚠️ 音频元数据加载超时，使用默认时长10秒');
+                            resolve();
+                        }, 2000);
+                    });
+                } catch (error) {
+                    console.warn('⚠️ 读取音频时长失败，使用默认值10秒:', error);
+                }
+                
                 // 更新显示内容
                 transcriptionResult.innerHTML = `
                     <div class="recording-text" style="margin-bottom: 15px;">
@@ -1226,6 +1286,37 @@ class MicrophoneSetupManager {
                 console.error('MP3转换失败:', error);
                 // 转换失败，使用原始WAV文件
                 const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // 从原始音频文件读取实际时长
+                let duration = 10; // 默认值
+                try {
+                    const audioElement = new Audio(audioUrl);
+                    
+                    // 等待音频元数据加载完成
+                    await new Promise((resolve) => {
+                        audioElement.onloadedmetadata = () => {
+                            if (audioElement.duration && audioElement.duration !== Infinity && !isNaN(audioElement.duration)) {
+                                duration = Math.round(audioElement.duration);
+                                console.log(`✅ 从WAV文件读取到实际时长: ${duration}秒`);
+                            } else {
+                                console.warn('⚠️ 音频时长无效，使用默认值10秒');
+                            }
+                            resolve();
+                        };
+                        audioElement.onerror = () => {
+                            console.warn('⚠️ 音频元数据加载失败，使用默认时长10秒');
+                            resolve();
+                        };
+                        // 设置超时，避免无限等待
+                        setTimeout(() => {
+                            console.warn('⚠️ 音频元数据加载超时，使用默认时长10秒');
+                            resolve();
+                        }, 2000);
+                    });
+                } catch (durationError) {
+                    console.warn('⚠️ 读取音频时长失败，使用默认值10秒:', durationError);
+                }
+                
                 transcriptionResult.innerHTML = `
                     <div class="recording-text" style="margin-bottom: 15px;">
                         录音时长：${duration}秒，文件大小：${size}KB

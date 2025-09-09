@@ -102,7 +102,7 @@ class AudioSetupManager {
                         <br><br>
                         <strong>操作步骤：</strong><br>
                         1. 前往<a href="https://ram.console.aliyun.com/overview?activeTab=workflow" target="_blank">RAM控制台工作流程</a><br>
-                        2. 选择"创建初始用户"下方的"账号管理员"选项<br>
+                        2. 选择"创建初始用户"下的"账号管理员"<br>
                         3. 点击"执行配置"完成验证
                     `,
                     image: 'assets/images/settings/step_3_create_user.png'
@@ -245,10 +245,10 @@ class AudioSetupManager {
 
     // 创建设置界面
     createSetup() {
-        // 创建步骤管理器实例
+        // 创建步骤管理器实例（标题将由SettingsStepManager统一生成）
+        // 注意：audio设置使用'recording'作为settingId来获取正确的标题
         this.stepManager = new SettingsStepManager({
-            settingId: this.settingId,
-            title: '录音文字识别设置',
+            settingId: 'recording', // 使用'recording'而不是this.settingId('audio')来获取正确的标题
             steps: this.steps,
             config: this.config,
             onComplete: () => this.handleSetupComplete(),
@@ -356,7 +356,7 @@ class AudioSetupManager {
                     valid: true, 
                     warning: true, 
                     message: formatCheck.error + '，' + formatCheck.suggestion,
-                    suggestion: '将在第5步语音识别时进行实际验证'
+                    suggestion: '将在语音识别进行实际验证'
                 };
             } else {
                 // 其他错误（如空值）直接抛出
@@ -367,7 +367,7 @@ class AudioSetupManager {
         // 格式正确，返回成功但说明实际验证在第5步
         return { 
             valid: true, 
-            message: '格式检查通过，将在第5步语音识别时进行实际验证' 
+            message: '格式检查通过，将在语音识别进行实际验证' 
         };
     }
 
@@ -387,7 +387,15 @@ class AudioSetupManager {
             if (validationResult.warning) {
                 // 格式有问题，显示警告并等待跳转
                 const warningMessage = `${validationResult.message}。${validationResult.suggestion}`;
-                await this.stepManager.showStepWarningAndAdvance('step2', warningMessage, 2000);
+                
+                // 显示警告状态
+                this.stepManager.showStepStatus('step2', warningMessage, 'warning');
+                
+                // 等待2秒后跳转
+                setTimeout(() => {
+                    this.stepManager.markStepCompleted('step2', true);
+                    this.stepManager.goToStep(2); // 跳转到步骤3
+                }, 2000);
             } else {
                 // 格式正确，正常跳转
                 this.stepManager.showStepStatus('step2', validationResult.message, 'success');
@@ -575,7 +583,7 @@ class AudioSetupManager {
             // 如果有格式警告，先显示警告信息
             if (hasFormatWarning) {
                 const warningMessage = warningMessages.join('；') + '。将进行实际API验证';
-                await this.stepManager.showStepWarningOnly('step4', warningMessage, 1500);
+                await this.stepManager.showStepWarning('step4', warningMessage, 1500);
             }
             
             this.stepManager.showStepStatus('step4', '正在验证AccessKey...', 'processing');
@@ -801,6 +809,17 @@ class AudioSetupManager {
             if (!this.selectedDeviceId) {
                 this.stepManager.showStepStatus('step5', '请先选择麦克风设备', 'warning');
                 return;
+            }
+
+            // 如果有之前的录音，先清除状态（隐藏下载按钮等）
+            if (this.recordingTestCompleted || this.lastRecordedAudio) {
+                console.log('🔄 开始新录音，清除之前的录音状态...');
+                // 隐藏之前的下载按钮和完成按钮
+                this.stepManager.hideButton('step5', 'downloadBtn');
+                this.stepManager.hideButton('step5', 'completeBtn');
+                // 重置录音完成状态
+                this.recordingTestCompleted = false;
+                this.lastRecordedAudio = null;
             }
 
             // 使用选择的设备进行录音

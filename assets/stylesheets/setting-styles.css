@@ -41,6 +41,290 @@
     border-radius: 12px;
 }
 
+/* 快速测试状态样式 */
+.setting-card.quick-testing {
+    border-color: #8B5CF6;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+    overflow: hidden;
+}
+
+/* 流体测试背景 */
+.fluid-testing-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 流体波浪动画 */
+.fluid-wave {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, 
+        rgba(139, 92, 246, 0.1) 0%,
+        rgba(168, 85, 247, 0.15) 25%,
+        rgba(139, 92, 246, 0.1) 50%,
+        rgba(168, 85, 247, 0.15) 75%,
+        rgba(139, 92, 246, 0.1) 100%);
+    border-radius: 50%;
+    animation: fluidWave 3s ease-in-out infinite;
+}
+
+.fluid-wave.wave1 {
+    top: -50%;
+    left: -50%;
+    animation-delay: 0s;
+    animation-duration: 3s;
+}
+
+.fluid-wave.wave2 {
+    top: -75%;
+    left: -25%;
+    animation-delay: -1s;
+    animation-duration: 4s;
+}
+
+.fluid-wave.wave3 {
+    top: -25%;
+    left: -75%;
+    animation-delay: -2s;
+    animation-duration: 5s;
+}
+
+@keyframes fluidWave {
+    0% {
+        transform: rotate(0deg) scale(0.8);
+        opacity: 0.3;
+    }
+    50% {
+        transform: rotate(180deg) scale(1.2);
+        opacity: 0.6;
+    }
+    100% {
+        transform: rotate(360deg) scale(0.8);
+        opacity: 0.3;
+    }
+}
+
+/* 确保卡片内容在流体背景之上 */
+.setting-card.quick-testing .setting-card-header,
+.setting-card.quick-testing .setting-card-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* 快速测试指示器 */
+.quick-test-indicator {
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* 状态提示框 */
+.status-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 1px solid #333;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+}
+
+.status-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1a1a1a;
+}
+
+.quick-test-indicator:hover .status-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 不同状态的提示框颜色 */
+.status-tooltip.success {
+    border-color: #10B981;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.status-tooltip.failed {
+    border-color: #F59E0B;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.status-tooltip.testing {
+    border-color: #8B5CF6;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.status-tooltip.unconfigured {
+    border-color: #666;
+    box-shadow: 0 4px 12px rgba(102, 102, 102, 0.2);
+}
+
+.test-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #666;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.test-status-dot.testing {
+    background: #8B5CF6;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.test-status-dot.success {
+    background: #10B981;
+}
+
+.test-status-dot.failed {
+    background: #F59E0B; /* 黄色表示失败 */
+}
+
+.test-status-dot.unconfigured {
+    background: #666; /* 灰色表示未配置 */
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* 消息框样式 */
+.message-box {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 400px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.message-box.message-error {
+    border-color: #EF4444;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
+}
+
+.message-box.message-success {
+    border-color: #10B981;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+}
+
+.message-box.message-info {
+    border-color: #666AF6;
+    box-shadow: 0 4px 20px rgba(102, 106, 246, 0.2);
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #333;
+}
+
+.message-header i {
+    font-size: 18px;
+    margin-right: 8px;
+}
+
+.message-error .message-header i {
+    color: #EF4444;
+}
+
+.message-success .message-header i {
+    color: #10B981;
+}
+
+.message-info .message-header i {
+    color: #666AF6;
+}
+
+.message-header h4 {
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    flex: 1;
+}
+
+.message-close {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.message-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.message-content {
+    padding: 12px 16px;
+}
+
+.message-content p {
+    color: #ccc;
+    font-size: 13px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 .setting-card:hover {
     border-color: #555;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -228,6 +512,184 @@
 
 .settings-footer a:hover {
     text-decoration: underline;
+}
+
+/* 动态生成字段样式 */
+.field-value {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 12px;
+    transition: border-color 0.3s ease;
+}
+
+.field-value:hover {
+    border-color: #666AF6;
+}
+
+.field-value.text-field {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+.field-value.password-field {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+.value-text {
+    color: #ccc;
+    font-size: 14px;
+    flex: 1;
+    word-break: break-all;
+}
+
+.masked-value {
+    color: #888;
+    font-size: 14px;
+    flex: 1;
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
+.real-value {
+    color: #ccc;
+    font-size: 14px;
+    flex: 1;
+    word-break: break-all;
+}
+
+.toggle-visibility-btn,
+.copy-field-btn {
+    background: #666AF6;
+    border: none;
+    color: white;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    min-width: 32px;
+    height: 28px;
+}
+
+.toggle-visibility-btn:hover,
+.copy-field-btn:hover {
+    background: #5a5ee6;
+    transform: translateY(-1px);
+}
+
+.toggle-visibility-btn i,
+.copy-field-btn i {
+    font-size: 14px;
+}
+
+/* 复制成功状态 */
+.copy-field-btn.success {
+    background: #28a745;
+}
+
+.copy-field-btn.success:hover {
+    background: #218838;
+}
+
+/* 字段动画效果 */
+.setting-field {
+    animation: fadeInField 0.3s ease;
+}
+
+@keyframes fadeInField {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 快速测试按钮样式 */
+.quick-test-btn {
+    background: #28a745;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.quick-test-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.quick-test-btn.testing {
+    background: #ffc107;
+    cursor: not-allowed;
+}
+
+.quick-test-btn.testing:hover {
+    background: #ffc107;
+    transform: none;
+}
+
+.quick-test-btn i {
+    font-size: 14px;
+}
+
+/* 快速测试结果样式 */
+.quick-test-result {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 10px;
+    animation: slideInResult 0.3s ease;
+}
+
+.quick-test-result.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.quick-test-result.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.quick-test-result i {
+    font-size: 14px;
+}
+
+@keyframes slideInResult {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .volume-control-content {

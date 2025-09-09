@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>临时录音测试页面</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #666AF6;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .recording-section {
+            margin-bottom: 30px;
+        }
+
+        .device-selector {
+            margin-bottom: 20px;
+        }
+
+        .device-selector label {
+            display: block;
+            color: #ccc;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .device-selector select {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .device-selector select:focus {
+            outline: none;
+            border-color: #666AF6;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #666AF6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a5ee6;
+        }
+
+        .btn-primary:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: #EF4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: #10B981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .status-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .status-indicator.recording {
+            border-color: #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .status-indicator .status-text {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 4px;
+        }
+
+        .status-indicator.recording .status-text {
+            color: #EF4444;
+        }
+
+        .status-indicator .timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .volume-meter {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .volume-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #EF4444);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .download-section {
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .download-section h3 {
+            color: #ccc;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .recording-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .recording-info {
+            flex: 1;
+        }
+
+        .recording-name {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .recording-details {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .recording-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-download {
+            background: #666AF6;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #5a5ee6;
+        }
+
+        .btn-play {
+            background: #10B981;
+            color: white;
+        }
+
+        .btn-play:hover {
+            background: #059669;
+        }
+
+        .btn-delete {
+            background: #EF4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            padding: 20px;
+        }
+
+        /* 录音状态动画 */
+        @keyframes recordingPulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .recording-pulse {
+            animation: recordingPulse 1s ease-in-out infinite;
+        }
+
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 350px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            display: flex;
+            align-items: flex-start;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .notification-success {
+            border-color: #10B981;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .notification-info {
+            border-color: #666AF6;
+            box-shadow: 0 4px 20px rgba(102, 106, 246, 0.2);
+        }
+
+        .notification-content {
+            flex: 1;
+            padding: 12px 16px;
+        }
+
+        .notification-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .notification-message {
+            color: #ccc;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            padding: 8px 12px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .notification-close:hover {
+            color: white;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class='bx bx-microphone'></i> 录音测试工具</h1>
+            <p>用于测试录音功能并生成WebM文件</p>
+        </div>
+
+        <div class="recording-section">
+            <div class="device-selector">
+                <label for="audioDevice">选择录音设备：</label>
+                <select id="audioDevice">
+                    <option value="">正在检测设备...</option>
+                </select>
+            </div>
+
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-text" id="statusText">准备就绪</div>
+                <div class="timer" id="timer">00:00</div>
+                <div class="volume-meter">
+                    <div class="volume-fill" id="volumeFill"></div>
+                </div>
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn btn-primary" id="startBtn">
+                    <i class='bx bx-play'></i>
+                    开始录音
+                </button>
+                <button class="btn btn-danger" id="stopBtn" disabled>
+                    <i class='bx bx-stop'></i>
+                    停止录音
+                </button>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <h3><i class='bx bx-download'></i> 录音文件</h3>
+            <div id="recordingsList">
+                <div class="empty-state">
+                    暂无录音文件
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RecordingTester {
+            constructor() {
+                this.mediaRecorder = null;
+                this.audioContext = null;
+                this.analyser = null;
+                this.stream = null;
+                this.recordedChunks = [];
+                this.recordings = [];
+                this.isRecording = false;
+                this.startTime = null;
+                this.timerInterval = null;
+                this.volumeAnimationId = null;
+
+                this.initializeElements();
+                this.setupEventListeners();
+                this.detectAudioDevices();
+            }
+
+            initializeElements() {
+                this.audioDevice = document.getElementById('audioDevice');
+                this.statusIndicator = document.getElementById('statusIndicator');
+                this.statusText = document.getElementById('statusText');
+                this.timer = document.getElementById('timer');
+                this.volumeFill = document.getElementById('volumeFill');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.recordingsList = document.getElementById('recordingsList');
+            }
+
+            setupEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+            }
+
+            async detectAudioDevices() {
+                try {
+                    // 请求麦克风权限
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+
+                    // 枚举设备
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const audioInputs = devices.filter(device => device.kind === 'audioinput');
+
+                    this.audioDevice.innerHTML = '';
+
+                    if (audioInputs.length === 0) {
+                        this.audioDevice.innerHTML = '<option value="">未检测到音频输入设备</option>';
+                        this.startBtn.disabled = true;
+                        return;
+                    }
+
+                    audioInputs.forEach((device, index) => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.textContent = device.label || `麦克风 ${index + 1}`;
+                        this.audioDevice.appendChild(option);
+                    });
+
+                    // 默认选择第一个设备
+                    if (audioInputs.length > 0) {
+                        this.audioDevice.value = audioInputs[0].deviceId;
+                    }
+
+                    console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
+
+                } catch (error) {
+                    console.error('❌ 检测音频设备失败:', error);
+                    this.audioDevice.innerHTML = '<option value="">检测失败，请检查麦克风权限</option>';
+                    this.startBtn.disabled = true;
+                }
+            }
+
+            async startRecording() {
+                try {
+                    const deviceId = this.audioDevice.value;
+                    if (!deviceId) {
+                        alert('请选择录音设备');
+                        return;
+                    }
+
+                    // 获取音频流
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        audio: { 
+                            deviceId: { exact: deviceId },
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+
+                    // 设置音频分析器（用于音量显示）
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.analyser = this.audioContext.createAnalyser();
+                    const source = this.audioContext.createMediaStreamSource(this.stream);
+                    this.analyser.fftSize = 256;
+                    source.connect(this.analyser);
+
+                    // 设置MediaRecorder
+                    this.mediaRecorder = new MediaRecorder(this.stream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+
+                    this.recordedChunks = [];
+
+                    this.mediaRecorder.addEventListener('dataavailable', (event) => {
+                        if (event.data.size > 0) {
+                            this.recordedChunks.push(event.data);
+                        }
+                    });
+
+                    this.mediaRecorder.addEventListener('stop', () => {
+                        this.saveRecording();
+                    });
+
+                    // 开始录音
+                    this.mediaRecorder.start();
+                    this.isRecording = true;
+                    this.startTime = Date.now();
+
+                    // 更新UI
+                    this.updateRecordingUI();
+                    this.startTimer();
+                    this.startVolumeMonitoring();
+
+                    console.log('🎙️ 录音开始');
+
+                } catch (error) {
+                    console.error('❌ 录音开始失败:', error);
+                    alert('录音开始失败: ' + error.message);
+                }
+            }
+
+            stopRecording() {
+                if (!this.isRecording || !this.mediaRecorder) return;
+
+                this.mediaRecorder.stop();
+                this.isRecording = false;
+
+                // 停止音频流
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                }
+
+                // 关闭音频上下文
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+
+                // 停止定时器和音量监测
+                this.stopTimer();
+                this.stopVolumeMonitoring();
+
+                // 更新UI
+                this.updateStoppedUI();
+
+                console.log('🛑 录音停止');
+            }
+
+            updateRecordingUI() {
+                this.statusIndicator.classList.add('recording');
+                this.statusText.textContent = '正在录音...';
+                this.statusText.classList.add('recording-pulse');
+                this.startBtn.disabled = true;
+                this.stopBtn.disabled = false;
+                this.audioDevice.disabled = true;
+            }
+
+            updateStoppedUI() {
+                this.statusIndicator.classList.remove('recording');
+                this.statusText.textContent = '准备就绪';
+                this.statusText.classList.remove('recording-pulse');
+                this.timer.textContent = '00:00';
+                this.volumeFill.style.width = '0%';
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.audioDevice.disabled = false;
+            }
+
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    const elapsed = Date.now() - this.startTime;
+                    const seconds = Math.floor(elapsed / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    
+                    this.timer.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            startVolumeMonitoring() {
+                if (!this.analyser) return;
+
+                const bufferLength = this.analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                const updateVolume = () => {
+                    if (!this.isRecording || !this.analyser) return;
+
+                    this.analyser.getByteFrequencyData(dataArray);
+
+                    // 计算平均音量
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        sum += dataArray[i];
+                    }
+                    const average = sum / bufferLength;
+                    const volume = (average / 255) * 100;
+
+                    // 更新音量条
+                    this.volumeFill.style.width = volume + '%';
+
+                    this.volumeAnimationId = requestAnimationFrame(updateVolume);
+                };
+
+                updateVolume();
+            }
+
+            stopVolumeMonitoring() {
+                if (this.volumeAnimationId) {
+                    cancelAnimationFrame(this.volumeAnimationId);
+                    this.volumeAnimationId = null;
+                }
+            }
+
+            saveRecording() {
+                const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+                const url = URL.createObjectURL(blob);
+                const duration = Date.now() - this.startTime;
+                const timestamp = new Date().toLocaleString();
+
+                const recording = {
+                    id: Date.now(),
+                    name: `录音_${new Date().toLocaleString().replace(/[\/\s:]/g, '_')}.webm`,
+                    url: url,
+                    blob: blob,
+                    duration: Math.floor(duration / 1000),
+                    timestamp: timestamp,
+                    size: blob.size
+                };
+
+                this.recordings.unshift(recording);
+                this.updateRecordingsList();
+
+                // 自动保存第一个录音作为快速测试音频
+                this.saveAsQuickTestAudio(recording);
+
+                console.log('💾 录音已保存:', recording);
+            }
+
+            // 保存为快速测试音频
+            async saveAsQuickTestAudio(recording) {
+                try {
+                    // 将blob转换为base64字符串以便存储
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const testAudioData = {
+                            blob: reader.result, // base64字符串
+                            size: recording.size,
+                            duration: recording.duration,
+                            timestamp: Date.now(),
+                            name: recording.name
+                        };
+                        
+                        localStorage.setItem('quickTestAudio', JSON.stringify(testAudioData));
+                        console.log('🧪 已保存为快速测试音频:', testAudioData.name);
+                        
+                        // 显示提示信息
+                        this.showNotification('已保存为测试音频', '这个录音将用于录音识别的快速测试', 'success');
+                    };
+                    reader.readAsDataURL(recording.blob);
+                } catch (error) {
+                    console.error('保存快速测试音频失败:', error);
+                }
+            }
+
+            // 显示通知
+            showNotification(title, message, type = 'info') {
+                // 移除现有通知
+                const existingNotification = document.querySelector('.notification');
+                if (existingNotification) {
+                    existingNotification.remove();
+                }
+
+                // 创建新通知
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <div class="notification-title">${title}</div>
+                        <div class="notification-message">${message}</div>
+                    </div>
+                    <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+                `;
+
+                document.body.appendChild(notification);
+
+                // 自动消失
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 4000);
+            }
+
+            updateRecordingsList() {
+                if (this.recordings.length === 0) {
+                    this.recordingsList.innerHTML = '<div class="empty-state">暂无录音文件</div>';
+                    return;
+                }
+
+                const recordingsHTML = this.recordings.map(recording => {
+                    const sizeKB = Math.round(recording.size / 1024);
+                    return `
+                        <div class="recording-item">
+                            <div class="recording-info">
+                                <div class="recording-name">${recording.name}</div>
+                                <div class="recording-details">
+                                    时长: ${recording.duration}秒 | 大小: ${sizeKB}KB | ${recording.timestamp}
+                                </div>
+                            </div>
+                            <div class="recording-actions">
+                                <button class="btn-small btn-play" onclick="recordingTester.playRecording(${recording.id})">
+                                    <i class='bx bx-play'></i>
+                                </button>
+                                <button class="btn-small btn-download" onclick="recordingTester.downloadRecording(${recording.id})">
+                                    <i class='bx bx-download'></i>
+                                </button>
+                                <button class="btn-small btn-delete" onclick="recordingTester.deleteRecording(${recording.id})">
+                                    <i class='bx bx-trash'></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                this.recordingsList.innerHTML = recordingsHTML;
+            }
+
+            playRecording(id) {
+                const recording = this.recordings.find(r => r.id === id);
+                if (!recording) return;
+
+                const audio = new Audio(recording.url);
+                audio.play().catch(error => {
+                    console.error('播放失败:', error);
+                    alert('播放失败: ' + error.message);
+                });
+            }
+
+            downloadRecording(id) {
+                const recording = this.recordings.find(r => r.id === id);
+                if (!recording) return;
+
+                const a = document.createElement('a');
+                a.href = recording.url;
+                a.download = recording.name;
+                a.click();
+
+                console.log('⬇️ 下载录音:', recording.name);
+            }
+
+            deleteRecording(id) {
+                if (!confirm('确定要删除这个录音吗？')) return;
+
+                const index = this.recordings.findIndex(r => r.id === id);
+                if (index === -1) return;
+
+                const recording = this.recordings[index];
+                URL.revokeObjectURL(recording.url);
+                this.recordings.splice(index, 1);
+                this.updateRecordingsList();
+
+                console.log('🗑️ 删除录音:', recording.name);
+            }
+        }
+
+        // 初始化录音测试器
+        const recordingTester = new RecordingTester();
+
+        console.log('🎤 录音测试页面已加载');
+    </script>
+</body>
+</html>

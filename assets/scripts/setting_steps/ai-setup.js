@@ -131,10 +131,9 @@ class AISetupManager {
 
     // 创建设置界面
     createSetup() {
-        // 创建步骤管理器实例
+        // 创建步骤管理器实例（标题将由SettingsStepManager统一生成）
         this.stepManager = new SettingsStepManager({
             settingId: this.settingId,
-            title: '智谱AI评分设置',
             steps: this.steps,
             config: this.config,
             onComplete: () => this.handleSetupComplete(),

@@ -1335,6 +1335,12 @@ const updateSettingFieldsUI = (settingId, fields) => {
         contentContainer.insertAdjacentHTML('beforeend', fieldHtml);
     });
     
+    // 如果有字段内容，自动展开设置卡片
+    if (fields && fields.length > 0) {
+        contentContainer.classList.add('expanded');
+        console.log(`✅ 已展开 ${settingId} 设置卡片内容`);
+    }
+    
     // console.log(`✅ 已更新 ${settingId} 设置UI显示`);
 };
 
@@ -1357,9 +1363,10 @@ const generateFieldHtml = (field) => {
         `;
     } else {
         // 明文显示
+        const displayValue = field.value || '未设置';
         valueHtml = `
             <div class="field-value text-field" id="${fieldId}">
-                <span class="value-text">${field.value}</span>
+                <span class="value-text">${displayValue}</span>
             </div>
         `;
     }
