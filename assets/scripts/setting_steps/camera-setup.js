@@ -165,8 +165,8 @@ class CameraSetupManager {
         // 创建overlay
         const overlay = this.stepManager.createOverlay();
         
-        // 显示设置界面
-        this.stepManager.show();
+        // 全局引用，供onclick事件使用
+        window.cameraManager = this;
         
         return overlay;
     }
