@@ -151,7 +151,43 @@ class CameraSetupManager {
         console.log('📹 步骤管理器已设置');
     }
 
-    // 创建步骤管理器实例
+    // 创建设置界面
+    createSetup() {
+        // 创建步骤管理器实例（标题将由SettingsStepManager统一生成）
+        this.stepManager = new SettingsStepManager({
+            settingId: this.settingId,
+            steps: this.steps,
+            config: this.config || {},
+            onComplete: () => this.handleSetupComplete(),
+            onBack: () => this.handleBackToSettings()
+        });
+
+        // 创建overlay
+        const overlay = this.stepManager.createOverlay();
+        
+        // 显示设置界面
+        this.stepManager.show();
+        
+        return overlay;
+    }
+
+    // 处理设置完成
+    handleSetupComplete() {
+        console.log('✅ 摄像头设置完成');
+        this.saveConfiguration();
+        if (window.settingsManager) {
+            window.settingsManager.refreshSetting(this.settingId);
+        }
+        this.cleanup();
+    }
+
+    // 处理返回设置列表
+    handleBackToSettings() {
+        console.log('🔙 返回设置列表');
+        this.cleanup();
+    }
+
+    // 创建步骤管理器实例（保留原方法用于内部使用）
     createStepManager() {
         const stepManagerOptions = {
             settingId: this.settingId,
@@ -748,3 +784,14 @@ if (typeof window !== 'undefined') {
     window.cameraSetupManager = cameraSetupManager;
     window.initializeCameraSetup = initializeCameraSetup;
 }
+
+// 全局导出
+window.CameraSetupManager = CameraSetupManager;
+
+// 创建摄像头设置界面函数
+window.createCameraSetupOverlay = () => {
+    const manager = new CameraSetupManager();
+    return manager.createSetup();
+};
+
+console.log('📹 摄像头设置管理器已加载');
