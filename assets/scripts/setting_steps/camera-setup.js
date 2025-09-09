@@ -32,45 +32,61 @@ class CameraSetupManager {
                     description: `
                         为了录制视频，需要获取摄像头访问权限。
                         <br><br>
-                        <div class="permission-status">
-                            <div class="status-item">
-                                <i id="cameraIcon" class="bx bx-camera"></i>
-                                <span id="cameraStatus">等待权限请求</span>
-                            </div>
-                        </div>
-                        <br>
-                        <div id="cameraDeviceSection" style="display: none;">
-                            <label for="cameraDeviceSelect">选择摄像头设备：</label>
-                            <select id="cameraDeviceSelect" class="form-control">
-                                <option value="">请选择摄像头设备</option>
-                            </select>
-                            <br><br>
-                            <video id="cameraPreview" style="display: none; width: 100%; max-width: 400px; border-radius: 8px;" autoplay muted></video>
-                        </div>
-                    `
+                        系统正在自动请求摄像头权限，请在浏览器弹出的权限对话框中点击"允许"。
+                        <br><br>
+                        权限获取成功后，将自动检测可用的摄像头设备并进入下一步。
+                    `,
+                    custom: () => this.generatePermissionInterface()
                 },
                 buttons: [
                     {
                         id: 'requestBtn',
                         text: '请求摄像头权限',
-                        type: 'primary',
-                        isPrimary: true,
+                        type: 'secondary',
                         onClick: () => this.requestCameraPermission(),
+                        show: false  // 默认隐藏，只在权限失败时显示
+                    }
+                ],
+                autoJumpCondition: () => this.validatePermissionGranted(),
+                onEnter: () => this.initializePermissionStep(),
+                validation: () => this.validatePermissionGranted()
+            },
+            {
+                id: 'step2',
+                title: '摄像头设备选择',
+                content: {
+                    description: `
+                        选择要使用的摄像头设备并测试预览功能。
+                        <br><br>
+                        <strong>操作说明：</strong><br>
+                        1. 从下方选择要使用的摄像头设备<br>
+                        2. 查看摄像头预览确保画面正常<br>
+                        3. 确认设备工作正常后进入下一步
+                    `,
+                    custom: () => this.generateDeviceSelectionInterface()
+                },
+                buttons: [
+                    {
+                        id: 'backBtn',
+                        text: '上一步',
+                        type: 'back',
+                        onClick: () => this.stepManager.prevStep(),
                         show: true
                     },
                     {
                         id: 'nextBtn',
                         text: '下一步',
-                        type: 'success',
+                        type: 'primary',
+                        isPrimary: true,
                         onClick: () => this.stepManager.nextStep(),
                         show: false
                     }
                 ],
-                onEnter: () => this.initializePermissionStep(),
-                validation: () => this.permissionGranted && this.selectedDeviceId
+                onEnter: () => this.initializeDeviceSelection(),
+                validation: () => this.selectedDeviceId !== null
             },
             {
-                id: 'step2',
+                id: 'step3',
                 title: '演讲者模式设置',
                 content: {
                     description: `
@@ -145,6 +161,41 @@ class CameraSetupManager {
         ];
     }
 
+    // 生成权限请求界面
+    generatePermissionInterface() {
+        return `
+            <div class="permission-status" id="permissionStatus">
+                <div class="status-item">
+                    <i class='bx bx-camera' id="cameraIcon"></i>
+                    <span id="cameraStatus">等待权限请求</span>
+                </div>
+            </div>
+            
+            <div class="device-section" id="deviceSection" style="display: none;">
+                <h4>检测到的摄像头设备：</h4>
+                <div class="device-list" id="deviceList">
+                    <!-- 设备列表将动态生成 -->
+                </div>
+            </div>
+        `;
+    }
+
+    // 生成设备选择界面
+    generateDeviceSelectionInterface() {
+        return `
+            <div class="form-group" id="deviceSelectionGroup">
+                <label for="cameraDeviceSelect">选择摄像头设备：</label>
+                <select id="cameraDeviceSelect" class="form-control">
+                    <option value="">选择设备...</option>
+                </select>
+            </div>
+            
+            <div class="camera-preview" id="cameraPreviewSection" style="display: none;">
+                <video id="cameraPreview" width="400" height="300" autoplay muted></video>
+            </div>
+        `;
+    }
+
     // 初始化步骤管理器
     initStepManager(stepManager) {
         this.stepManager = stepManager;
@@ -207,6 +258,11 @@ class CameraSetupManager {
         return new SettingsStepManager(stepManagerOptions);
     }
 
+    // 验证权限是否已获取
+    validatePermissionGranted() {
+        return this.permissionGranted && this.devicesDetected;
+    }
+
     // 初始化设置
     async initialize() {
         console.log('📹 开始初始化摄像头设置...');
@@ -226,44 +282,36 @@ class CameraSetupManager {
         }
     }
 
-    // 初始化权限步骤 - 重置状态，等待用户交互
+    // 初始化权限步骤 - 自动请求权限
     initializePermissionStep() {
-        console.log('🔄 初始化权限步骤，重置权限状态等待用户交互...');
+        console.log('🔄 初始化权限步骤，自动请求摄像头权限...');
         
-        // 重置权限状态（无论之前是否有权限）
+        // 重置权限状态
         this.permissionGranted = false;
         this.devicesDetected = false;
         
-        // 更新UI显示等待状态
-        const cameraStatus = document.getElementById('cameraStatus');
-        const cameraIcon = document.getElementById('cameraIcon');
-        const deviceSection = document.getElementById('cameraDeviceSection');
-        
-        if (cameraStatus) cameraStatus.textContent = '等待权限请求';
-        if (cameraIcon) {
-            cameraIcon.className = 'bx bx-camera';
-            cameraIcon.style.color = '';
-        }
-        if (deviceSection) deviceSection.style.display = 'none';
-        
-        // 显示请求权限按钮，等待用户手动点击
-        console.log('🔘 准备显示请求权限按钮...');
-        console.log('stepManager存在:', !!this.stepManager);
-        console.log('stepManager.showButton方法存在:', typeof this.stepManager?.showButton);
-        
-        this.stepManager.showButton('step1', 'requestBtn');
-        
-        console.log('🔘 showButton命令已执行');
-        
-        // 更新按钮文本和状态提示
+        // 自动开始权限请求
         setTimeout(() => {
-            const statusElement = document.getElementById('cameraStatus');
-            if (statusElement) {
-                statusElement.textContent = '请申请摄像头权限';
-            }
-        }, 100);
+            this.requestCameraPermission();
+        }, 500);
         
-        console.log('✅ 权限步骤已初始化，等待用户手动申请权限');
+        console.log('✅ 权限步骤已初始化，自动请求权限中...');
+    }
+
+    // 初始化设备选择步骤
+    initializeDeviceSelection() {
+        console.log('📹 初始化设备选择步骤...');
+        
+        // 填充设备下拉框
+        this.populateDeviceSelectDropdown();
+        
+        // 绑定设备选择事件
+        const deviceSelect = document.getElementById('cameraDeviceSelect');
+        if (deviceSelect) {
+            deviceSelect.addEventListener('change', (e) => this.handleDeviceSelection(e.target.value));
+        }
+        
+        console.log('✅ 设备选择步骤已初始化');
     }
 
     // 请求摄像头权限
@@ -389,11 +437,7 @@ class CameraSetupManager {
             
             if (this.availableDevices.length > 0) {
                 this.devicesDetected = true;
-                this.populateDeviceSelect();
-                
-                // 显示设备选择区域
-                const deviceSection = document.getElementById('cameraDeviceSection');
-                if (deviceSection) deviceSection.style.display = 'block';
+                this.displayDeviceList();
             } else {
                 console.warn('⚠️ 未检测到摄像头设备');
                 this.stepManager.showStepStatus('step1', '未检测到摄像头设备', 'warning');
@@ -405,8 +449,44 @@ class CameraSetupManager {
         }
     }
 
-    // 填充设备选择下拉框
-    populateDeviceSelect() {
+    // 显示设备列表（第一步使用）
+    displayDeviceList() {
+        console.log('📹 显示摄像头设备列表...');
+        
+        const deviceSection = document.getElementById('deviceSection');
+        const deviceList = document.getElementById('deviceList');
+        
+        if (deviceSection && deviceList) {
+            if (this.availableDevices.length > 0) {
+                deviceSection.style.display = 'block';
+                
+                let deviceHtml = '';
+                this.availableDevices.forEach((device, index) => {
+                    const deviceName = device.label || `摄像头 ${index + 1}`;
+                    deviceHtml += `
+                        <div class="device-item" data-device-id="${device.deviceId}">
+                            <div class="device-info">
+                                <i class='bx bx-camera'></i>
+                                <span class="device-name">${deviceName}</span>
+                            </div>
+                            <div class="device-status">
+                                <span>可用</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                deviceList.innerHTML = deviceHtml;
+            } else {
+                deviceList.innerHTML = '<div class="device-item">未检测到摄像头设备</div>';
+            }
+        }
+        
+        console.log(`✅ 显示了 ${this.availableDevices.length} 个摄像头设备`);
+    }
+
+    // 填充设备下拉框（第二步使用）
+    populateDeviceSelectDropdown() {
         const deviceSelect = document.getElementById('cameraDeviceSelect');
         if (!deviceSelect) {
             console.error('❌ 找不到摄像头设备选择元素');
@@ -414,7 +494,7 @@ class CameraSetupManager {
         }
         
         // 清空现有选项
-        deviceSelect.innerHTML = '<option value="">请选择摄像头设备</option>';
+        deviceSelect.innerHTML = '<option value="">选择设备...</option>';
         
         // 添加设备选项
         this.availableDevices.forEach((device, index) => {
@@ -427,6 +507,7 @@ class CameraSetupManager {
         console.log('📹 设备选择下拉框已更新');
     }
 
+
     // 处理设备选择变化
     async handleDeviceSelection(deviceId) {
         console.log('📹 用户选择了设备:', deviceId);
@@ -435,6 +516,7 @@ class CameraSetupManager {
             this.selectedDeviceId = null;
             this.selectedDeviceName = null;
             this.stopPreview();
+            this.stepManager.hideButton('step2', 'nextBtn');
             return;
         }
         
@@ -447,6 +529,9 @@ class CameraSetupManager {
             
             // 开始预览
             await this.startPreview();
+            
+            // 显示下一步按钮
+            this.stepManager.showButton('step2', 'nextBtn');
         }
     }
 
@@ -475,9 +560,10 @@ class CameraSetupManager {
             
             // 设置预览视频元素
             const previewVideo = document.getElementById('cameraPreview');
+            const previewSection = document.getElementById('cameraPreviewSection');
             if (previewVideo) {
                 previewVideo.srcObject = this.currentStream;
-                previewVideo.style.display = 'block';
+                if (previewSection) previewSection.style.display = 'block';
                 this.isPreviewActive = true;
                 console.log('✅ 摄像头预览已开始');
             }
@@ -498,9 +584,12 @@ class CameraSetupManager {
         }
         
         const previewVideo = document.getElementById('cameraPreview');
+        const previewSection = document.getElementById('cameraPreviewSection');
         if (previewVideo) {
             previewVideo.srcObject = null;
-            previewVideo.style.display = 'none';
+        }
+        if (previewSection) {
+            previewSection.style.display = 'none';
         }
         
         this.isPreviewActive = false;

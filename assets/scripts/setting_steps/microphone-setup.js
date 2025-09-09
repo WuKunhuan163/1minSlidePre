@@ -231,7 +231,7 @@ class MicrophoneSetupManager {
         setTimeout(() => {
             const statusElement = document.getElementById('micStatus');
             if (statusElement) {
-                statusElement.textContent = '请申请麦克风权限';
+                statusElement.textContent = '还未申请麦克风权限';
             }
         }, 100);
         
