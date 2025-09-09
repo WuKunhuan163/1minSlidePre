@@ -8,7 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="assets/stylesheets/index.css">
-    <link rel="stylesheet" href="assets/stylesheets/audio-setup.css">
+    <link rel="stylesheet" href="assets/stylesheets/setting-steps-index.css">
+    <!-- 设置步骤专用样式 -->
+    <link rel="stylesheet" href="assets/stylesheets/setting_steps/microphone-setup.css">
+    <link rel="stylesheet" href="assets/stylesheets/setting_steps/audio-setup.css">
+    <link rel="stylesheet" href="assets/stylesheets/setting_steps/ai-setup.css">
     <link rel="icon" href="assets/images/favicon.ico">
 </head>
 <body>
@@ -42,10 +46,14 @@
     
     <!-- 设置页面模板 -->
     <script src="assets/scripts/settings-manager.js"></script>
-    <script src="assets/scripts/microphone-setup.js"></script>
-    <script src="assets/scripts/audio-setup.js"></script>
     <script src="assets/scripts/settings-template.js"></script>
     
+    <!-- 新的统一设置步骤管理器 -->
+    <script src="assets/scripts/microphone-permission.js"></script>
+    <script src="assets/scripts/settings-step-manager.js"></script>
+    <script src="assets/scripts/setting_steps/audio-setup.js"></script>
+    <script src="assets/scripts/setting_steps/ai-setup.js"></script>
+    <script src="assets/scripts/setting_steps/microphone-setup.js"></script>
     <script src="assets/scripts/index.js"></script>
 </body>
 </html>

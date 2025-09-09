@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试新的设置管理器</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="assets/stylesheets/index.css">
+    <link rel="stylesheet" href="assets/stylesheets/setting-steps-index.css">
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background: #666AF6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            background: #5a5ee6;
+            transform: translateY(-2px);
+        }
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #666AF6;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 设置管理器测试页面</h1>
+        
+        <div class="info">
+            <h3>📋 新的统一设置步骤管理器测试</h3>
+            <p>这个页面用于测试新开发的设置步骤管理器系统。点击下面的按钮来测试不同的设置流程：</p>
+        </div>
+
+        <div class="test-buttons">
+            <button class="test-button" onclick="testAudioSetup()">
+                🎤 测试语音识别设置
+            </button>
+            
+            <button class="test-button" onclick="testAISetup()">
+                🤖 测试智谱AI设置
+            </button>
+            
+            <button class="test-button" onclick="testMicrophoneSetup()">
+                🎙️ 测试录音设备设置
+            </button>
+            
+            <button class="test-button" onclick="testDemoSetting()">
+                🎯 测试演示设置
+            </button>
+        </div>
+
+        <div class="info">
+            <h3>📊 系统状态</h3>
+            <div id="systemStatus">正在检查系统状态...</div>
+        </div>
+
+        <div class="info">
+            <h3>📝 测试日志</h3>
+            <div id="testLog" style="font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- 加载所有必要的脚本 -->
+    <script src="modules/config.js"></script>
+    <script src="assets/scripts/microphone-permission.js"></script>
+    <script src="assets/scripts/settings-manager.js"></script>
+    <script src="assets/scripts/settings-template.js"></script>
+    <script src="assets/scripts/settings-step-manager.js"></script>
+    <script src="assets/scripts/setting_steps/audio-setup.js"></script>
+    <script src="assets/scripts/setting_steps/ai-setup.js"></script>
+    <script src="assets/scripts/setting_steps/microphone-setup.js"></script>
+    <script src="assets/scripts/settings-integration.js"></script>
+
+    <script>
+        // 测试日志功能
+        function log(message) {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // 检查系统状态
+        function checkSystemStatus() {
+            const statusDiv = document.getElementById('systemStatus');
+            let status = [];
+            
+            if (typeof SettingsStepManager !== 'undefined') {
+                status.push('✅ SettingsStepManager 已加载');
+            } else {
+                status.push('❌ SettingsStepManager 未加载');
+            }
+            
+            if (typeof AudioSetupManager !== 'undefined') {
+                status.push('✅ AudioSetupManager 已加载');
+            } else {
+                status.push('❌ AudioSetupManager 未加载');
+            }
+            
+            if (typeof AISetupManager !== 'undefined') {
+                status.push('✅ AISetupManager 已加载');
+            } else {
+                status.push('❌ AISetupManager 未加载');
+            }
+            
+            if (typeof MicrophoneSetupManager !== 'undefined') {
+                status.push('✅ MicrophoneSetupManager 已加载');
+            } else {
+                status.push('❌ MicrophoneSetupManager 未加载');
+            }
+            
+            if (typeof simpleConfig !== 'undefined') {
+                status.push('✅ SimpleConfig 已加载');
+            } else {
+                status.push('❌ SimpleConfig 未加载');
+            }
+            
+            statusDiv.innerHTML = status.join('<br>');
+        }
+
+        // 测试函数
+        function testAudioSetup() {
+            log('🎤 开始测试语音识别设置管理器');
+            try {
+                if (typeof AudioSetupManager === 'undefined') {
+                    throw new Error('AudioSetupManager 未加载');
+                }
+                
+                const manager = new AudioSetupManager();
+                const overlay = manager.createSetup();
+                log('✅ 语音识别设置界面创建成功');
+                
+            } catch (error) {
+                log('❌ 语音识别设置测试失败: ' + error.message);
+            }
+        }
+
+        function testAISetup() {
+            log('🤖 开始测试智谱AI设置管理器');
+            try {
+                if (typeof AISetupManager === 'undefined') {
+                    throw new Error('AISetupManager 未加载');
+                }
+                
+                const manager = new AISetupManager();
+                const overlay = manager.createSetup();
+                log('✅ 智谱AI设置界面创建成功');
+                
+            } catch (error) {
+                log('❌ 智谱AI设置测试失败: ' + error.message);
+            }
+        }
+
+        function testMicrophoneSetup() {
+            log('🎙️ 开始测试录音设备设置管理器');
+            try {
+                if (typeof MicrophoneSetupManager === 'undefined') {
+                    throw new Error('MicrophoneSetupManager 未加载');
+                }
+                
+                const manager = new MicrophoneSetupManager();
+                const overlay = manager.createSetup();
+                log('✅ 录音设备设置界面创建成功');
+                
+            } catch (error) {
+                log('❌ 录音设备设置测试失败: ' + error.message);
+            }
+        }
+
+        function testDemoSetting() {
+            log('🎯 开始测试演示设置');
+            try {
+                if (typeof createDemoSetting === 'undefined') {
+                    throw new Error('createDemoSetting 函数未加载');
+                }
+                
+                const overlay = createDemoSetting();
+                log('✅ 演示设置界面创建成功');
+                
+            } catch (error) {
+                log('❌ 演示设置测试失败: ' + error.message);
+            }
+        }
+
+        // 页面加载完成后检查状态
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                checkSystemStatus();
+                log('📱 测试页面加载完成');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+

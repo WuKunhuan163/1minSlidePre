@@ -1269,7 +1269,7 @@ const downloadDebugLogs = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `audio-setup-debug-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.log`;
+        a.download = `setting-steps-index-debug-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.log`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1970,7 +1970,7 @@ const pulseAnimationCSS = `
 `;
 
 // 将动画CSS添加到现有样式中
-const existingStyle = document.querySelector('style[data-audio-setup]');
+const existingStyle = document.querySelector('style[data-setting-steps-index]');
 if (existingStyle) {
     existingStyle.textContent += pulseAnimationCSS;
 }
