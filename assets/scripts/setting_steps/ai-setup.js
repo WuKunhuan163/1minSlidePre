@@ -190,7 +190,7 @@ class AISetupManager {
             throw new Error('请输入API Key');
         }
         
-        console.log('🔑 开始验证智谱AI API Key...');
+        // console.log('🔑 开始验证智谱AI API Key...');
         
         try {
             // 使用zhipu_llm_api服务验证API Key
@@ -211,7 +211,7 @@ class AISetupManager {
                 })
             });
 
-            console.log('📥 智谱API验证响应状态:', response.status);
+            // console.log('📥 智谱API验证响应状态:', response.status);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -230,7 +230,7 @@ class AISetupManager {
             }
 
             const result = await response.json();
-            console.log('✅ 智谱API Key验证成功');
+            // console.log('✅ 智谱API Key验证成功');
 
             if (result.success) {
                 return true;
@@ -377,7 +377,7 @@ class AISetupManager {
             }
         ];
         
-        console.log('🤖 聊天测试界面已初始化，等待自动验证触发');
+        // console.log('🤖 聊天测试界面已初始化，等待自动验证触发');
     }
 
     // 触发自动测试（用于自动跳转条件）
@@ -389,7 +389,7 @@ class AISetupManager {
         
         // 如果还没有发送自动测试消息，则发送
         if (!this.autoTestSent) {
-            console.log('🤖 自动验证条件触发，准备发送测试消息');
+            // console.log('🤖 自动验证条件触发，准备发送测试消息');
             // 延迟发送，确保DOM已经渲染完成
             setTimeout(() => {
                 this.autoSendTestMessage();
@@ -404,12 +404,12 @@ class AISetupManager {
     async autoSendTestMessage() {
         // 防止重复发送
         if (this.autoTestSent) {
-            console.log('🤖 自动测试消息已发送过，跳过重复发送');
+            // console.log('🤖 自动测试消息已发送过，跳过重复发送');
             return;
         }
         
         this.autoTestSent = true; // 标记为已发送
-        console.log('🤖 自动发送测试消息进行API验证');
+        // console.log('🤖 自动发送测试消息进行API验证');
         
         const messagesContainer = document.getElementById('chatbotMessages');
         if (!messagesContainer) {
@@ -451,7 +451,7 @@ class AISetupManager {
             // 显示完成按钮
             this.stepManager.showButton('step3', 'completeBtn');
             
-            console.log('✅ AI自动验证成功');
+            // console.log('✅ AI自动验证成功');
             
         } catch (error) {
             console.error('❌ AI自动验证失败:', error);
@@ -569,7 +569,7 @@ class AISetupManager {
                 throw new Error('未找到API Key，请先完成第2步验证');
             }
             
-            console.log('🤖 调用智谱AI API...');
+            // console.log('🤖 调用智谱AI API...');
             
             // 调用智谱AI API
             const response = await fetch('https://zhipu-llm-api.vercel.app/api/chat', {
@@ -593,7 +593,7 @@ class AISetupManager {
                 })
             });
 
-            console.log('📥 智谱AI响应状态:', response.status);
+            // console.log('📥 智谱AI响应状态:', response.status);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -602,7 +602,7 @@ class AISetupManager {
             }
 
             const result = await response.json();
-            console.log('✅ 智谱AI调用成功');
+            // console.log('✅ 智谱AI调用成功');
 
             if (result.success && result.data && result.data.choices && result.data.choices.length > 0) {
                 const aiResponse = result.data.choices[0].message.content;
@@ -630,7 +630,7 @@ class AISetupManager {
 
     // 完成设置
     completeSetup() {
-        console.log('🎯 完成智谱AI设置');
+        // console.log('🎯 完成智谱AI设置');
         
         // 标记设置为已测试（这是完成的标志）
         if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
@@ -642,7 +642,7 @@ class AISetupManager {
             simpleConfig.set('aiEnabled', true);
         }
         
-        console.log('✅ AI功能设置完成并已启用');
+        // console.log('✅ AI功能设置完成并已启用');
         
         this.stepManager.completeSetup();
     }
@@ -657,7 +657,7 @@ class AISetupManager {
 
     // 处理设置完成
     handleSetupComplete() {
-        console.log('✅ 智谱AI设置完成');
+        // console.log('✅ 智谱AI设置完成');
         
         // 刷新主设置页面显示
         if (window.refreshSettingsDisplay) {
@@ -680,13 +680,13 @@ class AISetupManager {
     // 导入配置
     importConfig() {
         // 实现配置导入逻辑
-        console.log('导入AI配置');
+        // console.log('导入AI配置');
     }
 
     // 导出配置
     exportConfig() {
         // 实现配置导出逻辑
-        console.log('导出AI配置');
+        // console.log('导出AI配置');
     }
 }
 
@@ -701,35 +701,35 @@ window.createAISetupOverlayRefactored = () => {
 
 // AI相关的兼容性函数
 const completeAIStep1 = () => {
-    console.log('🤖 兼容性调用: completeAIStep1');
+    // console.log('🤖 兼容性调用: completeAIStep1');
     if (window.aiManager) {
         window.aiManager.completeStep1();
     }
 };
 
 const validateAIStep2 = () => {
-    console.log('🤖 兼容性调用: validateAIStep2');
+    // console.log('🤖 兼容性调用: validateAIStep2');
     if (window.aiManager) {
         return window.aiManager.validateStep2();
     }
 };
 
 const completeAIStep3 = () => {
-    console.log('🤖 兼容性调用: completeAIStep3');
+    // console.log('🤖 兼容性调用: completeAIStep3');
     if (window.aiManager) {
         window.aiManager.completeSetup();
     }
 };
 
 const goBackToAIStep = (step) => {
-    console.log(`🤖 兼容性调用: goBackToAIStep(${step})`);
+    // console.log(`🤖 兼容性调用: goBackToAIStep(${step})`);
     if (window.aiManager) {
         window.aiManager.stepManager.goToStep(step - 1);
     }
 };
 
 const sendTestMessage = () => {
-    console.log('🤖 兼容性调用: sendTestMessage');
+    // console.log('🤖 兼容性调用: sendTestMessage');
     if (window.aiManager) {
         window.aiManager.sendTestMessage();
     }
@@ -742,4 +742,4 @@ window.completeAIStep3 = completeAIStep3;
 window.goBackToAIStep = goBackToAIStep;
 window.sendTestMessage = sendTestMessage;
 
-console.log('🤖 重构后的智谱AI设置管理器已加载');
+// console.log('🤖 重构后的智谱AI设置管理器已加载');

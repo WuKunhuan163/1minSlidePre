@@ -16,6 +16,10 @@ class MicrophoneSetupManager {
         this.recordingTestCompleted = false;
         this.availableDevices = [];
         this.selectedDeviceId = null;
+        this.selectedDeviceName = null;
+        this.availableOutputDevices = [];
+        this.selectedOutputDeviceId = null;
+        this.selectedOutputDeviceName = null;
         this.isRecording = false;
         this.mediaRecorder = null;
         this.audioChunks = [];
@@ -52,9 +56,9 @@ class MicrophoneSetupManager {
                         text: '请求权限',
                         type: 'secondary',
                         onClick: () => {
-                            console.log('========== 请求权限按钮被点击 ==========');
-                            console.log('当前管理器实例:', this);
-                            console.log('stepManager存在:', !!this.stepManager);
+                            // console.log('========== 请求权限按钮被点击 ==========');
+                            // console.log('当前管理器实例:', this);
+                            // console.log('stepManager存在:', !!this.stepManager);
                             this.requestMicrophonePermission();
                         },
                         show: false  // 默认隐藏，只在权限失败时显示
@@ -111,7 +115,7 @@ class MicrophoneSetupManager {
                         show: false
                     }
                 ],
-                autoJumpCondition: () => this.validateRecordingTest(),
+                autoJumpCondition: () => this.validateRecordingTest(), // 只有已保存的配置才自动跳转，当前测试完成不自动跳转
                 onEnter: () => this.initializeRecordingTest(),
                 validation: () => this.validateRecordingTest()
             }
@@ -167,6 +171,13 @@ class MicrophoneSetupManager {
                 </select>
             </div>
             
+            <div class="form-group" id="outputDeviceSelectionGroup">
+                <label for="outputDeviceSelect">选择输出设备：</label>
+                <select id="outputDeviceSelect" class="device-select">
+                    <option value="">选择设备...</option>
+                </select>
+            </div>
+            
             <div class="audio-test-section" id="audioTestSection">
                 <!-- 使用以前的录音接口容器 -->
                 <div class="transcription-container">
@@ -196,7 +207,7 @@ class MicrophoneSetupManager {
 
     // 初始化权限步骤 - 重置状态，等待用户交互
     initializePermissionStep() {
-        console.log('🔄 初始化权限步骤，重置权限状态等待用户交互...');
+        // console.log('🔄 初始化权限步骤，重置权限状态等待用户交互...');
         
         // 重置权限状态（无论之前是否有权限）
         this.permissionGranted = false;
@@ -215,13 +226,13 @@ class MicrophoneSetupManager {
         if (deviceSection) deviceSection.style.display = 'none';
         
         // 显示请求权限按钮，等待用户手动点击
-        console.log('🔘 准备显示请求权限按钮...');
-        console.log('stepManager存在:', !!this.stepManager);
-        console.log('stepManager.showButton方法存在:', typeof this.stepManager?.showButton);
+        // console.log('🔘 准备显示请求权限按钮...');
+        // console.log('stepManager存在:', !!this.stepManager);
+        // console.log('stepManager.showButton方法存在:', typeof this.stepManager?.showButton);
         
         this.stepManager.showButton('step1', 'requestBtn');
         
-        console.log('🔘 showButton命令已执行');
+        // console.log('🔘 showButton命令已执行');
         
         // 更新按钮文本和状态提示
         setTimeout(() => {
@@ -231,30 +242,30 @@ class MicrophoneSetupManager {
             }
         }, 100);
         
-        console.log('✅ 权限步骤已初始化，等待用户手动申请权限');
+        // console.log('✅ 权限步骤已初始化，等待用户手动申请权限');
     }
 
     // 请求麦克风权限
     async requestMicrophonePermission() {
-        console.log('========== 请求麦克风权限方法被调用 ==========');
-        console.log('当前settingId:', this.settingId);
+        // console.log('========== 请求麦克风权限方法被调用 ==========');
+        // console.log('当前settingId:', this.settingId);
         
         const micStatus = document.getElementById('micStatus');
         const micIcon = document.getElementById('micIcon');
         const requestBtn = document.getElementById(`${this.settingId}-step1-requestBtn`);
         const nextBtn = document.getElementById(`${this.settingId}-step1-nextBtn`);
         
-        console.log('DOM元素查找结果:');
-        console.log('- micStatus:', !!micStatus);
-        console.log('- micIcon:', !!micIcon);
-        console.log('- requestBtn:', !!requestBtn);
-        console.log('- nextBtn:', !!nextBtn);
+        // console.log('DOM元素查找结果:');
+        // console.log('- micStatus:', !!micStatus);
+        // console.log('- micIcon:', !!micIcon);
+        // console.log('- requestBtn:', !!requestBtn);
+        // console.log('- nextBtn:', !!nextBtn);
         
         try {
-            console.log('🎤 开始请求麦克风权限...');
-            console.log('🌐 用户代理:', navigator.userAgent);
-            console.log('🔒 协议:', window.location.protocol);
-            console.log('🏠 主机:', window.location.host);
+            // console.log('🎤 开始请求麦克风权限...');
+            // console.log('🌐 用户代理:', navigator.userAgent);
+            // console.log('🔒 协议:', window.location.protocol);
+            // console.log('🏠 主机:', window.location.host);
             
             // 检查浏览器支持
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -265,18 +276,26 @@ class MicrophoneSetupManager {
             if (navigator.permissions) {
                 try {
                     const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                    console.log('🔍 当前麦克风权限状态:', permissionStatus.state);
+                    // console.log('🔍 当前麦克风权限状态:', permissionStatus.state);
                 } catch (permErr) {
-                    console.log('⚠️ 无法查询权限状态:', permErr.message);
+                    // console.log('⚠️ 无法查询权限状态:', permErr.message);
                 }
             }
             
-            this.stepManager.showStepStatus('step1', '正在请求麦克风权限...', 'info');
+            this.stepManager.showStepStatus('step1', '正在请求麦克风权限...', 'processing');
             
             if (micStatus) micStatus.textContent = '正在请求权限...';
-            if (requestBtn) requestBtn.disabled = true;
             
-            console.log('🎤 调用 getUserMedia...');
+            // 禁用请求按钮，防止重复点击
+            if (requestBtn) {
+                requestBtn.disabled = true;
+                requestBtn.textContent = '请求中...';
+            }
+            
+            // 禁用按钮交互
+            this.stepManager.disableButton('step1', 'requestBtn');
+            
+            // console.log('🎤 调用 getUserMedia...');
             
             // 请求麦克风权限
             const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -287,7 +306,7 @@ class MicrophoneSetupManager {
                 }
             });
             
-            console.log('✅ 麦克风权限获取成功');
+            // console.log('✅ 麦克风权限获取成功');
             
             // 权限获取成功
             this.permissionGranted = true;
@@ -305,6 +324,16 @@ class MicrophoneSetupManager {
             await this.detectAudioDevices();
             
             this.stepManager.showStepStatus('step1', '麦克风权限获取成功！', 'success');
+            
+            // 标记第一步为完成
+            this.stepManager.markStepCompleted('step1', true);
+            // console.log('💾 第一步已标记为完成');
+            
+            // 恢复请求按钮状态（虽然会被隐藏）
+            if (requestBtn) {
+                requestBtn.disabled = false;
+                requestBtn.textContent = '请求权限';
+            }
             
             // 隐藏请求按钮
             this.stepManager.hideButton('step1', 'requestBtn');
@@ -352,6 +381,15 @@ class MicrophoneSetupManager {
             
             // status只显示简化的错误信息，详细建议已在permission-advice区域显示
             this.stepManager.showStepStatus('step1', errorMessage, 'error');
+            
+            // 重新启用请求按钮
+            if (requestBtn) {
+                requestBtn.disabled = false;
+                requestBtn.textContent = '请求权限';
+            }
+            
+            // 重新启用按钮交互
+            this.stepManager.enableButton('step1', 'requestBtn');
             
             // 显示重新请求按钮
             this.stepManager.showButton('step1', 'requestBtn');
@@ -405,7 +443,7 @@ class MicrophoneSetupManager {
                 }
             }
             
-            console.log(`✅ 检测到 ${this.availableDevices.length} 个音频输入设备，显示 ${displayDevices.length} 个`);
+            // console.log(`✅ 检测到 ${this.availableDevices.length} 个音频输入设备，显示 ${displayDevices.length} 个`);
             
         } catch (error) {
             console.error('设备检测失败:', error);
@@ -414,8 +452,34 @@ class MicrophoneSetupManager {
     }
 
     // 验证权限已获取
-    validatePermissionGranted() {
-        return this.permissionGranted && this.devicesDetected;
+    async validatePermissionGranted() {
+        // console.log('🔍 验证麦克风权限...');
+        
+        try {
+            // 尝试获取权限
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            
+            // 权限获取成功
+            this.permissionGranted = true;
+            stream.getTracks().forEach(track => track.stop());
+            
+            // 检测设备
+            await this.detectAudioDevices();
+            
+            // console.log('✅ 麦克风权限验证成功');
+            return true;
+        } catch (error) {
+            // console.log('❌ 麦克风权限验证失败:', error.message);
+            this.permissionGranted = false;
+            this.devicesDetected = false;
+            return false;
+        }
     }
 
     // 跳转到下一步
@@ -438,19 +502,63 @@ class MicrophoneSetupManager {
         this.totalAmplitude = 0;
         this.sampleCount = 0;
         
-        // 填充设备选择下拉框
-        this.populateDeviceSelect();
+        // 清除可能存在的旧设备提示信息
+        this.clearDeviceNotices();
+        
+        // 获取设备并填充下拉框
+        this.detectAudioDevices().then(() => {
+            this.populateDeviceSelect();
+        });
+    }
+
+    // 清除设备选择相关的提示信息
+    clearDeviceNotices() {
+        // 查找所有可能的设备下拉框容器
+        const deviceSelects = document.querySelectorAll('#deviceSelect, .device-select');
+        deviceSelects.forEach(deviceSelect => {
+            if (deviceSelect.parentElement) {
+                // 移除所有提示信息
+                const notices = deviceSelect.parentElement.querySelectorAll('.device-default-notice, .device-locked-notice');
+                notices.forEach(notice => notice.remove());
+            }
+        });
+    }
+
+    // 检测音频设备
+    async detectAudioDevices() {
+        console.log('🔍 检测音频设备...');
+        
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            this.availableDevices = devices.filter(device => device.kind === 'audioinput');
+            this.availableOutputDevices = devices.filter(device => device.kind === 'audiooutput');
+            
+            console.log('📱 检测到输入设备:', this.availableDevices.length, '个');
+            this.availableDevices.forEach((device, index) => {
+                console.log(`  ${index + 1}. ${device.label || `麦克风 ${index + 1}`} (${device.deviceId})`);
+            });
+            
+            console.log('🔊 检测到输出设备:', this.availableOutputDevices.length, '个');
+            this.availableOutputDevices.forEach((device, index) => {
+                console.log(`  ${index + 1}. ${device.label || `扬声器 ${index + 1}`} (${device.deviceId})`);
+            });
+            
+        } catch (error) {
+            console.error('❌ 检测音频设备失败:', error);
+        }
     }
 
     // 填充设备选择下拉框
     populateDeviceSelect() {
         const deviceSelect = document.getElementById('deviceSelect');
-        if (!deviceSelect) return;
+        const outputDeviceSelect = document.getElementById('outputDeviceSelect');
+        if (!deviceSelect || !outputDeviceSelect) return;
         
         // 清空现有选项
         deviceSelect.innerHTML = '<option value="">选择设备...</option>';
+        outputDeviceSelect.innerHTML = '<option value="">选择设备...</option>';
         
-        // 添加检测到的设备
+        // 添加检测到的输入设备
         this.availableDevices.forEach((device, index) => {
             const option = document.createElement('option');
             option.value = device.deviceId;
@@ -458,7 +566,15 @@ class MicrophoneSetupManager {
             deviceSelect.appendChild(option);
         });
         
-        // 优先选择Default设备，如果没有则选择第一个设备
+        // 添加检测到的输出设备
+        this.availableOutputDevices.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.textContent = device.label || `扬声器 ${index + 1}`;
+            outputDeviceSelect.appendChild(option);
+        });
+        
+        // 优先选择Default输入设备，如果没有则选择第一个设备
         if (this.availableDevices.length > 0) {
             // 查找Default设备
             const defaultDevice = this.availableDevices.find(device => {
@@ -469,27 +585,69 @@ class MicrophoneSetupManager {
             if (defaultDevice) {
                 deviceSelect.value = defaultDevice.deviceId;
                 this.selectedDeviceId = defaultDevice.deviceId;
-                console.log('✅ 默认选择Default设备:', defaultDevice.label);
+                this.selectedDeviceName = defaultDevice.label || 'Default';
+                console.log('✅ 默认选择Default输入设备:', defaultDevice.label);
             } else {
                 deviceSelect.value = this.availableDevices[0].deviceId;
                 this.selectedDeviceId = this.availableDevices[0].deviceId;
-                console.log('✅ 默认选择第一个设备:', this.availableDevices[0].label);
+                this.selectedDeviceName = this.availableDevices[0].label || '未知设备';
+                console.log('✅ 默认选择第一个输入设备:', this.availableDevices[0].label);
             }
         }
         
-        // 监听设备选择变化
+        // 优先选择Default输出设备，如果没有则选择第一个设备
+        if (this.availableOutputDevices.length > 0) {
+            // 查找Default设备
+            const defaultOutputDevice = this.availableOutputDevices.find(device => {
+                const deviceName = device.label || '';
+                return deviceName.toLowerCase().includes('default');
+            });
+            
+            if (defaultOutputDevice) {
+                outputDeviceSelect.value = defaultOutputDevice.deviceId;
+                this.selectedOutputDeviceId = defaultOutputDevice.deviceId;
+                this.selectedOutputDeviceName = defaultOutputDevice.label || 'Default';
+                console.log('✅ 默认选择Default输出设备:', defaultOutputDevice.label);
+            } else {
+                outputDeviceSelect.value = this.availableOutputDevices[0].deviceId;
+                this.selectedOutputDeviceId = this.availableOutputDevices[0].deviceId;
+                this.selectedOutputDeviceName = this.availableOutputDevices[0].label || '未知设备';
+                console.log('✅ 默认选择第一个输出设备:', this.availableOutputDevices[0].label);
+            }
+        }
+        
+        // 监听输入设备选择变化
         deviceSelect.addEventListener('change', (e) => {
             this.selectedDeviceId = e.target.value;
-            console.log('🔄 设备选择已改变:', this.selectedDeviceId);
+            
+            // 获取设备名称
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            this.selectedDeviceName = selectedOption ? selectedOption.text : '未知设备';
+            
+            console.log('🔄 输入设备选择已改变:', this.selectedDeviceId, '-', this.selectedDeviceName);
             
             // 清空录音结果和隐藏完成按钮
             this.clearRecordingResults();
         });
+        
+        // 监听输出设备选择变化
+        outputDeviceSelect.addEventListener('change', (e) => {
+            this.selectedOutputDeviceId = e.target.value;
+            
+            // 获取设备名称
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            this.selectedOutputDeviceName = selectedOption ? selectedOption.text : '未知设备';
+            
+            console.log('🔄 输出设备选择已改变:', this.selectedOutputDeviceId, '-', this.selectedOutputDeviceName);
+        });
+        
+        // 自动加载之前保存的设备配置
+        this.loadSavedDeviceConfig();
     }
     
     // 清空录音结果
     clearRecordingResults() {
-        console.log('🧹 清空录音结果...');
+        // console.log('🧹 清空录音结果...');
         
         // 清空录音结果区域
         const transcriptionResult = document.getElementById('transcriptionResult');
@@ -508,13 +666,13 @@ class MicrophoneSetupManager {
             const existingAudio = audioTestSection.querySelector('.recording-audio-player');
             if (existingAudio) {
                 existingAudio.remove();
-                console.log('🧹 音频播放器已移除');
+                // console.log('🧹 音频播放器已移除');
             }
         }
         
         // 移除下载按钮
         this.stepManager.hideButton('step2', 'downloadBtn');
-        console.log('🧹 下载按钮已移除');
+        // console.log('🧹 下载按钮已移除');
         
         // 清空波峰图
         const waveformBars = document.getElementById('waveformBars');
@@ -541,7 +699,7 @@ class MicrophoneSetupManager {
         // 清空step-status
         this.stepManager.showStepStatus('step2', '', 'info');
         
-        console.log('✅ 录音结果已清空');
+        // console.log('✅ 录音结果已清空');
     }
 
     // 切换录音状态
@@ -562,12 +720,12 @@ class MicrophoneSetupManager {
         
         // 如果是重新录音，先清空之前的状态
         if (this.recordingTestCompleted) {
-            console.log('🔄 重新录音，清空之前的状态...');
+            // console.log('🔄 重新录音，清空之前的状态...');
             this.clearRecordingResults();
         }
         
         try {
-            console.log('🎤 开始录音前验证麦克风权限...');
+            // console.log('🎤 开始录音前验证麦克风权限...');
             
             const constraints = {
                 audio: {
@@ -577,7 +735,7 @@ class MicrophoneSetupManager {
             
             // 再次请求麦克风权限，验证是否仍然可用
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            console.log('✅ 麦克风权限验证成功，开始录音流程');
+            // console.log('✅ 麦克风权限验证成功，开始录音流程');
             
             this.mediaRecorder = new MediaRecorder(stream);
             this.audioChunks = [];
@@ -613,7 +771,7 @@ class MicrophoneSetupManager {
             };
             
             this.mediaRecorder.onstop = () => {
-                console.log('📹 MediaRecorder已停止');
+                // console.log('📹 MediaRecorder已停止');
                 this.processRecording();
             };
             
@@ -626,15 +784,15 @@ class MicrophoneSetupManager {
             
             // 监听状态变化
             this.mediaRecorder.onstart = () => {
-                console.log('📹 MediaRecorder已开始录音');
+                // console.log('📹 MediaRecorder已开始录音');
             };
             
             this.mediaRecorder.onpause = () => {
-                console.log('⏸️ MediaRecorder已暂停');
+                // console.log('⏸️ MediaRecorder已暂停');
             };
             
             this.mediaRecorder.onresume = () => {
-                console.log('▶️ MediaRecorder已恢复');
+                // console.log('▶️ MediaRecorder已恢复');
             };
             
             // 监听音频轨道状态
@@ -652,13 +810,13 @@ class MicrophoneSetupManager {
                 };
                 
                 track.onunmute = () => {
-                    console.log('🔊 音频轨道取消静音');
+                    // console.log('🔊 音频轨道取消静音');
                 };
             });
             
             // 开始录音
             this.mediaRecorder.start();
-            console.log('🎤 开始录音，MediaRecorder状态:', this.mediaRecorder.state);
+            // console.log('🎤 开始录音，MediaRecorder状态:', this.mediaRecorder.state);
             
             // 录音开始时暂停背景音乐
             this.pauseBackgroundMusic();
@@ -672,7 +830,7 @@ class MicrophoneSetupManager {
             // 10秒后自动停止
             setTimeout(() => {
                 if (this.isRecording) {
-                    console.log('⏰ 录音时间到，自动停止录音');
+                    // console.log('⏰ 录音时间到，自动停止录音');
                     this.stopRecording();
                 }
             }, 10000);
@@ -682,7 +840,7 @@ class MicrophoneSetupManager {
             
             // 检查是否是权限相关错误
             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                console.log('🔄 检测到权限被撤销，回退到第一步');
+                // console.log('🔄 检测到权限被撤销，回退到第一步');
                 
                 // 重置权限状态
                 this.permissionGranted = false;
@@ -1031,7 +1189,7 @@ class MicrophoneSetupManager {
             }
         }, 500);
         
-        console.log('🔍 录音状态监控已启动');
+        // console.log('🔍 录音状态监控已启动');
     }
 
     // 停止录音状态监控
@@ -1039,7 +1197,7 @@ class MicrophoneSetupManager {
         if (this.recordingCheckInterval) {
             clearInterval(this.recordingCheckInterval);
             this.recordingCheckInterval = null;
-            console.log('🔍 录音状态监控已停止');
+            // console.log('🔍 录音状态监控已停止');
         }
     }
 
@@ -1052,13 +1210,13 @@ class MicrophoneSetupManager {
             const averageAmplitude = this.sampleCount > 0 ? this.totalAmplitude / this.sampleCount : 0;
             const volumeThreshold = 0.001; // 音量阈值，低于此值认为录音失败
             
-            console.log('📊 录音音量检测:', {
-                总振幅: this.totalAmplitude.toFixed(6),
-                采样次数: this.sampleCount,
-                平均振幅: averageAmplitude.toFixed(6),
-                阈值: volumeThreshold,
-                录音成功: averageAmplitude >= volumeThreshold
-            });
+            // console.log('📊 录音音量检测:', {
+            //     总振幅: this.totalAmplitude.toFixed(6),
+            //     采样次数: this.sampleCount,
+            //     平均振幅: averageAmplitude.toFixed(6),
+            //     阈值: volumeThreshold,
+            //     录音成功: averageAmplitude >= volumeThreshold
+            // });
             
             if (averageAmplitude < volumeThreshold) {
                 // 音量太低，录音失败
@@ -1086,7 +1244,7 @@ class MicrophoneSetupManager {
             }
             
             // 音量正常，继续处理录音
-            console.log('✅ 录音音量检测通过，开始处理录音文件...');
+            // console.log('✅ 录音音量检测通过，开始处理录音文件...');
             
             // 更新录音按钮状态为转换中
             const recordBtn = document.getElementById(`${this.settingId}-step2-recordBtn`);
@@ -1114,13 +1272,20 @@ class MicrophoneSetupManager {
                 console.warn('录音质量检验未通过，平均音量:', this.sampleCount > 0 ? this.totalAmplitude / this.sampleCount : 0);
             }
             
-            // 只有录音质量合格时才显示完成按钮
+            // 只有录音质量合格时才显示完成按钮并触发自动跳转检查
             if (hasValidAudio) {
                 console.log('🔘 准备显示完成按钮...');
                 console.log('步骤管理器存在:', !!this.stepManager);
                 console.log('showButton方法存在:', typeof this.stepManager.showButton);
                 
+                // 录音测试完成，立即保存基本配置
+                console.log('💾 录音测试完成，保存基本设备配置...');
+                this.saveBasicConfiguration();
+                
                 this.stepManager.showButton('step2', 'completeBtn');
+                
+                // 不再自动跳转，需要用户手动点击"完成设置"按钮确认
+                console.log('🔄 录音测试完成，显示完成按钮，等待用户确认...');
             }
             
             // 恢复录音按钮为可重新录音状态
@@ -1132,7 +1297,7 @@ class MicrophoneSetupManager {
                 recordBtn.style.display = 'inline-block'; // 保持显示，允许重新录音
             }
             
-            console.log('✅ 完成按钮显示命令已执行');
+            // console.log('✅ 完成按钮显示命令已执行');
             
             // 保存设备配置
             this.saveMicrophoneConfig();
@@ -1171,7 +1336,7 @@ class MicrophoneSetupManager {
                     audioElement.onloadedmetadata = () => {
                         if (audioElement.duration && audioElement.duration !== Infinity && !isNaN(audioElement.duration)) {
                             duration = Math.round(audioElement.duration);
-                            console.log(`✅ 从音频文件读取到实际时长: ${duration}秒`);
+                            // console.log(`✅ 从音频文件读取到实际时长: ${duration}秒`);
                         }
                         URL.revokeObjectURL(audioUrl);
                         resolve();
@@ -1216,7 +1381,7 @@ class MicrophoneSetupManager {
                 try {
                     if (window.convertToMp3) {
                         mp3Blob = await window.convertToMp3(audioBlob);
-                        console.log('✅ MP3编码完成');
+                        // console.log('✅ MP3编码完成');
                     } else {
                         console.warn('⚠️ convertToMp3函数不可用，使用原始WAV文件');
                         mp3Blob = audioBlob;
@@ -1240,7 +1405,7 @@ class MicrophoneSetupManager {
                         audioElement.onloadedmetadata = () => {
                             if (audioElement.duration && audioElement.duration !== Infinity && !isNaN(audioElement.duration)) {
                                 duration = Math.round(audioElement.duration);
-                                console.log(`✅ 从${fileFormat}文件读取到实际时长: ${duration}秒`);
+                                // console.log(`✅ 从${fileFormat}文件读取到实际时长: ${duration}秒`);
                             } else {
                                 console.warn('⚠️ 音频时长无效，使用默认值10秒');
                             }
@@ -1285,7 +1450,7 @@ class MicrophoneSetupManager {
                         audioElement.onloadedmetadata = () => {
                             if (audioElement.duration && audioElement.duration !== Infinity && !isNaN(audioElement.duration)) {
                                 duration = Math.round(audioElement.duration);
-                                console.log(`✅ 从WAV文件读取到实际时长: ${duration}秒`);
+                                // console.log(`✅ 从WAV文件读取到实际时长: ${duration}秒`);
                             } else {
                                 console.warn('⚠️ 音频时长无效，使用默认值10秒');
                             }
@@ -1368,7 +1533,7 @@ class MicrophoneSetupManager {
         // 添加到audioTestSection的末尾
         audioTestSection.appendChild(audioElement);
         
-        console.log('✅ 音频播放器和下载按钮已添加到transcription-container下方');
+        // console.log('✅ 音频播放器和下载按钮已添加到transcription-container下方');
     }
 
     // 添加下载按钮到步骤管理器
@@ -1380,7 +1545,7 @@ class MicrophoneSetupManager {
         // 显示下载按钮
         this.stepManager.showButton('step2', 'downloadBtn');
         
-        console.log('✅ 下载按钮已显示到步骤按钮容器');
+        // console.log('✅ 下载按钮已显示到步骤按钮容器');
     }
 
     // 下载录音文件
@@ -1391,7 +1556,7 @@ class MicrophoneSetupManager {
             return;
         }
 
-        console.log('📥 开始下载录音文件:', this.currentRecordingFileName);
+        // console.log('📥 开始下载录音文件:', this.currentRecordingFileName);
 
         try {
             // 创建下载链接
@@ -1407,7 +1572,7 @@ class MicrophoneSetupManager {
             downloadLink.click();
             document.body.removeChild(downloadLink);
 
-            console.log('📥 录音文件已开始下载:', safeFileName);
+            // console.log('📥 录音文件已开始下载:', safeFileName);
         } catch (error) {
             console.error('❌ 下载录音文件失败:', error);
         }
@@ -1442,7 +1607,7 @@ class MicrophoneSetupManager {
         // 统一使用MP3格式
         const extension = 'mp3';
         
-        console.log('📝 生成录音文件名:', `录音设备设置_${dateTime}_${hash}.${extension}`);
+        // console.log('📝 生成录音文件名:', `录音设备设置_${dateTime}_${hash}.${extension}`);
         
         return `录音设备设置_${dateTime}_${hash}.${extension}`;
     }
@@ -1450,17 +1615,17 @@ class MicrophoneSetupManager {
 
     // 降低背景音乐音量
     pauseBackgroundMusic() {
-        console.log('🎵 开始降低背景音乐音量...');
+        // console.log('🎵 开始降低背景音乐音量...');
         
         // 使用新的全局背景音乐音量控制器
         if (window.BackgroundMusicVolumeController) {
             window.BackgroundMusicVolumeController.pause(true);
-            console.log('🎵 通过全局控制器暂停背景音乐');
+            // console.log('🎵 通过全局控制器暂停背景音乐');
             return;
         }
         
         // 兼容性代码：使用原有的控制方式
-        console.log('⚠️ 全局背景音乐控制器不可用，使用兼容性代码');
+        // console.log('⚠️ 全局背景音乐控制器不可用，使用兼容性代码');
         
         // 查找页面中的背景音乐元素
         const backgroundAudio = document.querySelector('audio[id*="background"], audio[src*="background"], audio.background-music');
@@ -1468,48 +1633,48 @@ class MicrophoneSetupManager {
             // 保存原始音量
             if (this.originalBackgroundVolume === undefined) {
                 this.originalBackgroundVolume = backgroundAudio.volume;
-                console.log('🎵 保存原始背景音乐音量:', this.originalBackgroundVolume);
+                // console.log('🎵 保存原始背景音乐音量:', this.originalBackgroundVolume);
             }
             
             // 将音量设置为0
             backgroundAudio.volume = 0;
-            console.log('🎵 背景音乐音量已设置为0');
+            // console.log('🎵 背景音乐音量已设置为0');
             
             // 更新音量进度条（如果存在）
             this.updateVolumeSlider(0);
         } else {
-            console.log('🎵 未找到背景音乐元素');
+            // console.log('🎵 未找到背景音乐元素');
             
             // 尝试通过全局变量或其他方式控制背景音乐
             if (window.setBackgroundMusicVolume && typeof window.setBackgroundMusicVolume === 'function') {
                 // 保存当前音量
                 if (this.originalBackgroundVolume === undefined && window.getBackgroundMusicVolume) {
                     this.originalBackgroundVolume = window.getBackgroundMusicVolume();
-                    console.log('🎵 通过全局函数保存原始音量:', this.originalBackgroundVolume);
+                    // console.log('🎵 通过全局函数保存原始音量:', this.originalBackgroundVolume);
                 }
                 
                 window.setBackgroundMusicVolume(0);
-                console.log('🎵 通过全局函数设置背景音乐音量为0');
+                // console.log('🎵 通过全局函数设置背景音乐音量为0');
             }
         }
     }
 
     // 恢复背景音乐音量
     resumeBackgroundMusic() {
-        console.log('🎵 开始恢复背景音乐音量...');
+        // console.log('🎵 开始恢复背景音乐音量...');
         
         // 使用新的全局背景音乐音量控制器
         if (window.BackgroundMusicVolumeController) {
             window.BackgroundMusicVolumeController.resume();
-            console.log('🎵 通过全局控制器恢复背景音乐');
+            // console.log('🎵 通过全局控制器恢复背景音乐');
             return;
         }
         
         // 兼容性代码：使用原有的控制方式
-        console.log('⚠️ 全局背景音乐控制器不可用，使用兼容性代码');
+        // console.log('⚠️ 全局背景音乐控制器不可用，使用兼容性代码');
         
         if (this.originalBackgroundVolume === undefined) {
-            console.log('🎵 没有保存的原始音量，跳过恢复');
+            // console.log('🎵 没有保存的原始音量，跳过恢复');
             return;
         }
         
@@ -1518,17 +1683,17 @@ class MicrophoneSetupManager {
         if (backgroundAudio) {
             // 恢复原始音量
             backgroundAudio.volume = this.originalBackgroundVolume;
-            console.log('🎵 背景音乐音量已恢复为:', this.originalBackgroundVolume);
+            // console.log('🎵 背景音乐音量已恢复为:', this.originalBackgroundVolume);
             
             // 更新音量进度条
             this.updateVolumeSlider(this.originalBackgroundVolume);
         } else {
-            console.log('🎵 未找到背景音乐元素');
+            // console.log('🎵 未找到背景音乐元素');
             
             // 尝试通过全局变量恢复
             if (window.setBackgroundMusicVolume && typeof window.setBackgroundMusicVolume === 'function') {
                 window.setBackgroundMusicVolume(this.originalBackgroundVolume);
-                console.log('🎵 通过全局函数恢复背景音乐音量为:', this.originalBackgroundVolume);
+                // console.log('🎵 通过全局函数恢复背景音乐音量为:', this.originalBackgroundVolume);
             }
         }
         
@@ -1538,7 +1703,7 @@ class MicrophoneSetupManager {
 
     // 更新音量进度条
     updateVolumeSlider(volume) {
-        console.log('🎵 尝试更新音量进度条为:', volume);
+        // console.log('🎵 尝试更新音量进度条为:', volume);
         
         // 查找音量滑块
         const volumeSliders = document.querySelectorAll('input[type="range"].inline-volume-slider, input[type="range"].volume-slider');
@@ -1547,14 +1712,14 @@ class MicrophoneSetupManager {
                 slider.value = volume;
                 // 触发change事件以更新UI
                 slider.dispatchEvent(new Event('input'));
-                console.log('🎵 音量滑块已更新为:', volume);
+                // console.log('🎵 音量滑块已更新为:', volume);
             }
         });
         
         // 也尝试通过全局函数更新
         if (window.updateVolumeSlider && typeof window.updateVolumeSlider === 'function') {
             window.updateVolumeSlider(volume);
-            console.log('🎵 通过全局函数更新音量滑块');
+            // console.log('🎵 通过全局函数更新音量滑块');
         }
     }
 
@@ -1588,7 +1753,7 @@ class MicrophoneSetupManager {
         };
         
         localStorage.setItem('microphoneConfig', JSON.stringify(config));
-        console.log('✅ 麦克风配置已保存', config);
+        // console.log('✅ 麦克风配置已保存', config);
         
         // 注册配置显示字段
         this.registerConfigFields(config);
@@ -1630,6 +1795,21 @@ class MicrophoneSetupManager {
         return this.recordingTestCompleted && this.hasValidRecording();
     }
 
+    // 检查当前会话中录音测试是否已完成
+    checkCurrentRecordingCompleted() {
+        // console.log('========== 检查当前录音测试状态 ==========');
+        // console.log('当前状态:', {
+        //     selectedDeviceId: this.selectedDeviceId,
+        //     selectedDeviceName: this.selectedDeviceName,
+        //     recordingTestCompleted: this.recordingTestCompleted,
+        //     hasValidRecording: this.hasValidRecording()
+        // });
+        
+        const isCompleted = this.selectedDeviceId && this.selectedDeviceName && this.recordingTestCompleted && this.hasValidRecording();
+        // console.log('当前录音测试完成结果:', isCompleted);
+        return isCompleted;
+    }
+
     // 检查是否有有效的录音
     hasValidRecording() {
         // 检查录音是否存在且有声音
@@ -1646,19 +1826,240 @@ class MicrophoneSetupManager {
 
     // 完成设置
     completeSetup() {
-        // 标记设置为已测试
-        if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
-            simpleConfig.markSettingTested('microphone');
+        // console.log('🎤 完成录音设备设置...');
+        
+        if (this.saveConfiguration()) {
+            // 标记设置为已测试
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
+                simpleConfig.markSettingTested('microphone');
+            }
+            
+            // console.log('✅ 录音设备设置完成');
+            
+            // 刷新主设置页面显示
+            if (window.refreshSettingsDisplay) {
+                window.refreshSettingsDisplay();
+            }
+            
+            this.stepManager.completeSetup();
+        } else {
+            this.stepManager.showStepStatus('step2', '保存配置失败', 'error');
+        }
+    }
+
+    // 保存基本配置（录音测试完成时调用）
+    saveBasicConfiguration() {
+        console.log('========== 录音设备基本配置保存调试 ==========');
+        console.log('保存基本配置时的变量状态:');
+        console.log('  - selectedDeviceId:', this.selectedDeviceId);
+        console.log('  - selectedDeviceName:', this.selectedDeviceName);
+        console.log('  - recordingTestCompleted:', this.recordingTestCompleted);
+        
+        if (!this.selectedDeviceId || !this.selectedDeviceName) {
+            console.error('❌ 未选择录音设备，无法保存基本配置');
+            console.error('  - selectedDeviceId为空:', !this.selectedDeviceId);
+            console.error('  - selectedDeviceName为空:', !this.selectedDeviceName);
+            return false;
         }
         
-        console.log('✅ 录音设备设置完成');
+        const config = {
+            enabled: true,
+            selectedDeviceId: this.selectedDeviceId,
+            selectedDeviceName: this.selectedDeviceName,
+            selectedOutputDeviceId: this.selectedOutputDeviceId,
+            selectedOutputDeviceName: this.selectedOutputDeviceName,
+            recordingTestCompleted: this.recordingTestCompleted,
+            timestamp: Date.now()
+        };
         
-        // 刷新主设置页面显示
-        if (window.refreshSettingsDisplay) {
-            window.refreshSettingsDisplay();
+        console.log('准备保存的基本配置对象:', config);
+        
+        try {
+            localStorage.setItem('microphoneConfig', JSON.stringify(config));
+            console.log('✅ 录音设备基本配置已保存到localStorage');
+            
+            // 验证保存是否成功
+            const saved = localStorage.getItem('microphoneConfig');
+            console.log('验证基本配置保存结果:', saved ? JSON.parse(saved) : null);
+            
+            return true;
+        } catch (error) {
+            console.error('❌ 保存录音设备基本配置失败:', error);
+            return false;
+        }
+    }
+
+    // 保存完整配置（设置完成时调用）
+    saveConfiguration() {
+        console.log('========== 录音设备完整配置保存调试 ==========');
+        console.log('保存完整配置时的变量状态:');
+        console.log('  - selectedDeviceId:', this.selectedDeviceId);
+        console.log('  - selectedDeviceName:', this.selectedDeviceName);
+        console.log('  - recordingTestCompleted:', this.recordingTestCompleted);
+        console.log('  - 管理器实例:', this);
+        
+        if (!this.selectedDeviceId || !this.selectedDeviceName) {
+            console.error('❌ 未选择录音设备，无法保存配置');
+            console.error('  - selectedDeviceId为空:', !this.selectedDeviceId);
+            console.error('  - selectedDeviceName为空:', !this.selectedDeviceName);
+            return false;
         }
         
-        this.stepManager.completeSetup();
+        const config = {
+            enabled: true,
+            selectedDeviceId: this.selectedDeviceId,
+            selectedDeviceName: this.selectedDeviceName,
+            selectedOutputDeviceId: this.selectedOutputDeviceId,
+            selectedOutputDeviceName: this.selectedOutputDeviceName,
+            recordingTestCompleted: this.recordingTestCompleted,
+            timestamp: Date.now()
+        };
+        
+        console.log('准备保存的完整配置对象:', config);
+        
+        try {
+            localStorage.setItem('microphoneConfig', JSON.stringify(config));
+            console.log('✅ 录音设备完整配置已保存到localStorage');
+            
+            // 验证保存是否成功
+            const saved = localStorage.getItem('microphoneConfig');
+            console.log('验证完整配置保存结果:', saved ? JSON.parse(saved) : null);
+            
+            return true;
+        } catch (error) {
+            console.error('❌ 保存录音设备配置失败:', error);
+            return false;
+        }
+    }
+
+    // 加载配置
+    loadConfiguration() {
+        console.log('========== 录音设备配置加载调试 ==========');
+        try {
+            const configStr = localStorage.getItem('microphoneConfig');
+            console.log('从localStorage获取的原始配置字符串:', configStr);
+            
+            if (configStr) {
+                const config = JSON.parse(configStr);
+                console.log('✅ 成功解析录音设备配置:', config);
+                console.log('配置详情:');
+                console.log('  - enabled:', config.enabled);
+                console.log('  - selectedDeviceId:', config.selectedDeviceId);
+                console.log('  - selectedDeviceName:', config.selectedDeviceName);
+                console.log('  - recordingTestCompleted:', config.recordingTestCompleted);
+                console.log('  - timestamp:', config.timestamp);
+                return config;
+            } else {
+                console.log('⚠️ localStorage中没有找到microphoneConfig');
+            }
+        } catch (error) {
+            console.error('❌ 加载录音设备配置失败:', error);
+        }
+        console.log('返回null（没有配置或加载失败）');
+        return null;
+    }
+
+    // 加载保存的设备配置
+    loadSavedDeviceConfig() {
+        console.log('========== 自动加载保存的录音设备配置调试 ==========');
+        
+        try {
+            const config = this.loadConfiguration();
+            console.log('（1）从localStorage加载的配置:', config);
+            
+            if (config && config.selectedDeviceId && config.enabled) {
+                console.log('（2）检测到有效的保存配置:');
+                console.log('  - selectedDeviceId:', config.selectedDeviceId);
+                console.log('  - selectedDeviceName:', config.selectedDeviceName);
+                console.log('  - recordingTestCompleted:', config.recordingTestCompleted);
+                console.log('  - enabled:', config.enabled);
+                
+                const deviceSelect = document.getElementById('deviceSelect');
+                console.log('（3）设备选择下拉框元素:', !!deviceSelect);
+                
+                if (deviceSelect) {
+                    // 尝试选择配置的设备
+                    const option = deviceSelect.querySelector(`option[value="${config.selectedDeviceId}"]`);
+                    console.log('（4）在下拉框中查找保存的设备选项:', !!option);
+                    
+                    if (option) {
+                        deviceSelect.value = config.selectedDeviceId;
+                        this.selectedDeviceId = config.selectedDeviceId;
+                        this.selectedDeviceName = config.selectedDeviceName;
+                        this.recordingTestCompleted = config.recordingTestCompleted || false;
+                        
+                        // 也恢复输出设备配置
+                        if (config.selectedOutputDeviceId) {
+                            const outputDeviceSelect = document.getElementById('outputDeviceSelect');
+                            if (outputDeviceSelect) {
+                                const outputOption = outputDeviceSelect.querySelector(`option[value="${config.selectedOutputDeviceId}"]`);
+                                if (outputOption) {
+                                    outputDeviceSelect.value = config.selectedOutputDeviceId;
+                                    this.selectedOutputDeviceId = config.selectedOutputDeviceId;
+                                    this.selectedOutputDeviceName = config.selectedOutputDeviceName;
+                                    console.log('✅ 已恢复输出设备选择:', config.selectedOutputDeviceName);
+                                }
+                            }
+                        }
+                        
+                        // console.log('（5）已自动设置设备选择:');
+                        // console.log('  - 下拉框值:', deviceSelect.value);
+                        // console.log('  - session变量 selectedDeviceId:', this.selectedDeviceId);
+                        // console.log('  - session变量 selectedDeviceName:', this.selectedDeviceName);
+                        // console.log('  - recordingTestCompleted:', this.recordingTestCompleted);
+                        
+                        // 不锁定设备选择，保持可编辑状态
+                        // 用户可以重新选择设备，这样更灵活
+                        
+                        // 在设备选择后添加说明文字，提示这是之前配置的设备
+                        const deviceGroup = deviceSelect.parentElement;
+                        if (deviceGroup && !deviceGroup.querySelector('.device-default-notice')) {
+                            const notice = document.createElement('div');
+                            notice.className = 'device-default-notice';
+                            notice.style.cssText = `
+                                margin-top: 8px;
+                                padding: 8px 12px;
+                                background: rgba(102, 106, 246, 0.1);
+                                border: 1px solid rgba(102, 106, 246, 0.3);
+                                border-radius: 4px;
+                                color: #666AF6;
+                                font-size: 12px;
+                            `;
+                            notice.innerHTML = `<i class="bx bx-info-circle"></i> 已预填之前配置的录音设备，可重新选择`;
+                            deviceGroup.appendChild(notice);
+                        }
+                        
+                        // 如果录音测试已完成，保存基本配置、显示完成按钮并触发自动跳转
+                        if (this.recordingTestCompleted) {
+                            console.log('（6）录音测试已完成，保存基本配置、显示完成按钮并触发自动跳转');
+                            
+                            // 保存基本配置
+                            this.saveBasicConfiguration();
+                            
+                            this.stepManager.showButton('step2', 'completeBtn');
+                            
+                            // 不自动跳转，让用户手动确认完成
+                            console.log('等待用户点击"完成设置"按钮确认...');
+                        }
+                        
+                        // console.log('========== 自动配置加载完成 ==========');
+                    } else {
+                        console.warn('⚠️ 保存的录音设备不在可用设备列表中，可用选项:');
+                        const allOptions = Array.from(deviceSelect.options).map(opt => ({
+                            value: opt.value,
+                            text: opt.text
+                        }));
+                        console.warn('  可用设备选项:', allOptions);
+                    }
+                } else {
+                    console.warn('⚠️ 找不到录音设备选择下拉框');
+                }
+            } else {
+                // console.log('（2）没有找到有效的保存配置，跳过自动加载');
+            }
+        } catch (error) {
+            console.warn('⚠️ 加载保存的录音设备配置失败:', error);
+        }
     }
 
     // 返回上一步
@@ -1671,16 +2072,32 @@ class MicrophoneSetupManager {
 
     // 处理设置完成
     handleSetupComplete() {
-        console.log('✅ 录音设备设置完成');
+        console.log('========== 录音设备设置完成处理调试 ==========');
+        console.log('设置完成时的状态:');
+        console.log('  - selectedDeviceId:', this.selectedDeviceId);
+        console.log('  - selectedDeviceName:', this.selectedDeviceName);
+        console.log('  - recordingTestCompleted:', this.recordingTestCompleted);
+        
+        // 验证localStorage中的配置
+        const savedConfig = localStorage.getItem('microphoneConfig');
+        console.log('localStorage中的配置:', savedConfig ? JSON.parse(savedConfig) : null);
         
         // 刷新主设置页面显示
+        console.log('调用refreshSettingsDisplay...');
         if (window.refreshSettingsDisplay) {
             window.refreshSettingsDisplay();
+        } else {
+            console.error('❌ window.refreshSettingsDisplay 不存在');
         }
+        
+        console.log('✅ 录音设备设置完成处理结束');
     }
 
     // 处理返回设置菜单
     handleBackToSettings() {
+        // 清理录音资源
+        this.cleanup();
+        
         // 创建新的设置overlay
         const newSettingsOverlay = createSettingsOverlay();
         setupSettingsOverlayEvents(newSettingsOverlay);
@@ -1691,14 +2108,43 @@ class MicrophoneSetupManager {
         }
     }
 
+    // 清理资源
+    cleanup() {
+        // console.log('🎤 清理录音设备设置资源...');
+        
+        // 停止录音（如果正在录音）
+        if (this.isRecording) {
+            this.stopRecording();
+        }
+        
+        // 停止录音监控
+        this.stopRecordingMonitor();
+        
+        // 清理音频流
+        if (this.mediaRecorder && this.mediaRecorder.stream) {
+            this.mediaRecorder.stream.getTracks().forEach(track => {
+                track.stop();
+                // console.log('🔇 已停止音频轨道:', track.kind);
+            });
+        }
+        
+        // 重置状态变量
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.recordingTestCompleted = false;
+        this.currentRecordingUrl = null;
+        
+        // console.log('✅ 录音设备资源清理完成');
+    }
+
     // 导入配置
     importConfig() {
-        console.log('导入麦克风配置');
+        // console.log('导入麦克风配置');
     }
 
     // 导出配置
     exportConfig() {
-        console.log('导出麦克风配置');
+        // console.log('导出麦克风配置');
     }
 }
 

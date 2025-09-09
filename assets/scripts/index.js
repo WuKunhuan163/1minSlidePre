@@ -26,7 +26,7 @@ class PPTSessionManager {
                 timestamp: Date.now()
             };
             sessionStorage.setItem(this.storageKey, JSON.stringify(sessionData));
-            console.log('✅ PPT数据已保存到session');
+            // console.log('✅ PPT数据已保存到session');
         } catch (error) {
             console.error('❌ Session保存失败:', error);
         }
@@ -45,7 +45,7 @@ class PPTSessionManager {
                 slideNames = sessionData.slideNames || {};
                 selectedSlideIndex = sessionData.selectedSlideIndex || -1;
                 
-                console.log(`✅ 已从session恢复 ${slides.length} 张PPT数据`);
+                // console.log(`✅ 已从session恢复 ${slides.length} 张PPT数据`);
                 return true;
             }
         } catch (error) {
@@ -58,7 +58,7 @@ class PPTSessionManager {
     clearSession() {
         try {
             sessionStorage.removeItem(this.storageKey);
-            console.log('🗑️ Session数据已清除');
+            // console.log('🗑️ Session数据已清除');
         } catch (error) {
             console.error('❌ Session清除失败:', error);
         }
@@ -97,7 +97,7 @@ const initializeDefaultSlideRequirements = () => {
 
 // 从assets/slides目录加载预设PPT文件
 const loadPresetSlides = async () => {
-    console.log('📁 开始加载预设PPT文件...');
+    // console.log('📁 开始加载预设PPT文件...');
     
     try {
         // 预设文件列表（基于assets/slides目录中的实际文件）
@@ -123,7 +123,7 @@ const loadPresetSlides = async () => {
                     const imageUrl = await blobToDataURL(imageBlob);
                     slides.push(imageUrl);
                     
-                    console.log(`✅ 已加载图片: ${preset.name} (使用Data URL)`);
+                    // console.log(`✅ 已加载图片: ${preset.name} (使用Data URL)`);
                 } else {
                     console.warn(`⚠️ 无法加载图片: ${preset.image}`);
                     continue;
@@ -136,7 +136,7 @@ const loadPresetSlides = async () => {
                         const requirements = await reqResponse.text();
                         const trimmedRequirements = requirements.trim();
                         slideRequirements[i] = truncateText(trimmedRequirements, 4096);
-                        console.log(`✅ 已加载要求文件: ${preset.name}.requirement.txt`);
+                        // console.log(`✅ 已加载要求文件: ${preset.name}.requirement.txt`);
                     }
                 } catch (reqError) {
                     console.warn(`⚠️ 无法加载要求文件: ${preset.requirement}`, reqError);
@@ -149,7 +149,7 @@ const loadPresetSlides = async () => {
                         const nameContent = await nameResponse.text();
                         const firstName = nameContent.split('\n')[0].trim();
                         slideNames[i] = firstName || preset.name;
-                        console.log(`✅ 已加载名称文件: ${preset.name}.name.txt`);
+                        // console.log(`✅ 已加载名称文件: ${preset.name}.name.txt`);
                     }
                 } catch (nameError) {
                     console.warn(`⚠️ 无法加载名称文件: ${preset.nameFile}`, nameError);
@@ -161,7 +161,7 @@ const loadPresetSlides = async () => {
             }
         }
         
-        console.log(`✅ 预设PPT加载完成，共加载 ${slides.length} 张PPT`);
+        // console.log(`✅ 预设PPT加载完成，共加载 ${slides.length} 张PPT`);
         
         // 保存到session
         pptSession.saveToSession();
@@ -180,12 +180,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     if (!hasSessionData) {
         // 如果没有session数据，尝试加载预设PPT文件
-        console.log('📁 没有session数据，尝试加载预设PPT...');
+        // console.log('📁 没有session数据，尝试加载预设PPT...');
         const presetLoaded = await loadPresetSlides();
         
         if (!presetLoaded) {
             // 如果预设PPT加载失败，初始化默认PPT的演讲要求
-            console.log('📁 预设PPT加载失败，使用默认初始化');
+            // console.log('📁 预设PPT加载失败，使用默认初始化');
             initializeDefaultSlideRequirements();
         }
     } else {
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const overlay = document.querySelector('.slides-overlay');
             if (overlay && slides.length > 0) {
                 window.renderThumbnails(overlay);
-                console.log(`🔄 已重新渲染 ${slides.length} 张PPT缩略图`);
+                // console.log(`🔄 已重新渲染 ${slides.length} 张PPT缩略图`);
             }
         }, 500);
     }
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     let isIOSFunction = () => {
         const userAgent = window.navigator.userAgent;
         let result = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-        console.log(result ? "The device is iOS" : "The device is not iOS");
+        // console.log(result ? "The device is iOS" : "The device is not iOS");
         return result;
     };
     let isIOS = isIOSFunction();
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 初始化拖拽上传功能
     const initializeDragAndDrop = (overlay) => {
-        console.log('🎯 初始化拖拽上传功能');
+        // console.log('🎯 初始化拖拽上传功能');
         
         // 创建拖拽提示层
         const dragOverlay = document.createElement('div');
@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // 检查是否包含文件
             if (e.dataTransfer.types.includes('Files')) {
-                console.log('🎯 拖拽文件进入');
+                // console.log('🎯 拖拽文件进入');
                 dragOverlay.style.display = 'flex';
             }
         });
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             dragCounter--;
             
             if (dragCounter === 0) {
-                console.log('🎯 拖拽文件离开');
+                // console.log('🎯 拖拽文件离开');
                 dragOverlay.style.display = 'none';
             }
         });
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             dragOverlay.style.display = 'none';
             
             const files = Array.from(e.dataTransfer.files);
-            console.log(`🎯 拖拽放置了 ${files.length} 个文件`);
+            // console.log(`🎯 拖拽放置了 ${files.length} 个文件`);
             
             try {
                 await processUploadedFiles(files, { clearExisting: false, actionName: '添加' });
@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
         
-        console.log('✅ 拖拽上传功能初始化完成');
+        // console.log('✅ 拖拽上传功能初始化完成');
     };
 
 
@@ -582,12 +582,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 预加载阶段 - 纯黑屏，快速完成
     const performPreloadSteps = async (overlay) => {
-        console.log('🎬 开始预加载阶段');
+        // console.log('🎬 开始预加载阶段');
         
         // 步骤1: 请求麦克风权限
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            console.log('✅ 麦克风权限获取成功');
+            // console.log('✅ 麦克风权限获取成功');
             // 停止流，我们只是为了获取权限
             stream.getTracks().forEach(track => track.stop());
         } catch (error) {
@@ -597,7 +597,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 步骤2: 请求摄像头权限
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            console.log('✅ 摄像头权限获取成功');
+            // console.log('✅ 摄像头权限获取成功');
             // 停止流，我们只是为了获取权限
             stream.getTracks().forEach(track => track.stop());
         } catch (error) {
@@ -617,25 +617,25 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             const results = await Promise.all(imagePromises);
             const successCount = results.filter(Boolean).length;
-            console.log(`✅ PPT图片加载完成: ${successCount}/${slides.length}`);
+            // console.log(`✅ PPT图片加载完成: ${successCount}/${slides.length}`);
         } catch (error) {
             console.warn('⚠️ PPT图片加载失败:', error);
         }
         
-        console.log('🎬 预加载阶段完成');
+        // console.log('🎬 预加载阶段完成');
     };
 
     // 开始录音录像
     const startRecording = async () => {
-        console.log('🎤 开始录音录像');
+        // console.log('🎤 开始录音录像');
         
         // 检查设置状态
         const audioSetupCompleted = simpleConfig.get('audioSetupCompleted');
         const videoSetupCompleted = simpleConfig.get('videoSetupCompleted');
         
-        console.log('📋 录音录像设置状态:');
-        console.log('  - 录音设置完成:', audioSetupCompleted);
-        console.log('  - 录像设置完成:', videoSetupCompleted);
+        // console.log('📋 录音录像设置状态:');
+        // console.log('  - 录音设置完成:', audioSetupCompleted);
+        // console.log('  - 录像设置完成:', videoSetupCompleted);
         
         if (!audioSetupCompleted && !videoSetupCompleted) {
             console.warn('⚠️ 录音和录像设置都未完成，无法开始录制');
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (videoSetupCompleted) {
             // 尝试录像（包含音频）
             try {
-                console.log('📹 尝试开始录像（包含音频）');
+                // console.log('📹 尝试开始录像（包含音频）');
                 
                 const stream = await getVideoStream();
             
@@ -670,24 +670,24 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             videoRecorder.onstop = () => {
                 videoBlob = new Blob(videoChunks, { type: 'video/webm' });
-                console.log('📹 视频录制完成, 大小:', videoBlob.size, 'bytes');
+                // console.log('📹 视频录制完成, 大小:', videoBlob.size, 'bytes');
             };
             
                 videoRecorder.start();
-                console.log('✅ 视频录制（含音频）已开始');
+                // console.log('✅ 视频录制（含音频）已开始');
                 
             } catch (error) {
                 console.warn('⚠️ 视频录制失败:', error);
                 
                 // 如果录像失败但录音设置完成，尝试仅录音
                 if (audioSetupCompleted) {
-                    console.log('🎤 录像失败，尝试仅录音');
+                    // console.log('🎤 录像失败，尝试仅录音');
                     await startAudioOnlyRecording();
                 }
             }
         } else if (audioSetupCompleted) {
             // 仅录音
-            console.log('🎤 开始仅录音模式');
+            // console.log('🎤 开始仅录音模式');
             await startAudioOnlyRecording();
         }
     };
@@ -709,20 +709,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             mediaRecorder.onstop = async () => {
                 const webmBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                console.log('🎤 音频录制完成，WebM大小:', webmBlob.size, 'bytes，开始转换为MP3');
+                // console.log('🎤 音频录制完成，WebM大小:', webmBlob.size, 'bytes，开始转换为MP3');
                 
                 try {
                     audioBlob = await convertToMp3(webmBlob);
-                    console.log('✅ 音频转换为MP3成功, 大小:', audioBlob.size, 'bytes');
+                    // console.log('✅ 音频转换为MP3成功, 大小:', audioBlob.size, 'bytes');
                 } catch (error) {
                     console.warn('⚠️ MP3转换失败，使用原始格式:', error);
                     audioBlob = webmBlob;
-                    console.log('🎤 使用WebM格式, 大小:', audioBlob.size, 'bytes');
+                    // console.log('🎤 使用WebM格式, 大小:', audioBlob.size, 'bytes');
                 }
             };
             
             mediaRecorder.start();
-            console.log('✅ 音频录制已开始');
+            // console.log('✅ 音频录制已开始');
             
         } catch (audioError) {
             console.error('❌ 音频录制失败:', audioError);
@@ -731,9 +731,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 停止录音录像
     const stopRecording = () => {
-        console.log('🛑 开始停止录音录像');
-        console.log('  - videoRecorder状态:', videoRecorder ? videoRecorder.state : 'null');
-        console.log('  - mediaRecorder状态:', mediaRecorder ? mediaRecorder.state : 'null');
+        // console.log('🛑 开始停止录音录像');
+        // console.log('  - videoRecorder状态:', videoRecorder ? videoRecorder.state : 'null');
+        // console.log('  - mediaRecorder状态:', mediaRecorder ? mediaRecorder.state : 'null');
         
         return new Promise((resolve) => {
             let completedCount = 0;
@@ -746,12 +746,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             const checkComplete = () => {
                 completedCount++;
-                console.log(`🔄 录制器停止进度: ${completedCount}/${totalRecorders}`);
+                // console.log(`🔄 录制器停止进度: ${completedCount}/${totalRecorders}`);
                 if (completedCount >= totalRecorders) {
-                    console.log('✅ 所有录制器已停止，摄像头已关闭');
-                    console.log('🔍 最终录音数据状态:');
-                    console.log('  - audioBlob:', !!audioBlob, audioBlob ? `大小:${audioBlob.size}` : '');
-                    console.log('  - videoBlob:', !!videoBlob, videoBlob ? `大小:${videoBlob.size}` : '');
+                    // console.log('✅ 所有录制器已停止，摄像头已关闭');
+                    // console.log('🔍 最终录音数据状态:');
+                    // console.log('  - audioBlob:', !!audioBlob, audioBlob ? `大小:${audioBlob.size}` : '');
+                    // console.log('  - videoBlob:', !!videoBlob, videoBlob ? `大小:${videoBlob.size}` : '');
                     resolve();
                 }
             };
@@ -764,7 +764,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     // 确保彻底关闭摄像头和麦克风
                     if (videoRecorder.stream) {
                         videoRecorder.stream.getTracks().forEach(track => {
-                            console.log(`🔇 停止轨道: ${track.kind} (${track.label})`);
+                            // console.log(`🔇 停止轨道: ${track.kind} (${track.label})`);
                             track.stop();
                         });
                         videoRecorder.stream = null;
@@ -784,7 +784,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     // 确保彻底关闭麦克风
                     if (mediaRecorder.stream) {
                         mediaRecorder.stream.getTracks().forEach(track => {
-                            console.log(`🔇 停止轨道: ${track.kind} (${track.label})`);
+                            // console.log(`🔇 停止轨道: ${track.kind} (${track.label})`);
                             track.stop();
                         });
                         mediaRecorder.stream = null;
@@ -864,7 +864,7 @@ const convertToMp3 = async (webmBlob) => {
 
 // 统一的录音接口 - 处理浏览器兼容性
 const getAudioStream = async (constraints = { audio: true }) => {
-    console.log('🎤 请求麦克风权限...');
+    // console.log('🎤 请求麦克风权限...');
     
     // 检查浏览器支持 - 参考audio-setup.js的实现
     if (!navigator.mediaDevices) {
@@ -874,7 +874,7 @@ const getAudioStream = async (constraints = { audio: true }) => {
             const stream = await new Promise((resolve, reject) => {
                 getUserMedia.call(navigator, constraints, resolve, reject);
             });
-            console.log('✅ 麦克风权限获取成功 (旧API)');
+            // console.log('✅ 麦克风权限获取成功 (旧API)');
             return stream;
         } else {
             throw new Error('您的浏览器不支持录音功能，请使用Chrome、Firefox或Safari等现代浏览器');
@@ -898,13 +898,13 @@ const getAudioStream = async (constraints = { audio: true }) => {
     };
     
     const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
-    console.log('✅ 麦克风权限获取成功');
+    // console.log('✅ 麦克风权限获取成功');
     return stream;
 };
 
 // 统一的录像接口 - 处理浏览器兼容性
 const getVideoStream = async (constraints = { audio: true, video: true }) => {
-    console.log('📹 请求摄像头和麦克风权限...');
+    // console.log('📹 请求摄像头和麦克风权限...');
     
     // 检查浏览器支持
     if (!navigator.mediaDevices) {
@@ -933,7 +933,7 @@ const getVideoStream = async (constraints = { audio: true, video: true }) => {
     };
     
     const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-    console.log('✅ 摄像头和麦克风权限获取成功');
+    // console.log('✅ 摄像头和麦克风权限获取成功');
     return stream;
 };
 
@@ -944,18 +944,18 @@ window.getVideoStream = getVideoStream;
 
     // 添加下载按钮
     const addDownloadButtons = (overlay) => {
-        console.log('📥 添加下载按钮');
+        // console.log('📥 添加下载按钮');
         
         // 查找录音停止按钮和定时器容器
         const recordStopButton = overlay.querySelector('.stop-recording') || overlay.querySelector('.record-stop-button');
         const timerContainer = overlay.querySelector('.timer-container') || overlay.querySelector('.presentation-controls');
         
-        console.log('🔍 查找按钮结果:', {
-            recordStopButton: recordStopButton ? '找到' : '未找到',
-            timerContainer: timerContainer ? '找到' : '未找到',
-            stopRecordingBtn: overlay.querySelector('.stop-recording') ? '找到.stop-recording' : '未找到.stop-recording',
-            presentationControls: overlay.querySelector('.presentation-controls') ? '找到.presentation-controls' : '未找到.presentation-controls'
-        });
+        // console.log('🔍 查找按钮结果:', {
+        //     recordStopButton: recordStopButton ? '找到' : '未找到',
+        //     timerContainer: timerContainer ? '找到' : '未找到',
+        //     stopRecordingBtn: overlay.querySelector('.stop-recording') ? '找到.stop-recording' : '未找到.stop-recording',
+        //     presentationControls: overlay.querySelector('.presentation-controls') ? '找到.presentation-controls' : '未找到.presentation-controls'
+        // });
         
         if (!timerContainer || !recordStopButton) {
             console.warn('⚠️ 无法找到必要的DOM元素，跳过下载按钮添加');
@@ -990,7 +990,7 @@ window.getVideoStream = getVideoStream;
             downloadAudioBtn.className = 'normal-button download-btn audio-btn';
             
             downloadAudioBtn.onclick = () => {
-                console.log('🎤 用户点击下载音频按钮');
+                // console.log('🎤 用户点击下载音频按钮');
                 // 禁用按钮
                 downloadAudioBtn.disabled = true;
                 downloadAudioBtn.textContent = '下载中...';
@@ -1014,7 +1014,7 @@ window.getVideoStream = getVideoStream;
             downloadVideoBtn.className = 'normal-button download-btn video-btn';
             
             downloadVideoBtn.onclick = () => {
-                console.log('📹 用户点击下载视频按钮');
+                // console.log('📹 用户点击下载视频按钮');
                 // 禁用按钮
                 downloadVideoBtn.disabled = true;
                 downloadVideoBtn.textContent = '下载中...';
@@ -1048,29 +1048,29 @@ window.getVideoStream = getVideoStream;
 
     // 下载音频
     const downloadAudio = () => {
-        console.log('🎤 开始下载音频');
-        console.log('  - audioBlob可用:', !!audioBlob, audioBlob ? `大小:${audioBlob.size}` : '');
-        console.log('  - videoBlob可用:', !!videoBlob, videoBlob ? `大小:${videoBlob.size}` : '');
+        // console.log('🎤 开始下载音频');
+        // console.log('  - audioBlob可用:', !!audioBlob, audioBlob ? `大小:${audioBlob.size}` : '');
+        // console.log('  - videoBlob可用:', !!videoBlob, videoBlob ? `大小:${videoBlob.size}` : '');
         
         let blob = audioBlob;
         let filename = '演讲录音.mp3';
         
         // 如果有视频但没有单独的音频，从视频中提取音频
         if (!audioBlob && videoBlob) {
-            console.log('🔄 没有音频blob，使用视频blob');
+            // console.log('🔄 没有音频blob，使用视频blob');
             blob = videoBlob;
             filename = '演讲录音.webm'; // 视频文件保持webm格式
         }
         
         if (blob) {
-            console.log(`📥 开始下载文件: ${filename}, 大小: ${blob.size} bytes`);
+            // console.log(`📥 开始下载文件: ${filename}, 大小: ${blob.size} bytes`);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
             a.click();
             URL.revokeObjectURL(url);
-            console.log('✅ 下载链接已创建并触发');
+            // console.log('✅ 下载链接已创建并触发');
         } else {
             console.error('❌ 没有可下载的音频或视频数据');
         }
@@ -1078,7 +1078,7 @@ window.getVideoStream = getVideoStream;
 
     // 下载视频
     const downloadVideo = async () => {
-        console.log('📹 下载视频');
+        // console.log('📹 下载视频');
         
         if (!videoBlob) {
             console.error('❌ 没有视频数据可下载');
@@ -1205,14 +1205,14 @@ window.getVideoStream = getVideoStream;
             progressBar.style.width = `${progress}%`;
             if (isActive) {
             if (currentTime >= totalTime && !endWarned) {
-                console.log(`⏰ 演讲时间到! 实际时长: ${totalTime}秒 (${presentationTime}分钟)`);
+                // console.log(`⏰ 演讲时间到! 实际时长: ${totalTime}秒 (${presentationTime}分钟)`);
                 endWarned = true;
                     if (!effectsMuted) {
                         endSound.volume = effectsVolume * effectsVolume; // 平方权重 
                         endSound.play();
                     }
                 } else if (currentTime >= totalTime / 2 && !halfwayWarned) {
-                    console.log("Presentation time is halfway!");
+                    // console.log("Presentation time is halfway!");
                     halfwayWarned = true;
                     if (!effectsMuted) {
                         halfwaySound.volume = effectsVolume * effectsVolume; // 平方权重
@@ -1255,7 +1255,7 @@ window.getVideoStream = getVideoStream;
             slideContainer.classList.add('blur');
             await new Promise(resolve => setTimeout(resolve, 1000));
             if (!isActive) return;
-            console.log("Get ready for the presentation! ");
+            // console.log("Get ready for the presentation! ");
             if (!effectsMuted) {
                 startSound.currentTime = 0;
                 startSound.volume = effectsVolume * effectsVolume; // 平方权重
@@ -1289,7 +1289,7 @@ window.getVideoStream = getVideoStream;
             await startRecording();
             
             startTime = Date.now();
-            console.log(`🎬 演讲开始! 预设时长: ${presentationTime * 60}秒 (${presentationTime}分钟)`);
+            // console.log(`🎬 演讲开始! 预设时长: ${presentationTime * 60}秒 (${presentationTime}分钟)`);
             timerInterval = setInterval(updateTimer, 100);
             if (overlay) {
                 recordStopButton.addEventListener('click', async () => {
@@ -1316,18 +1316,18 @@ window.getVideoStream = getVideoStream;
                         
                         // 等待一小段时间确保blob数据准备好
                         setTimeout(() => {
-                            console.log('🔍 演讲结束后检查录音数据:');
-                            console.log('  - audioBlob存在:', !!audioBlob);
-                            console.log('  - videoBlob存在:', !!videoBlob);
-                            console.log('  - audioBlob大小:', audioBlob ? audioBlob.size : 'N/A');
-                            console.log('  - videoBlob大小:', videoBlob ? videoBlob.size : 'N/A');
+                            // console.log('🔍 演讲结束后检查录音数据:');
+                            // console.log('  - audioBlob存在:', !!audioBlob);
+                            // console.log('  - videoBlob存在:', !!videoBlob);
+                            // console.log('  - audioBlob大小:', audioBlob ? audioBlob.size : 'N/A');
+                            // console.log('  - videoBlob大小:', videoBlob ? videoBlob.size : 'N/A');
                             
                             // 自动下载音频（如果有音频数据）
                             if (audioBlob || videoBlob) {
-                                console.log('🎤 满足自动下载条件，开始自动下载音频');
+                                // console.log('🎤 满足自动下载条件，开始自动下载音频');
                                 try {
                                     downloadAudio();
-                                    console.log('✅ 自动下载音频调用成功');
+                                    // console.log('✅ 自动下载音频调用成功');
                                 } catch (error) {
                                     console.error('❌ 自动下载音频调用失败:', error);
                                 }
@@ -1337,7 +1337,7 @@ window.getVideoStream = getVideoStream;
                             
                             // 如果开启了录音识别功能，开始语音转文字
                             if (shouldShowTranscriptButton()) {
-                                console.log('🔊 开始语音转文字');
+                                // console.log('🔊 开始语音转文字');
                                 startSpeechRecognition(overlay);
                             }
                         }, 500);
@@ -1360,7 +1360,7 @@ window.getVideoStream = getVideoStream;
     startButton.addEventListener('click', () => {
         if (slides.length === 0) {
             // 没有PPT时，等效于点击"上传PPT"按钮
-            console.log('🎯 没有PPT，自动跳转到上传PPT界面');
+            // console.log('🎯 没有PPT，自动跳转到上传PPT界面');
             uploadButton.click();
             return;
         }
@@ -1503,7 +1503,7 @@ const initBackgroundMusic = () => {
     window.BACKGROUND_MUSIC_VOLUME_MULTIPLIER = BACKGROUND_MUSIC_VOLUME_MULTIPLIER;
     
     // 不立即播放，等待用户首次交互
-    console.log('🎵 背景音乐已准备就绪，等待用户交互后播放');
+    // console.log('🎵 背景音乐已准备就绪，等待用户交互后播放');
 };
 
 // 尝试启动背景音乐（在用户交互后调用）
@@ -1511,9 +1511,9 @@ const tryStartBackgroundMusic = () => {
     if (backgroundMusic && isBackgroundMusicEnabled && !isPresentationMode && !audioContextUnlocked) {
         backgroundMusic.play().then(() => {
             audioContextUnlocked = true;
-            console.log('🎵 背景音乐开始播放');
+            // console.log('🎵 背景音乐开始播放');
         }).catch(e => {
-            console.log('🔇 背景音乐仍需要用户交互:', e.message);
+            // console.log('🔇 背景音乐仍需要用户交互:', e.message);
         });
     }
 };
@@ -1555,8 +1555,8 @@ const addUserInteractionListeners = () => {
 
 // 确保DOM加载完成后再初始化设置页面
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM加载完成，开始初始化');
-    console.log('🚀 当前时间:', new Date().toLocaleTimeString());
+    // console.log('🚀 DOM加载完成，开始初始化');
+    // console.log('🚀 当前时间:', new Date().toLocaleTimeString());
     
     // 初始化设置页面（已在后面的延迟初始化中处理）
     // initAudioSetup(); // 已移除，使用统一的设置页面初始化
@@ -1565,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         if (typeof initSettingsPage === 'function') {
             initSettingsPage();
-            console.log('🚀 设置页面初始化完成');
+            // console.log('🚀 设置页面初始化完成');
         } else {
             console.warn('⚠️ initSettingsPage 函数未找到，可能脚本加载未完成');
         }
@@ -1586,16 +1586,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // PPT选择相关函数
 const initSlideSelection = () => {
-    console.log('🎯 初始化PPT选择功能');
+    // console.log('🎯 初始化PPT选择功能');
 };
 
 // 选择PPT幻灯片
 const selectSlide = (index, overlay) => {
-    console.log(`🎯 选择PPT幻灯片: ${index}`);
+    // console.log(`🎯 选择PPT幻灯片: ${index}`);
     
     // 如果点击的是已经选中的幻灯片，则取消选中
     if (selectedSlideIndex === index) {
-        console.log(`🎯 取消选中PPT幻灯片: ${index}`);
+        // console.log(`🎯 取消选中PPT幻灯片: ${index}`);
         
         // 保存当前编辑内容
         autoSaveCurrentSlide();
@@ -1701,12 +1701,12 @@ const autoSaveCurrentSlide = () => {
                 const nameElement = targetThumbnail.querySelector('.slide-name');
                 if (nameElement) {
                     nameElement.textContent = slideNames[selectedSlideIndex];
-                    console.log(`🔄 已更新缩略图 ${selectedSlideIndex} 的名称显示: ${slideNames[selectedSlideIndex]}`);
+                    // console.log(`🔄 已更新缩略图 ${selectedSlideIndex} 的名称显示: ${slideNames[selectedSlideIndex]}`);
                 }
             }
         }
         
-        console.log(`🔄 自动保存PPT ${selectedSlideIndex} 的信息`);
+        // console.log(`🔄 自动保存PPT ${selectedSlideIndex} 的信息`);
     }
 };
 
@@ -1740,7 +1740,7 @@ const hideSpeechRequirements = () => {
 
 // 取消演讲内容要求输入
 const cancelSpeechRequirements = () => {
-    console.log('🎯 取消演讲内容要求输入');
+    // console.log('🎯 取消演讲内容要求输入');
     
     // 保存当前编辑内容（包括名称）
     if (selectedSlideIndex !== -1) {
@@ -1757,7 +1757,7 @@ const cancelSpeechRequirements = () => {
 
 // 保存演讲内容要求
 const saveSpeechRequirements = () => {
-    console.log('🎯 保存演讲内容要求');
+    // console.log('🎯 保存演讲内容要求');
     
     if (selectedSlideIndex === -1) {
         console.warn('⚠️ 没有选中的PPT');
@@ -1774,18 +1774,18 @@ const saveSpeechRequirements = () => {
         // 保存名称（如果为空则使用默认名称）
         if (slideName) {
             slideNames[selectedSlideIndex] = slideName;
-            console.log(`✅ 已保存PPT ${selectedSlideIndex} 的名称: ${slideName}`);
+            // console.log(`✅ 已保存PPT ${selectedSlideIndex} 的名称: ${slideName}`);
         } else {
             // 如果名称为空，使用默认名称
             slideNames[selectedSlideIndex] = (selectedSlideIndex + 1).toString();
-            console.log(`📝 PPT ${selectedSlideIndex} 使用默认名称: ${slideNames[selectedSlideIndex]}`);
+            // console.log(`📝 PPT ${selectedSlideIndex} 使用默认名称: ${slideNames[selectedSlideIndex]}`);
         }
         
         if (requirements) {
             // 应用4096字符限制并保存演讲要求
             const truncatedRequirements = truncateText(requirements, 4096);
             slideRequirements[selectedSlideIndex] = truncatedRequirements;
-            console.log(`✅ 已保存PPT ${selectedSlideIndex} 的演讲要求:`, truncatedRequirements.substring(0, 50) + '...');
+            // console.log(`✅ 已保存PPT ${selectedSlideIndex} 的演讲要求:`, truncatedRequirements.substring(0, 50) + '...');
             
             // 如果文本被截断，更新textarea显示
             if (truncatedRequirements !== requirements) {
@@ -1798,7 +1798,7 @@ const saveSpeechRequirements = () => {
         } else {
             // 如果内容为空，删除该PPT的演讲要求
             delete slideRequirements[selectedSlideIndex];
-            console.log(`🗑️ 已删除PPT ${selectedSlideIndex} 的演讲要求`);
+            // console.log(`🗑️ 已删除PPT ${selectedSlideIndex} 的演讲要求`);
         }
         
         hideSpeechRequirements();
@@ -1815,7 +1815,7 @@ const saveSpeechRequirements = () => {
                 const nameElement = targetThumbnail.querySelector('.slide-name');
                 if (nameElement) {
                     nameElement.textContent = slideNames[selectedSlideIndex];
-                    console.log(`🔄 已更新缩略图 ${selectedSlideIndex} 的名称显示: ${slideNames[selectedSlideIndex]}`);
+                    // console.log(`🔄 已更新缩略图 ${selectedSlideIndex} 的名称显示: ${slideNames[selectedSlideIndex]}`);
                 }
             }
         }
@@ -1830,7 +1830,7 @@ const saveSpeechRequirements = () => {
 
 // 清空所有PPT
 const clearAllSlides = () => {
-    console.log('🗑️ 开始清空所有PPT');
+    // console.log('🗑️ 开始清空所有PPT');
     
     if (slides.length === 0) {
         showMessage('没有PPT需要清空', 'info');
@@ -1841,7 +1841,7 @@ const clearAllSlides = () => {
     const confirmed = confirm(`确定要清空所有 ${slides.length} 张PPT吗？此操作不可撤销。`);
     
     if (!confirmed) {
-        console.log('❌ 用户取消了清空操作');
+        // console.log('❌ 用户取消了清空操作');
         return;
     }
     
@@ -1864,7 +1864,7 @@ const clearAllSlides = () => {
             window.renderThumbnails(overlay);
         }
         
-        console.log('✅ 已清空所有PPT数据');
+        // console.log('✅ 已清空所有PPT数据');
         showMessage('已清空所有PPT', 'success');
         
     } catch (error) {
@@ -1875,7 +1875,7 @@ const clearAllSlides = () => {
 
 // 批量导出PPT和演讲要求
 const batchExportSlides = async () => {
-    console.log('📦 开始批量导出PPT和演讲要求');
+    // console.log('📦 开始批量导出PPT和演讲要求');
     
     if (slides.length === 0) {
         showMessage('没有可导出的PPT', 'info');
@@ -1911,7 +1911,7 @@ const batchExportSlides = async () => {
                     
                     if (mimeMatch) {
                         const mimeType = mimeMatch[1];
-                        console.log(`📸 PPT ${i + 1} MIME类型: ${mimeType}`);
+                        // console.log(`📸 PPT ${i + 1} MIME类型: ${mimeType}`);
                         
                         // 根据MIME类型确定扩展名
                         switch (mimeType) {
@@ -1938,13 +1938,13 @@ const batchExportSlides = async () => {
                         }
                     }
                     
-                    console.log(`📸 PPT ${i + 1} 将导出为: ${slideIndex}.${extension}`);
+                    // console.log(`📸 PPT ${i + 1} 将导出为: ${slideIndex}.${extension}`);
                     
                     // 确保blob具有正确的MIME类型
                     const correctMimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
                     const correctedBlob = new Blob([blob], { type: correctMimeType });
                     
-                    console.log(`📸 PPT ${i + 1} 原始blob类型: ${blob.type}, 修正后类型: ${correctedBlob.type}`);
+                    // console.log(`📸 PPT ${i + 1} 原始blob类型: ${blob.type}, 修正后类型: ${correctedBlob.type}`);
                     zip.file(`${slideIndex}.${extension}`, correctedBlob);
                 } catch (error) {
                     console.warn(`无法处理PPT ${i + 1} (data URL):`, error);
@@ -1957,13 +1957,13 @@ const batchExportSlides = async () => {
                     const response = await fetch(slide);
                     const blob = await response.blob();
                     const extension = slide.split('.').pop().toLowerCase() || 'jpg';
-                    console.log(`📸 PPT ${i + 1} 从文件路径导出为: ${slideIndex}.${extension}`);
+                    // console.log(`📸 PPT ${i + 1} 从文件路径导出为: ${slideIndex}.${extension}`);
                     
                     // 确保blob具有正确的MIME类型
                     const correctMimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
                     const correctedBlob = new Blob([blob], { type: correctMimeType });
                     
-                    console.log(`📸 PPT ${i + 1} 原始blob类型: ${blob.type}, 修正后类型: ${correctedBlob.type}`);
+                    // console.log(`📸 PPT ${i + 1} 原始blob类型: ${blob.type}, 修正后类型: ${correctedBlob.type}`);
                     zip.file(`${slideIndex}.${extension}`, correctedBlob);
                 } catch (error) {
                     console.warn(`无法获取图片 ${slide}:`, error);
@@ -1981,14 +1981,14 @@ const batchExportSlides = async () => {
         }
         
         // 输出ZIP文件内容摘要
-        console.log('📦 ZIP文件内容摘要:');
+        // console.log('📦 ZIP文件内容摘要:');
         zip.forEach((relativePath, file) => {
-            console.log(`  - ${relativePath} (${file._data ? '有数据' : '无数据'})`);
+            // console.log(`  - ${relativePath} (${file._data ? '有数据' : '无数据'})`);
         });
         
         // 生成并下载zip文件
         const zipBlob = await zip.generateAsync({ type: 'blob' });
-        console.log(`📦 生成的ZIP文件大小: ${zipBlob.size} bytes`);
+        // console.log(`📦 生成的ZIP文件大小: ${zipBlob.size} bytes`);
         
         const url = URL.createObjectURL(zipBlob);
         
@@ -1998,7 +1998,7 @@ const batchExportSlides = async () => {
         link.click();
         
         URL.revokeObjectURL(url);
-        console.log('✅ 批量导出完成');
+        // console.log('✅ 批量导出完成');
         showMessage(`成功导出 ${slides.length} 张PPT到ZIP文件`, 'success');
         
     } catch (error) {
@@ -2019,7 +2019,7 @@ const batchExportSlides = async () => {
 
 // 批量导入PPT和演讲要求
 const batchImportSlides = () => {
-    console.log('📥 开始批量导入PPT和演讲要求');
+    // console.log('📥 开始批量导入PPT和演讲要求');
     
     // 禁用导入按钮
     const importBtn = document.querySelector('.btn-import');
@@ -2063,7 +2063,7 @@ const batchImportSlides = () => {
             const nameFiles = {};
             
             // 首先过滤掉macOS的垃圾文件并转换为文件对象
-            console.log('📦 开始分析ZIP文件内容:');
+            // console.log('📦 开始分析ZIP文件内容:');
             const files = [];
             
             for (const [relativePath, zipEntry] of Object.entries(zipContent.files)) {
@@ -2079,11 +2079,11 @@ const batchImportSlides = () => {
                     fileName.startsWith('~$') ||          // Office临时文件
                     fileName.endsWith('.tmp') ||          // 临时文件
                     zipEntry.dir) {
-                    console.log(`🗑️ 跳过垃圾文件/文件夹: ${relativePath}`);
+                    // console.log(`🗑️ 跳过垃圾文件/文件夹: ${relativePath}`);
                     continue;
                 }
                 
-                console.log(`📄 有效文件: ${relativePath}`);
+                // console.log(`📄 有效文件: ${relativePath}`);
                 
                 // 创建一个类似File对象的结构
                 const fileObj = {
@@ -2094,8 +2094,8 @@ const batchImportSlides = () => {
                 files.push(fileObj);
             }
             
-            console.log(`📊 过滤后有效文件数量: ${files.length}`);
-            console.log('有效文件列表:', files.map(f => f.name));
+            // console.log(`📊 过滤后有效文件数量: ${files.length}`);
+            // console.log('有效文件列表:', files.map(f => f.name));
             
             // 调用通用的文件处理函数（和文件夹导入相同的逻辑）
             await processZipFiles(files);
@@ -2138,7 +2138,7 @@ const shouldShowTranscriptButton = () => {
 
 // 开始语音识别
 const startSpeechRecognition = async (overlay) => {
-    console.log('🎤 开始语音识别');
+    // console.log('🎤 开始语音识别');
     transcriptStatus = 'processing';
     
     try {
@@ -2160,7 +2160,7 @@ const startSpeechRecognition = async (overlay) => {
             transcriptText = result.text;
             transcriptStatus = 'success';
             updateTranscriptButton('success');
-            console.log('✅ 语音识别成功:', transcriptText);
+            // console.log('✅ 语音识别成功:', transcriptText);
         } else {
             throw new Error(result.error || '识别失败');
         }
@@ -2211,7 +2211,7 @@ const updateTranscriptButton = (status) => {
 
 // 重试语音识别
 const retryRecognition = async () => {
-    console.log('🔄 重试语音识别');
+    // console.log('🔄 重试语音识别');
     const transcriptBtn = document.getElementById('transcriptButton');
     
     if (transcriptBtn) {
@@ -2246,7 +2246,7 @@ const retryRecognition = async () => {
 
 // 下载文字稿
 const downloadTranscript = () => {
-    console.log('📄 下载文字稿');
+    // console.log('📄 下载文字稿');
     
     if (!transcriptText) {
         console.warn('没有文字稿内容');
@@ -2279,7 +2279,7 @@ const downloadTranscript = () => {
 
 // 开始AI评分
 const startAIScoring = () => {
-    console.log('🤖 开始AI评分');
+    // console.log('🤖 开始AI评分');
     // TODO: 实现AI评分功能
     alert('AI评分功能开发中...');
 };
@@ -2288,7 +2288,7 @@ const startAIScoring = () => {
 const callAliyunSpeechAPI = async (audioBlob) => {
     // TODO: 实现阿里云语音识别API调用
     // 这里需要实现实际的API调用逻辑
-    console.log('🔄 调用阿里云语音识别API');
+    // console.log('🔄 调用阿里云语音识别API');
     
     // 模拟API调用
     return new Promise((resolve) => {
@@ -2381,7 +2381,7 @@ const toggleImportDropdown = () => {
 
 // 批量导入文件夹
 const batchImportFolder = () => {
-    console.log('📁 开始批量导入文件夹');
+    // console.log('📁 开始批量导入文件夹');
     
     const input = document.createElement('input');
     input.type = 'file';
@@ -2430,7 +2430,7 @@ const fileToDataURL = (file) => {
 
 // 统一的文件处理接口
 const processUploadedFiles = async (files, options = {}) => {
-    console.log(`📁 统一处理 ${files.length} 个文件`);
+    // console.log(`📁 统一处理 ${files.length} 个文件`);
     
     // 收集图片、txt文件和名称文件
     const imageFiles = {};
@@ -2444,7 +2444,7 @@ const processUploadedFiles = async (files, options = {}) => {
     files.forEach(file => {
         // 跳过系统文件
         if (file.name.startsWith('__MACOSX') || file.name.startsWith('.')) {
-            console.log(`⏭️ 跳过系统文件: ${file.name}`);
+            // console.log(`⏭️ 跳过系统文件: ${file.name}`);
             return;
         }
         
@@ -2456,23 +2456,23 @@ const processUploadedFiles = async (files, options = {}) => {
             // 如果已经有同名的图片，跳过（只选择第一个）
             if (!imageFiles[nameWithoutExt]) {
                 imageFiles[nameWithoutExt] = file;
-                console.log(`📸 收集图片文件: ${file.name}`);
+                // console.log(`📸 收集图片文件: ${file.name}`);
             }
         } else if (extension === 'txt') {
             if (nameWithoutExt.endsWith('.name')) {
                 // 这是名称文件 (新格式: NAME.name.txt)
                 const slideBaseName = nameWithoutExt.replace('.name', '');
                 nameFiles[slideBaseName] = file;
-                console.log(`📝 收集名称文件: ${file.name} -> ${slideBaseName}`);
+                // console.log(`📝 收集名称文件: ${file.name} -> ${slideBaseName}`);
             } else if (nameWithoutExt.endsWith('.requirement')) {
                 // 这是演讲要求文件 (新格式: NAME.requirement.txt)
                 const slideBaseName = nameWithoutExt.replace('.requirement', '');
                 textFiles[slideBaseName] = file;
-                console.log(`📄 收集要求文件: ${file.name} -> ${slideBaseName}`);
+                // console.log(`📄 收集要求文件: ${file.name} -> ${slideBaseName}`);
             } else {
                 // 兼容旧格式: NAME.txt (演讲要求)
                 textFiles[nameWithoutExt] = file;
-                console.log(`📄 收集要求文件(旧格式): ${file.name} -> ${nameWithoutExt}`);
+                // console.log(`📄 收集要求文件(旧格式): ${file.name} -> ${nameWithoutExt}`);
             }
         }
     });
@@ -2480,7 +2480,7 @@ const processUploadedFiles = async (files, options = {}) => {
     // 按文件名排序（保持原文件夹的排序）
     const sortedImageNames = Object.keys(imageFiles).sort();
     
-    console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
+    // console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
     
     if (sortedImageNames.length === 0) {
         throw new Error('没有找到支持的图片文件');
@@ -2492,7 +2492,7 @@ const processUploadedFiles = async (files, options = {}) => {
         slides.length = 0;
         Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
         Object.keys(slideNames).forEach(key => delete slideNames[key]);
-        console.log('🗑️ 已清空现有PPT数据');
+        // console.log('🗑️ 已清空现有PPT数据');
     }
     
     const startIndex = slides.length; // 记录开始添加的位置
@@ -2530,7 +2530,7 @@ const processUploadedFiles = async (files, options = {}) => {
     }
     
     const addedCount = slides.length - startIndex;
-    console.log(`✅ 成功处理 ${addedCount} 张PPT`);
+    // console.log(`✅ 成功处理 ${addedCount} 张PPT`);
     
     // 保存到session
     pptSession.saveToSession();
@@ -2554,7 +2554,7 @@ const processUploadedFiles = async (files, options = {}) => {
 
 // 专门处理ZIP文件的统一接口
 const processUploadedFilesFromZip = async (files, options = {}) => {
-    console.log(`📁 统一处理ZIP中的 ${files.length} 个文件`);
+    // console.log(`📁 统一处理ZIP中的 ${files.length} 个文件`);
     
     // 收集图片、txt文件和名称文件
     const imageFiles = {};
@@ -2568,7 +2568,7 @@ const processUploadedFilesFromZip = async (files, options = {}) => {
     files.forEach(file => {
         // 跳过系统文件
         if (file.name.startsWith('__MACOSX') || file.name.startsWith('.')) {
-            console.log(`⏭️ 跳过系统文件: ${file.name}`);
+            // console.log(`⏭️ 跳过系统文件: ${file.name}`);
             return;
         }
         
@@ -2580,23 +2580,23 @@ const processUploadedFilesFromZip = async (files, options = {}) => {
             // 如果已经有同名的图片，跳过（只选择第一个）
             if (!imageFiles[nameWithoutExt]) {
                 imageFiles[nameWithoutExt] = file;
-                console.log(`📸 收集图片文件: ${file.name}`);
+                // console.log(`📸 收集图片文件: ${file.name}`);
             }
         } else if (extension === 'txt') {
             if (nameWithoutExt.endsWith('.name')) {
                 // 这是名称文件 (新格式: NAME.name.txt)
                 const slideBaseName = nameWithoutExt.replace('.name', '');
                 nameFiles[slideBaseName] = file;
-                console.log(`📝 收集名称文件: ${file.name} -> ${slideBaseName}`);
+                // console.log(`📝 收集名称文件: ${file.name} -> ${slideBaseName}`);
             } else if (nameWithoutExt.endsWith('.requirement')) {
                 // 这是演讲要求文件 (新格式: NAME.requirement.txt)
                 const slideBaseName = nameWithoutExt.replace('.requirement', '');
                 textFiles[slideBaseName] = file;
-                console.log(`📄 收集要求文件: ${file.name} -> ${slideBaseName}`);
+                // console.log(`📄 收集要求文件: ${file.name} -> ${slideBaseName}`);
             } else {
                 // 兼容旧格式: NAME.txt (演讲要求)
                 textFiles[nameWithoutExt] = file;
-                console.log(`📄 收集要求文件(旧格式): ${file.name} -> ${nameWithoutExt}`);
+                // console.log(`📄 收集要求文件(旧格式): ${file.name} -> ${nameWithoutExt}`);
             }
         }
     });
@@ -2604,7 +2604,7 @@ const processUploadedFilesFromZip = async (files, options = {}) => {
     // 按文件名排序（保持原文件夹的排序）
     const sortedImageNames = Object.keys(imageFiles).sort();
     
-    console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
+    // console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
     
     if (sortedImageNames.length === 0) {
         throw new Error('ZIP文件中没有找到支持的图片文件');
@@ -2616,7 +2616,7 @@ const processUploadedFilesFromZip = async (files, options = {}) => {
         slides.length = 0;
         Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
         Object.keys(slideNames).forEach(key => delete slideNames[key]);
-        console.log('🗑️ 已清空现有PPT数据');
+        // console.log('🗑️ 已清空现有PPT数据');
     }
     
     const startIndex = slides.length; // 记录开始添加的位置
@@ -2655,7 +2655,7 @@ const processUploadedFilesFromZip = async (files, options = {}) => {
     }
     
     const addedCount = slides.length - startIndex;
-    console.log(`✅ 成功处理 ${addedCount} 张PPT`);
+    // console.log(`✅ 成功处理 ${addedCount} 张PPT`);
     
     // 保存到session
     pptSession.saveToSession();
@@ -2695,13 +2695,13 @@ const truncateText = (text, maxLength = 4096) => {
         return text;
     }
     
-    console.log(`📝 文本长度 ${text.length} 超过限制，截断到 ${maxLength} 字符`);
+    // console.log(`📝 文本长度 ${text.length} 超过限制，截断到 ${maxLength} 字符`);
     return text.substring(0, maxLength);
 };
 
 // 测试功能：下载第一张PPT进行验证
 const testDownloadFirstSlide = async () => {
-    console.log('🧪 测试功能：开始下载第一张PPT进行验证');
+    // console.log('🧪 测试功能：开始下载第一张PPT进行验证');
     
     if (slides.length === 0) {
         console.warn('⚠️ 没有PPT可以测试下载');
@@ -2712,19 +2712,19 @@ const testDownloadFirstSlide = async () => {
         const firstSlide = slides[0];
         const slideName = slideNames[0] || '001';
         
-        console.log('🔍 第一张PPT数据分析:');
-        console.log(`  - 数据类型: ${firstSlide.startsWith('data:') ? 'data URL' : '文件路径'}`);
-        console.log(`  - 数据长度: ${firstSlide.length} 字符`);
-        console.log(`  - 前100字符: ${firstSlide.substring(0, 100)}`);
+        // console.log('🔍 第一张PPT数据分析:');
+        // console.log(`  - 数据类型: ${firstSlide.startsWith('data:') ? 'data URL' : '文件路径'}`);
+        // console.log(`  - 数据长度: ${firstSlide.length} 字符`);
+        // console.log(`  - 前100字符: ${firstSlide.substring(0, 100)}`);
         
         if (firstSlide.startsWith('data:')) {
             // 处理data URL
             const response = await fetch(firstSlide);
             const blob = await response.blob();
             
-            console.log('📊 Blob信息:');
-            console.log(`  - 原始blob类型: ${blob.type}`);
-            console.log(`  - 原始blob大小: ${blob.size} bytes`);
+            // console.log('📊 Blob信息:');
+            // console.log(`  - 原始blob类型: ${blob.type}`);
+            // console.log(`  - 原始blob大小: ${blob.size} bytes`);
             
             // 从data URL中提取MIME类型
             const mimeMatch = firstSlide.match(/^data:([^;]+);/);
@@ -2733,7 +2733,7 @@ const testDownloadFirstSlide = async () => {
             
             if (mimeMatch) {
                 detectedMimeType = mimeMatch[1];
-                console.log(`  - 检测到的MIME类型: ${detectedMimeType}`);
+                // console.log(`  - 检测到的MIME类型: ${detectedMimeType}`);
                 
                 switch (detectedMimeType) {
                     case 'image/jpeg':
@@ -2758,15 +2758,15 @@ const testDownloadFirstSlide = async () => {
                 }
             }
             
-            console.log(`  - 确定的扩展名: ${extension}`);
+            // console.log(`  - 确定的扩展名: ${extension}`);
             
             // 创建修正的blob
             const correctMimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
             const correctedBlob = new Blob([blob], { type: correctMimeType });
             
-            console.log('🔧 修正后的Blob信息:');
-            console.log(`  - 修正后blob类型: ${correctedBlob.type}`);
-            console.log(`  - 修正后blob大小: ${correctedBlob.size} bytes`);
+            // console.log('🔧 修正后的Blob信息:');
+            // console.log(`  - 修正后blob类型: ${correctedBlob.type}`);
+            // console.log(`  - 修正后blob大小: ${correctedBlob.size} bytes`);
             
             // 下载文件
             const url = URL.createObjectURL(correctedBlob);
@@ -2776,20 +2776,20 @@ const testDownloadFirstSlide = async () => {
             link.click();
             URL.revokeObjectURL(url);
             
-            console.log(`✅ 测试下载完成: test_${slideName}.${extension}`);
+            // console.log(`✅ 测试下载完成: test_${slideName}.${extension}`);
             showMessage(`测试下载第一张PPT: test_${slideName}.${extension}`, 'info');
             
         } else {
-            console.log('📁 处理文件路径格式的PPT');
+            // console.log('📁 处理文件路径格式的PPT');
             // 处理文件路径
             const response = await fetch(firstSlide);
             const blob = await response.blob();
             const extension = firstSlide.split('.').pop().toLowerCase() || 'jpg';
             
-            console.log('📊 文件路径Blob信息:');
-            console.log(`  - blob类型: ${blob.type}`);
-            console.log(`  - blob大小: ${blob.size} bytes`);
-            console.log(`  - 扩展名: ${extension}`);
+            // console.log('📊 文件路径Blob信息:');
+            // console.log(`  - blob类型: ${blob.type}`);
+            // console.log(`  - blob大小: ${blob.size} bytes`);
+            // console.log(`  - 扩展名: ${extension}`);
             
             const correctMimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
             const correctedBlob = new Blob([blob], { type: correctMimeType });
@@ -2801,7 +2801,7 @@ const testDownloadFirstSlide = async () => {
             link.click();
             URL.revokeObjectURL(url);
             
-            console.log(`✅ 测试下载完成: test_${slideName}.${extension}`);
+            // console.log(`✅ 测试下载完成: test_${slideName}.${extension}`);
             showMessage(`测试下载第一张PPT: test_${slideName}.${extension}`, 'info');
         }
         
@@ -2813,13 +2813,13 @@ const testDownloadFirstSlide = async () => {
 
 // 手动触发测试下载的接口
 const manualTestDownload = () => {
-    console.log('🔧 手动触发测试下载');
+    // console.log('🔧 手动触发测试下载');
     testDownloadFirstSlide();
 };
 
 // 通用的图片下载API - 用于实际的打包下载
 const downloadImageAsCorrectFormat = async (imageDataUrl, fileName = 'image') => {
-    console.log(`📥 开始下载图片: ${fileName}`);
+    // console.log(`📥 开始下载图片: ${fileName}`);
     
     try {
         if (!imageDataUrl || !imageDataUrl.startsWith('data:')) {
@@ -2830,9 +2830,9 @@ const downloadImageAsCorrectFormat = async (imageDataUrl, fileName = 'image') =>
         const response = await fetch(imageDataUrl);
         const blob = await response.blob();
         
-        console.log(`📊 原始图片信息:`);
-        console.log(`  - 原始blob类型: ${blob.type}`);
-        console.log(`  - 原始blob大小: ${blob.size} bytes`);
+        // console.log(`📊 原始图片信息:`);
+        // console.log(`  - 原始blob类型: ${blob.type}`);
+        // console.log(`  - 原始blob大小: ${blob.size} bytes`);
         
         // 从data URL中提取MIME类型和扩展名
         const mimeMatch = imageDataUrl.match(/^data:([^;]+);/);
@@ -2841,7 +2841,7 @@ const downloadImageAsCorrectFormat = async (imageDataUrl, fileName = 'image') =>
         
         if (mimeMatch) {
             detectedMimeType = mimeMatch[1];
-            console.log(`  - 检测到的MIME类型: ${detectedMimeType}`);
+            // console.log(`  - 检测到的MIME类型: ${detectedMimeType}`);
             
             switch (detectedMimeType) {
                 case 'image/jpeg':
@@ -2873,15 +2873,15 @@ const downloadImageAsCorrectFormat = async (imageDataUrl, fileName = 'image') =>
             }
         }
         
-        console.log(`  - 确定的扩展名: ${extension}`);
+        // console.log(`  - 确定的扩展名: ${extension}`);
         
         // 创建具有正确MIME类型的blob
         const correctMimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
         const correctedBlob = new Blob([blob], { type: correctMimeType });
         
-        console.log(`🔧 修正后的图片信息:`);
-        console.log(`  - 修正后blob类型: ${correctedBlob.type}`);
-        console.log(`  - 修正后blob大小: ${correctedBlob.size} bytes`);
+        // console.log(`🔧 修正后的图片信息:`);
+        // console.log(`  - 修正后blob类型: ${correctedBlob.type}`);
+        // console.log(`  - 修正后blob大小: ${correctedBlob.size} bytes`);
         
         // 创建下载链接
         const url = URL.createObjectURL(correctedBlob);
@@ -2897,7 +2897,7 @@ const downloadImageAsCorrectFormat = async (imageDataUrl, fileName = 'image') =>
         // 清理URL对象
         URL.revokeObjectURL(url);
         
-        console.log(`✅ 图片下载完成: ${fileName}.${extension}`);
+        // console.log(`✅ 图片下载完成: ${fileName}.${extension}`);
         return {
             success: true,
             fileName: `${fileName}.${extension}`,
@@ -2918,7 +2918,7 @@ const downloadImageAsCorrectFormat = async (imageDataUrl, fileName = 'image') =>
 
 // 批量下载所有PPT图片的API
 const batchDownloadAllSlides = async () => {
-    console.log('📦 开始批量下载所有PPT图片');
+    // console.log('📦 开始批量下载所有PPT图片');
     
     if (slides.length === 0) {
         showMessage('没有可下载的PPT', 'info');
@@ -2934,7 +2934,7 @@ const batchDownloadAllSlides = async () => {
         const slideIndex = String(i + 1).padStart(3, '0'); // 001, 002, 003...
         const slideName = slideNames[i] || slideIndex;
         
-        console.log(`📸 处理第 ${i + 1} 张PPT: ${slideName}`);
+        // console.log(`📸 处理第 ${i + 1} 张PPT: ${slideName}`);
         
         if (slide.startsWith('data:')) {
             const result = await downloadImageAsCorrectFormat(slide, slideIndex);
@@ -2942,16 +2942,16 @@ const batchDownloadAllSlides = async () => {
             
             if (result.success) {
                 successCount++;
-                console.log(`✅ PPT ${i + 1} 下载成功`);
+                // console.log(`✅ PPT ${i + 1} 下载成功`);
             } else {
                 failCount++;
-                console.log(`❌ PPT ${i + 1} 下载失败: ${result.error}`);
+                // console.log(`❌ PPT ${i + 1} 下载失败: ${result.error}`);
             }
             
             // 添加小延迟，避免浏览器阻止多个下载
             await new Promise(resolve => setTimeout(resolve, 300));
         } else {
-            console.log(`⚠️ PPT ${i + 1} 不是data URL格式，跳过`);
+            // console.log(`⚠️ PPT ${i + 1} 不是data URL格式，跳过`);
             results.push({
                 success: false,
                 error: '不是data URL格式',
@@ -2969,10 +2969,10 @@ const batchDownloadAllSlides = async () => {
         results: results
     };
     
-    console.log('📊 批量下载结果汇总:');
-    console.log(`  - 总计: ${summary.total} 张PPT`);
-    console.log(`  - 成功: ${summary.successCount} 张`);
-    console.log(`  - 失败: ${summary.failCount} 张`);
+    // console.log('📊 批量下载结果汇总:');
+    // console.log(`  - 总计: ${summary.total} 张PPT`);
+    // console.log(`  - 成功: ${summary.successCount} 张`);
+    // console.log(`  - 失败: ${summary.failCount} 张`);
     
     if (successCount > 0) {
         showMessage(`成功下载 ${successCount}/${slides.length} 张PPT`, 'success');

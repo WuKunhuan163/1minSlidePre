@@ -798,14 +798,6 @@
     cursor: not-allowed !important;
 }
 
-/* 确保回退按钮始终可交互 */
-.btn-back,
-.back-button {
-    pointer-events: auto !important;
-    opacity: 1 !important;
-    cursor: pointer !important;
-}
-
 /* 特殊类：强制可交互 */
 .force-interact {
     pointer-events: auto !important;

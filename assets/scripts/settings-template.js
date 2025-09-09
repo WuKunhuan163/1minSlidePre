@@ -4,7 +4,7 @@
 
 // 创建设置页面覆盖层
 const createSettingsOverlay = () => {
-    console.log('🔧 创建设置overlay - 完全使用设置管理器动态生成');
+    // console.log('🔧 创建设置overlay - 完全使用设置管理器动态生成');
     
     // 检查设置管理器是否可用
     if (!window.settingsManager || !window.settingsManager.createSettingsOverlay) {
@@ -263,16 +263,16 @@ const initSettingsPage = () => {
     
     // 为设置按钮添加事件监听器
     const settingsButton = document.querySelector('.settings-button');
-    console.log('🔍 查找设置按钮:', settingsButton);
-    console.log('🔍 当前录音状态:', simpleConfig.get('recordingEnabled'));
-    console.log('🔍 页面加载时间:', new Date().toLocaleTimeString());
+    // console.log('🔍 查找设置按钮:', settingsButton);
+    // console.log('🔍 当前录音状态:', simpleConfig.get('recordingEnabled'));
+    // console.log('🔍 页面加载时间:', new Date().toLocaleTimeString());
     
     if (settingsButton) {
-        console.log('✅ 设置按钮找到，添加点击事件监听器');
+        // console.log('✅ 设置按钮找到，添加点击事件监听器');
         settingsButton.addEventListener('click', () => {
-            console.log('🖱️ 设置按钮被点击，创建设置覆盖层');
+            // console.log('🖱️ 设置按钮被点击，创建设置覆盖层');
             const overlay = createSettingsOverlay();
-            console.log('✅ 设置覆盖层已创建:', overlay);
+            // console.log('✅ 设置覆盖层已创建:', overlay);
             
     // 使用统一的事件设置函数
     setupSettingsOverlayEvents(overlay);
@@ -290,7 +290,7 @@ const initSettingsPage = () => {
     }
 };
 
-console.log('📱 设置页面模板已加载');
+// console.log('📱 设置页面模板已加载');
 
 // 全局背景音乐音量控制接口
 window.BackgroundMusicVolumeController = {
@@ -329,7 +329,7 @@ window.BackgroundMusicVolumeController = {
     
     // 初始化控制器
     init() {
-        console.log('🎵 初始化背景音乐音量控制器...');
+        // console.log('🎵 初始化背景音乐音量控制器...');
         
         // 查找背景音乐元素
         this._backgroundMusicElement = document.querySelector('#background-music') || 
@@ -344,8 +344,8 @@ window.BackgroundMusicVolumeController = {
             }
         }
         
-        console.log('🎵 背景音乐控制器初始化完成, 当前音量:', this.currentVolume);
-        console.log('🎵 背景音乐元素:', this._backgroundMusicElement);
+        // console.log('🎵 背景音乐控制器初始化完成, 当前音量:', this.currentVolume);
+        // console.log('🎵 背景音乐元素:', this._backgroundMusicElement);
     },
     
     // 设置音量 (0-1)
@@ -353,12 +353,12 @@ window.BackgroundMusicVolumeController = {
         // 确保音量在有效范围内
         volume = Math.max(0, Math.min(1, volume));
         
-        console.log(`🎵 设置背景音乐音量: ${volume} (保存为原始: ${saveAsOriginal})`);
+        // console.log(`🎵 设置背景音乐音量: ${volume} (保存为原始: ${saveAsOriginal})`);
         
         // 如果需要保存为原始音量
         if (saveAsOriginal && this.originalVolume === null) {
             this.originalVolume = this.currentVolume;
-            console.log(`🎵 保存原始音量: ${this.originalVolume}`);
+            // console.log(`🎵 保存原始音量: ${this.originalVolume}`);
         }
         
         // 更新当前音量
@@ -386,19 +386,19 @@ window.BackgroundMusicVolumeController = {
     
     // 暂停背景音乐（设置音量为0）
     pause(saveOriginal = true) {
-        console.log('🎵 暂停背景音乐...');
+        // console.log('🎵 暂停背景音乐...');
         return this.setVolume(0, saveOriginal);
     },
     
     // 恢复背景音乐音量
     resume() {
-        console.log('🎵 恢复背景音乐音量...');
+        // console.log('🎵 恢复背景音乐音量...');
         if (this.originalVolume !== null) {
             const volumeToRestore = this.originalVolume;
             this.originalVolume = null; // 清除原始音量
             return this.setVolume(volumeToRestore);
         } else {
-            console.log('🎵 没有保存的原始音量，保持当前音量');
+            // console.log('🎵 没有保存的原始音量，保持当前音量');
             return this.currentVolume;
         }
     },
@@ -409,16 +409,16 @@ window.BackgroundMusicVolumeController = {
             // 背景音乐使用4倍放大，最大为1.0
             const actualVolume = Math.min(this.currentVolume * 4.0, 1.0);
             this._backgroundMusicElement.volume = actualVolume;
-            console.log(`🎵 更新背景音乐实际音量: ${actualVolume} (原始: ${this.currentVolume})`);
+            // console.log(`🎵 更新背景音乐实际音量: ${actualVolume} (原始: ${this.currentVolume})`);
         } else {
-            console.log('🎵 背景音乐元素未找到，无法更新音量');
+            // console.log('🎵 背景音乐元素未找到，无法更新音量');
         }
         
         // 同时更新全局变量
         if (window.backgroundMusic && window.backgroundMusic !== this._backgroundMusicElement) {
             const actualVolume = Math.min(this.currentVolume * 4.0, 1.0);
             window.backgroundMusic.volume = actualVolume;
-            console.log(`🎵 更新全局背景音乐音量: ${actualVolume}`);
+            // console.log(`🎵 更新全局背景音乐音量: ${actualVolume}`);
         }
     },
     
@@ -436,7 +436,7 @@ window.BackgroundMusicVolumeController = {
             const percentage = this.currentVolume * 100;
             this._sliderElement.style.setProperty('--volume-percentage', `${percentage}%`);
             
-            console.log(`🎚️ 更新滑动条显示: ${this.currentVolume}`);
+            // console.log(`🎚️ 更新滑动条显示: ${this.currentVolume}`);
         }
     },
     
@@ -444,7 +444,7 @@ window.BackgroundMusicVolumeController = {
     saveToConfig() {
         if (simpleConfig) {
             simpleConfig.set('backgroundMusicVolume', this.currentVolume);
-            console.log(`💾 保存背景音乐音量到配置: ${this.currentVolume}`);
+            // console.log(`💾 保存背景音乐音量到配置: ${this.currentVolume}`);
         }
     },
     
@@ -453,20 +453,20 @@ window.BackgroundMusicVolumeController = {
         if (window.settingsManager && window.settingsManager.settingsState.backgroundMusic) {
             window.settingsManager.settingsState.backgroundMusic.config = { volume: this.currentVolume };
             window.settingsManager.settingsState.backgroundMusic.lastUpdate = Date.now();
-            console.log(`⚙️ 更新设置管理器状态: ${this.currentVolume}`);
+            // console.log(`⚙️ 更新设置管理器状态: ${this.currentVolume}`);
         }
     },
     
     // 设置滑动条引用（由设置管理器调用）
     setSliderReference(sliderElement) {
         this._sliderElement = sliderElement;
-        console.log('🎚️ 设置滑动条引用:', sliderElement);
+        // console.log('🎚️ 设置滑动条引用:', sliderElement);
     },
     
     // 设置背景音乐元素引用
     setBackgroundMusicElement(element) {
         this._backgroundMusicElement = element;
-        console.log('🎵 设置背景音乐元素引用:', element);
+        // console.log('🎵 设置背景音乐元素引用:', element);
         
         // 立即更新音量
         this.updateBackgroundMusicVolume();
@@ -523,23 +523,26 @@ if (document.readyState === 'loading') {
 const overlayManager = {
     // 清除所有现有的overlay
     clearAllOverlays() {
-        console.log('🧹 清理所有现有的overlay');
+        // console.log('🧹 清理所有现有的overlay');
         const existingOverlays = document.querySelectorAll('.slides-overlay, .overlay');
         existingOverlays.forEach((overlay, index) => {
-            console.log(`🗑️ 移除overlay ${index + 1}:`, overlay.className);
+            // console.log(`🗑️ 移除overlay ${index + 1}:`, overlay.className);
             overlay.remove();
         });
     },
     
     // 安全地切换到新的overlay
     switchToOverlay(newOverlay) {
-        console.log('🔄 安全切换到新overlay');
+        // console.log('🔄 安全切换到新overlay');
         this.clearAllOverlays();
         if (newOverlay && !document.body.contains(newOverlay)) {
             document.body.appendChild(newOverlay);
         }
     }
 };
+
+// 设置为全局对象，供其他模块使用
+window.overlayManager = overlayManager;
 
 // 设置overlay事件监听器的统一函数
 const setupSettingsOverlayEvents = (overlay) => {
@@ -548,8 +551,8 @@ const setupSettingsOverlayEvents = (overlay) => {
     const backButton = overlay.querySelector('.back-button');
     if (backButton) {
         backButton.addEventListener('click', () => {
-                console.log('🔙 点击设置页面的返回按钮，回到主菜单');
-                console.log('🔙 当前录音状态:', simpleConfig.get('recordingEnabled'));
+                // console.log('🔙 点击设置页面的返回按钮，回到主菜单');
+                // console.log('🔙 当前录音状态:', simpleConfig.get('recordingEnabled'));
             overlayManager.clearAllOverlays(); // 使用统一的清理方法
         });
     }
@@ -584,7 +587,7 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
         // toggle交互由设置管理器统一处理，这里不再干预
         
         // Header点击事件完全由设置管理器统一处理，这里不添加任何事件监听器
-        console.log('✅ 录音文字识别header事件由设置管理器统一管理');
+        // console.log('✅ 录音文字识别header事件由设置管理器统一管理');
     }
     
     // 录音设备卡片和toggle事件完全由设置管理器处理
@@ -592,11 +595,11 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
     const microphoneToggle = overlay.querySelector('#microphoneToggle');
     
     if (microphoneCard) {
-        console.log('✅ 录音设备卡片事件由设置管理器统一管理');
+        // console.log('✅ 录音设备卡片事件由设置管理器统一管理');
     }
     
     if (microphoneToggle) {
-        console.log('✅ 录音设备toggle事件由设置管理器统一管理');
+        // console.log('✅ 录音设备toggle事件由设置管理器统一管理');
         // 所有toggle事件处理都移交给设置管理器，避免重复处理
     }
     
@@ -607,20 +610,20 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
     
     // 保留旧的change事件处理作为备份（但不执行）
     const oldMicrophoneChangeHandler = (e) => {
-            console.log('========== 录音设备Toggle点击事件 ==========');
+            // console.log('========== 录音设备Toggle点击事件 ==========');
             
             const microphoneConfig = localStorage.getItem('microphoneConfig');
             const currentConfig = microphoneConfig ? JSON.parse(microphoneConfig) : null;
             
             // 输出调试信息
-            console.log('（1）当前设置是否开启:', currentConfig ? currentConfig.enabled : '无配置');
-            console.log('（2）当前的toggle状态:', e.target.checked);
+            // console.log('（1）当前设置是否开启:', currentConfig ? currentConfig.enabled : '无配置');
+            // console.log('（2）当前的toggle状态:', e.target.checked);
             
             if (currentConfig) {
                 if (e.target.checked) {
-                    console.log('（3）准备进行的操作: 启用录音设备设置');
+                    // console.log('（3）准备进行的操作: 启用录音设备设置');
                 } else {
-                    console.log('（3）准备进行的操作: 关闭录音设备设置');
+                    // console.log('（3）准备进行的操作: 关闭录音设备设置');
                 }
                 
                 // 更新配置
@@ -628,7 +631,7 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
                 currentConfig.timestamp = Date.now();
                 
                 localStorage.setItem('microphoneConfig', JSON.stringify(currentConfig));
-                console.log('✅ 录音设备配置已更新:', currentConfig);
+                // console.log('✅ 录音设备配置已更新:', currentConfig);
                 
                 // 刷新设置界面显示
                 if (window.refreshSettingsDisplay) {
@@ -663,14 +666,14 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
                 
                 // 根据toggle状态显示或隐藏录音文字识别卡片
                 if (e.target.checked) {
-                    console.log('🔄 显示录音文字识别卡片');
+                    // console.log('🔄 显示录音文字识别卡片');
                     showRecordingCard();
                 } else {
-                    console.log('🔄 隐藏录音文字识别卡片');
+                    // console.log('🔄 隐藏录音文字识别卡片');
                     hideRecordingCard();
                 }
             } else {
-                console.log('（3）准备进行的操作: 无配置信息，进入录音设备设置页面');
+                // console.log('（3）准备进行的操作: 无配置信息，进入录音设备设置页面');
                 // 如果没有配置，应该进入设置页面
                 e.target.checked = false; // 重置toggle状态
                 
@@ -681,17 +684,17 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
                 }
             }
             
-            console.log('========== Toggle事件处理完成 ==========');
+            // console.log('========== Toggle事件处理完成 ==========');
         }; // 注意：这个函数现在只是备份，不会被实际调用
     
     // 所有录音设备相关的事件处理已移交给设置管理器
-    console.log('✅ 录音设备相关事件处理完全由设置管理器接管');
+    // console.log('✅ 录音设备相关事件处理完全由设置管理器接管');
     
     // AI设置卡片（完全由设置管理器处理）
     const aiCard = overlay.querySelector('#aiCard');
     if (aiCard) {
         // 所有交互都由设置管理器统一处理，这里不添加任何事件监听器
-        console.log('✅ AI设置卡片由设置管理器统一管理');
+        // console.log('✅ AI设置卡片由设置管理器统一管理');
     }
     
     // 更新overlay显示状态（基于共享本地状态）
@@ -743,7 +746,7 @@ const updateOverlayFromSharedState = (overlay) => {
             // 音量设置卡片的显示/隐藏现在由设置管理器统一处理
             // 这里保留兼容性代码，以防设置管理器不可用
             if (!window.settingsManager) {
-                console.log('⚠️ 设置管理器不可用，使用兼容性代码初始化滑动条');
+                // console.log('⚠️ 设置管理器不可用，使用兼容性代码初始化滑动条');
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 const effectsVolumeCard = overlay.querySelector('#effectsVolumeCard');
                 const backgroundMusicCard = overlay.querySelector('#backgroundMusicCard');
@@ -768,7 +771,7 @@ const updateOverlayFromSharedState = (overlay) => {
 
 // 为主设置界面的字段添加复制功能并禁用输入
 const setupMainSettingsFieldCopy = (overlay) => {
-    console.log('🔒 设置主设置界面字段：禁用输入，添加复制功能');
+    // console.log('🔒 设置主设置界面字段：禁用输入，添加复制功能');
     
     const recordingInputs = [
         { id: 'appKey', label: 'App Key' },
@@ -841,12 +844,12 @@ const setupMainSettingsFieldCopy = (overlay) => {
         }
     });
     
-    console.log('✅ 主设置界面字段复制功能已设置');
+    // console.log('✅ 主设置界面字段复制功能已设置');
 };
 
 // 为主设置界面的AI字段添加复制功能并禁用输入
 const setupAISettingsFieldCopy = (overlay) => {
-    console.log('🔒 设置AI字段：禁用输入，添加复制功能');
+    // console.log('🔒 设置AI字段：禁用输入，添加复制功能');
     
     const aiInputs = [
         { id: 'zhipuApiKey', label: '智谱AI API Key' }
@@ -919,7 +922,7 @@ const setupAISettingsFieldCopy = (overlay) => {
         }
     });
     
-    console.log('✅ AI设置界面字段复制功能已设置');
+    // console.log('✅ AI设置界面字段复制功能已设置');
 };
 
 // 录音设备设置相关变量
@@ -930,7 +933,7 @@ let volumeAnimationId = null;
 
 // 初始化录音设备设置
 const initMicrophoneSettings = async () => {
-    console.log('🎤 初始化录音设备设置...');
+    // console.log('🎤 初始化录音设备设置...');
     
     try {
         // 检测音频设备
@@ -1002,7 +1005,7 @@ const initMicrophoneSettings = async () => {
 
 // 检测音频输入设备
 const detectAudioDevices = async () => {
-    console.log('🔍 检测音频输入设备...');
+    // console.log('🔍 检测音频输入设备...');
     
     try {
         // 请求麦克风权限
@@ -1035,7 +1038,7 @@ const detectAudioDevices = async () => {
             }
         }
         
-        console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
+        // console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
         
     } catch (error) {
         console.error('❌ 检测音频设备失败:', error);
@@ -1088,7 +1091,7 @@ const testMicrophone = async () => {
         // 开始音量监测
         startVolumeMonitoring();
         
-        console.log('✅ 麦克风测试开始');
+        // console.log('✅ 麦克风测试开始');
         
     } catch (error) {
         console.error('❌ 麦克风测试失败:', error);
@@ -1160,7 +1163,7 @@ const stopMicrophoneTest = () => {
     if (testButton) testButton.textContent = '测试麦克风';
     if (volumeMeter) volumeMeter.style.display = 'none';
     
-    console.log('✅ 麦克风测试已停止');
+    // console.log('✅ 麦克风测试已停止');
 };
 
 // 保存录音设备配置
@@ -1194,7 +1197,7 @@ const saveMicrophoneConfig = () => {
         hideRecordingCard();
     }
     
-    console.log('✅ 录音设备配置已保存', config);
+    // console.log('✅ 录音设备配置已保存', config);
 };
 
 // 显示录音文字识别卡片
@@ -1225,7 +1228,7 @@ const settingFields = {}; // 存储各个设置的字段配置
 // 更新设置字段
 window.updateSettingFields = (settingId, fields) => {
     settingFields[settingId] = fields;
-    console.log(`✅ 已更新 ${settingId} 设置字段:`, fields);
+    // console.log(`✅ 已更新 ${settingId} 设置字段:`, fields);
     
     // 立即更新UI显示
     updateSettingFieldsUI(settingId, fields);
@@ -1339,7 +1342,7 @@ window.copyFieldValue = (fieldId, fieldType) => {
     
     if (textToCopy) {
         navigator.clipboard.writeText(textToCopy).then(() => {
-            console.log('✅ 已复制到剪贴板:', textToCopy);
+            // console.log('✅ 已复制到剪贴板:', textToCopy);
             
             // 显示复制成功提示
             const copyBtn = fieldElement.querySelector('.copy-field-btn i');

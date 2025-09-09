@@ -28,7 +28,7 @@ class EnhancedAudioProcessor {
             result[i] = audioData[sourceIndex];
         }
         
-        console.log(`🔄 音频重采样: ${originalSampleRate}Hz → ${targetSampleRate}Hz (${audioData.length} → ${result.length} samples)`);
+        // console.log(`🔄 音频重采样: ${originalSampleRate}Hz → ${targetSampleRate}Hz (${audioData.length} → ${result.length} samples)`);
         return result;
     }
 
@@ -134,7 +134,7 @@ class EnhancedAudioProcessor {
             dynamicRange: maxAmplitude > 0 ? (maxAmplitude / (rmsLevel || 0.0001)) : 0
         };
         
-        console.log('🔍 详细音频质量分析:', analysis);
+        // console.log('🔍 详细音频质量分析:', analysis);
         
         return analysis;
     }
@@ -147,7 +147,7 @@ class EnhancedAudioProcessor {
      * @returns {Promise<Object>} Token结果
      */
     async getAliyunToken(appKey, accessKeyId, accessKeySecret) {
-        console.log('🔄 正在获取阿里云Token...');
+        // console.log('🔄 正在获取阿里云Token...');
         
         try {
             const response = await fetch(`${this.apiBaseUrl}/get-token`, {
@@ -165,7 +165,7 @@ class EnhancedAudioProcessor {
             const result = await response.json();
             
             if (result.success) {
-                console.log('✅ Token获取成功');
+                // console.log('✅ Token获取成功');
                 return {
                     success: true,
                     token: result.token,
@@ -199,11 +199,11 @@ class EnhancedAudioProcessor {
      */
     async recognizeAudio(rawAudioData, originalSampleRate, appKey, accessKeyId, accessKeySecret) {
         try {
-            console.log('🔄 开始语音识别处理...');
+            // console.log('🔄 开始语音识别处理...');
             
             // 1. 音频质量分析
             const qualityAnalysis = this.analyzeAudioQuality(rawAudioData);
-            console.log('📊 音频质量分析:', qualityAnalysis);
+            // console.log('📊 音频质量分析:', qualityAnalysis);
             
             if (!qualityAnalysis.isGoodQuality) {
                 console.warn('⚠️ 音频质量较低，可能影响识别效果');
@@ -228,13 +228,13 @@ class EnhancedAudioProcessor {
             // 5. 转换为Uint8Array格式（API需要）
             const audioData = Array.from(new Uint8Array(pcm16Data.buffer));
             
-            console.log('🎵 音频处理完成:');
-            console.log('   原始采样率:', originalSampleRate);
-            console.log('   目标采样率:', targetSampleRate);
-            console.log('   原始样本数:', rawAudioData.length);
-            console.log('   重采样后:', resampledData.length);
-            console.log('   最终数据长度:', audioData.length, 'bytes');
-            console.log('   音频时长:', (resampledData.length / targetSampleRate).toFixed(2), '秒');
+            // console.log('🎵 音频处理完成:');
+            // console.log('   原始采样率:', originalSampleRate);
+            // console.log('   目标采样率:', targetSampleRate);
+            // console.log('   原始样本数:', rawAudioData.length);
+            // console.log('   重采样后:', resampledData.length);
+            // console.log('   最终数据长度:', audioData.length, 'bytes');
+            // console.log('   音频时长:', (resampledData.length / targetSampleRate).toFixed(2), '秒');
             
             // 6. 调用识别API
             const apiUrl = `${this.apiBaseUrl}/recognize?t=${Date.now()}&v=enhanced&cb=${Math.random()}`;
@@ -250,12 +250,12 @@ class EnhancedAudioProcessor {
                 accessKeySecret: accessKeySecret
             };
             
-            console.log('🔗 调用识别API:');
-            console.log('   URL:', apiUrl);
-            console.log('   数据长度:', requestData.audioData.length);
-            console.log('   格式:', requestData.format);
-            console.log('   采样率:', requestData.sampleRate);
-            console.log('   Token:', tokenResult.token.substring(0, 8) + '...');
+            // console.log('🔗 调用识别API:');
+            // console.log('   URL:', apiUrl);
+            // console.log('   数据长度:', requestData.audioData.length);
+            // console.log('   格式:', requestData.format);
+            // console.log('   采样率:', requestData.sampleRate);
+            // console.log('   Token:', tokenResult.token.substring(0, 8) + '...');
             
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -265,7 +265,7 @@ class EnhancedAudioProcessor {
                 body: JSON.stringify(requestData)
             });
             
-            console.log('📥 API响应状态:', response.status, response.statusText);
+            // console.log('📥 API响应状态:', response.status, response.statusText);
             
             if (!response.ok) {
                 const errorText = await response.text();
@@ -274,7 +274,7 @@ class EnhancedAudioProcessor {
             }
             
             const result = await response.json();
-            console.log('✅ 识别API响应:', result);
+            // console.log('✅ 识别API响应:', result);
             
             if (result.success && result.result) {
                 return {
@@ -377,4 +377,4 @@ class EnhancedAudioProcessor {
 
 // 创建全局实例
 window.enhancedAudioProcessor = new EnhancedAudioProcessor();
-console.log('🎯 增强型音频处理器已加载');
+// console.log('🎯 增强型音频处理器已加载');

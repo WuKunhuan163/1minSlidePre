@@ -39,7 +39,7 @@ class EnhancedRecorder {
      */
     async startRecording() {
         if (this.isRecording) {
-            console.log('录音已在进行中');
+            // console.log('录音已在进行中');
             return false;
         }
 
@@ -49,7 +49,7 @@ class EnhancedRecorder {
                 try {
                     window.BackgroundMusicVolumeController.pause(true);
                     await new Promise(resolve => setTimeout(resolve, 200)); // 等待200ms确保生效
-                    console.log('🎵 增强录音器：已通过统一API暂停背景音乐');
+                    // console.log('🎵 增强录音器：已通过统一API暂停背景音乐');
                 } catch (error) {
                     console.warn('⚠️ 增强录音器：通过统一API暂停背景音乐时出错:', error);
                 }
@@ -70,9 +70,9 @@ class EnhancedRecorder {
             // 如果有配置的设备ID，使用特定设备
             if (microphoneConfig && microphoneConfig.selectedDeviceId && microphoneConfig.enabled) {
                 audioConstraints.deviceId = { exact: microphoneConfig.selectedDeviceId };
-                console.log('🎤 使用配置的录音设备:', microphoneConfig.selectedDeviceName);
+                // console.log('🎤 使用配置的录音设备:', microphoneConfig.selectedDeviceName);
             } else {
-                console.log('🎤 使用默认录音设备');
+                // console.log('🎤 使用默认录音设备');
             }
             
             // 1. 请求麦克风权限
@@ -88,16 +88,16 @@ class EnhancedRecorder {
                 sampleRate: this.SAMPLE_RATE,
                 latencyHint: 'interactive' // 优化延迟
             });
-            console.log('🎵 AudioContext创建完成，采样率:', this.audioContext.sampleRate);
+            // console.log('🎵 AudioContext创建完成，采样率:', this.audioContext.sampleRate);
 
             // 检测协议并选择合适的音频处理方式
             if (location.protocol === 'file:') {
-                console.log('🔧 检测到file://协议，使用ScriptProcessor作为fallback');
+                // console.log('🔧 检测到file://协议，使用ScriptProcessor作为fallback');
                 // 使用ScriptProcessor作为fallback（适用于file://协议）
                 this.scriptProcessor = this.audioContext.createScriptProcessor(4096, 1, 1);
                 this.useScriptProcessor = true;
             } else {
-                console.log('🔧 使用AudioWorklet处理器');
+                // console.log('🔧 使用AudioWorklet处理器');
                 // 创建内联AudioWorklet处理器
                 const processorCode = `
                 class EnhancedAudioProcessor extends AudioWorkletProcessor {
@@ -185,7 +185,7 @@ class EnhancedRecorder {
 
             // 清空之前的录音数据
             this.audioBuffer = [];
-            console.log('📝 音频缓冲区已清空');
+            // console.log('📝 音频缓冲区已清空');
             
             // 初始化音轨峰图
             this.initWaveform();
@@ -240,13 +240,13 @@ class EnhancedRecorder {
                 // AudioWorklet不需要连接destination就能工作
             }
             
-            console.log('🔗 音频节点连接完成');
+            // console.log('🔗 音频节点连接完成');
             
             // 确保AudioContext处于running状态
             if (this.audioContext.state === 'suspended') {
-                console.log('🔄 AudioContext被暂停，尝试恢复...');
+                // console.log('🔄 AudioContext被暂停，尝试恢复...');
                 await this.audioContext.resume();
-                console.log('✅ AudioContext状态:', this.audioContext.state);
+                // console.log('✅ AudioContext状态:', this.audioContext.state);
             }
 
             this.isRecording = true;
@@ -263,7 +263,7 @@ class EnhancedRecorder {
                 }
             }, this.MAX_RECORDING_TIME * 1000);
             
-            console.log('🔴 增强型录音开始 (使用 Web Audio API)');
+            // console.log('🔴 增强型录音开始 (使用 Web Audio API)');
             return true;
             
         } catch (error) {
@@ -355,7 +355,7 @@ class EnhancedRecorder {
             // 创建WAV格式的Blob（用于播放和下载）
             const wavBlob = this.createWavBlob(mergedBuffer);
             this.lastRecordingBlob = wavBlob;
-            console.log('✅ WAV编码完成，文件大小:', (wavBlob.size / 1024).toFixed(2), 'KB');
+            // console.log('✅ WAV编码完成，文件大小:', (wavBlob.size / 1024).toFixed(2), 'KB');
             
             // 关闭AudioContext
             if (this.audioContext) {
@@ -649,4 +649,4 @@ class EnhancedRecorder {
 
 // 创建全局实例
 window.enhancedRecorder = new EnhancedRecorder();
-console.log('🎤 增强型录音器已加载');
+// console.log('🎤 增强型录音器已加载');

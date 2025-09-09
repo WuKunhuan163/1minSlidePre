@@ -454,7 +454,7 @@
                         this.audioDevice.value = audioInputs[0].deviceId;
                     }
 
-                    console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
+                    // console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
 
                 } catch (error) {
                     console.error('❌ 检测音频设备失败:', error);
@@ -515,7 +515,7 @@
                     this.startTimer();
                     this.startVolumeMonitoring();
 
-                    console.log('🎙️ 录音开始');
+                    // console.log('🎙️ 录音开始');
 
                 } catch (error) {
                     console.error('❌ 录音开始失败:', error);
@@ -546,7 +546,7 @@
                 // 更新UI
                 this.updateStoppedUI();
 
-                console.log('🛑 录音停止');
+                // console.log('🛑 录音停止');
             }
 
             updateRecordingUI() {
@@ -644,7 +644,7 @@
                 // 自动保存第一个录音作为快速测试音频
                 this.saveAsQuickTestAudio(recording);
 
-                console.log('💾 录音已保存:', recording);
+                // console.log('💾 录音已保存:', recording);
             }
 
             // 保存为快速测试音频
@@ -662,7 +662,7 @@
                         };
                         
                         localStorage.setItem('quickTestAudio', JSON.stringify(testAudioData));
-                        console.log('🧪 已保存为快速测试音频:', testAudioData.name);
+                        // console.log('🧪 已保存为快速测试音频:', testAudioData.name);
                         
                         // 显示提示信息
                         this.showNotification('已保存为测试音频', '这个录音将用于录音识别的快速测试', 'success');
@@ -756,7 +756,7 @@
                 a.download = recording.name;
                 a.click();
 
-                console.log('⬇️ 下载录音:', recording.name);
+                // console.log('⬇️ 下载录音:', recording.name);
             }
 
             deleteRecording(id) {
@@ -770,14 +770,14 @@
                 this.recordings.splice(index, 1);
                 this.updateRecordingsList();
 
-                console.log('🗑️ 删除录音:', recording.name);
+                // console.log('🗑️ 删除录音:', recording.name);
             }
         }
 
         // 初始化录音测试器
         const recordingTester = new RecordingTester();
 
-        console.log('🎤 录音测试页面已加载');
+        // console.log('🎤 录音测试页面已加载');
     </script>
 </body>
 </html>

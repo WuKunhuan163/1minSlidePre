@@ -64,8 +64,8 @@ class MicrophonePermissionHelper {
     getMicrophonePermissionAdvice(error) {
         const { os, browser, deviceType, isHttps, isLocalhost } = this.deviceInfo;
         
-        console.log('🔍 设备信息:', this.deviceInfo);
-        console.log('❌ 权限错误:', error);
+        // console.log('🔍 设备信息:', this.deviceInfo);
+        // console.log('❌ 权限错误:', error);
 
         let advice = {
             title: '麦克风权限被拒绝',
@@ -378,5 +378,5 @@ window.microphonePermissionHelper = new MicrophonePermissionHelper();
 // 导出给其他模块使用
 window.MicrophonePermissionHelper = MicrophonePermissionHelper;
 
-console.log('🎤 麦克风权限助手已加载');
+// console.log('🎤 麦克风权限助手已加载');
 

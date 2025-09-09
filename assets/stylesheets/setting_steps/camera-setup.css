@@ -130,14 +130,22 @@
     background: #222;
     border: 1px solid #444;
     border-radius: 4px;
-    color: white;
+    color: white !important;
     font-size: 14px;
     transition: all 0.3s ease;
 }
 
 .form-control option {
-    color: white;
-    background: #222;
+    color: white !important;
+    background: #222 !important;
+    background-color: #222 !important;
+}
+
+/* 针对不同浏览器的兼容性修复 */
+select.form-control option {
+    color: white !important;
+    background: #222 !important;
+    background-color: #222 !important;
 }
 
 .form-control:focus {
@@ -148,7 +156,6 @@
 
 /* 预览区域样式 */
 .preview-section {
-    margin-top: 20px;
     text-align: center;
 }
 
@@ -198,6 +205,84 @@
 .btn-success:hover {
     background: #218838;
     transform: translateY(-1px);
+}
+
+/* 滑动条样式 */
+.setting-label-with-value {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.setting-label-with-value label {
+    font-weight: bold;
+    color: white;
+    margin: 0;
+}
+
+.setting-value {
+    font-weight: normal;
+    font-size: 12px;
+}
+
+.setting-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #333;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.setting-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #666AF6;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.setting-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #666AF6;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.setting-slider::-webkit-slider-track {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    background: #333;
+    border-radius: 3px;
+}
+
+.setting-slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    background: #333;
+    border-radius: 3px;
+    border: none;
+}
+
+.setting-slider:hover::-webkit-slider-thumb {
+    background: #7d7aff;
+    transform: scale(1.1);
+}
+
+.setting-slider:hover::-moz-range-thumb {
+    background: #7d7aff;
+    transform: scale(1.1);
 }
 
 /* 响应式设计 */

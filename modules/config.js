@@ -84,4 +84,4 @@ class SimpleConfig {
 
 // 全局实例
 const simpleConfig = new SimpleConfig();
-console.log('⚙️ 简单配置管理器已加载');
+// console.log('⚙️ 简单配置管理器已加载');

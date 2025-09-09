@@ -1,6 +1,53 @@
 /**
  * 设置步骤管理器 - 统一管理所有设置用例的步骤流程
  * 基于阿里云语音识别设置的步骤风格，提供通用的步骤管理功能
+ * 
+ * ## 架构设计原则
+ * 
+ * ### 1. 职责分离
+ * - **SettingsStepManager**: 负责步骤流程管理、自动化逻辑、UI状态管理
+ * - **具体设置类**: 负责业务逻辑、权限验证、配置保存
+ * - **验证函数**: 仅负责验证当前状态是否满足条件，不包含UI逻辑
+ * 
+ * ### 2. 自动化流程
+ * Manager会在初始化时自动执行以下逻辑：
+ * 1. 检查每个步骤的完成状态 (`isStepCompleted`)
+ * 2. 对于有验证函数的步骤，调用验证函数进行实际验证
+ * 3. 验证通过则自动跳转到下一步，失败则停留等待用户操作
+ * 4. 对于无验证函数的步骤，仅基于完成状态决定是否跳过
+ * 
+ * ### 3. 步骤完成标记
+ * - 使用 `markStepCompleted(stepId, success)` 标记步骤完成
+ * - 完成标记会持久化到localStorage
+ * - 回退到上一步时会自动清除该步骤及后续步骤的完成标记
+ * 
+ * ### 4. 验证函数设计指南
+ * 验证函数应该：
+ * - 尝试获取/验证所需权限或状态
+ * - 返回 `true`（验证成功）或 `false`（验证失败）
+ * - 不包含UI逻辑（状态显示由Manager处理）
+ * - 可以是异步函数
+ * 
+ * 示例：
+ * ```javascript
+ * async validatePermissionGranted() {
+ *     try {
+ *         const stream = await navigator.mediaDevices.getUserMedia({video: true});
+ *         stream.getTracks().forEach(track => track.stop());
+ *         return true;
+ *     } catch (error) {
+ *         return false;
+ *     }
+ * }
+ * ```
+ * 
+ * ### 5. 开发新设置的步骤
+ * 1. 创建设置类，继承或参考现有设置的结构
+ * 2. 定义steps数组，包含所有步骤配置
+ * 3. 对于需要验证的步骤，添加validation函数
+ * 4. 在关键操作完成后调用 `markStepCompleted(stepId, true)`
+ * 5. 验证函数只负责验证，不处理UI状态
+ * 6. Manager会自动处理步骤跳转和状态管理
  */
 
 class SettingsStepManager {
@@ -29,7 +76,7 @@ class SettingsStepManager {
             try {
                 const generatedTitle = window.settingsManager.generateSettingTitle(settingId);
                 if (generatedTitle && generatedTitle !== '设置') {
-                    console.log(`✅ 从settingsManager生成标题: ${generatedTitle} (settingId: ${settingId})`);
+                    // console.log(`✅ 从settingsManager生成标题: ${generatedTitle} (settingId: ${settingId})`);
                     return generatedTitle;
                 }
             } catch (error) {
@@ -121,7 +168,7 @@ class SettingsStepManager {
             delete this.completionStatus[stepId];
             this.saveCompletionStatus();
             this.updateStepVisuals();
-            console.log(`✅ 已清除步骤 ${stepId} 的完成状态`);
+            // console.log(`✅ 已清除步骤 ${stepId} 的完成状态`);
         }
     }
 
@@ -379,60 +426,56 @@ class SettingsStepManager {
     async autoAdvanceToFirstIncompleteStep() {
         console.log('🔄 开始自动验证步骤并推进到第一个需要操作的步骤...');
         
+        // 先输出所有步骤的完成标记状态
+        console.log('📊 所有步骤的完成标记状态:');
+        for (let j = 0; j < this.steps.length; j++) {
+            const stepStatus = this.isStepCompleted(this.steps[j].id);
+            console.log(`  步骤 ${j + 1} (${this.steps[j].id}): ${stepStatus ? '✅ 已完成' : '❌ 未完成'}`);
+        }
+        
         for (let i = 0; i < this.steps.length; i++) {
-            console.log(`🔍 检查步骤 ${i + 1} 的验证状态...`);
+            console.log(`🔍 检查步骤 ${i + 1} 的完成状态...`);
             
             const step = this.steps[i];
+            const hasCompletedMark = this.isStepCompleted(step.id);
             
-            // 检查步骤是否有验证函数
-            if (step.validation && typeof step.validation === 'function') {
-                try {
-                    // 显示检查状态
-                    this.goToStep(i, { clearTargetStatus: true });
-                    this.showStepStatus(step.id, `检查步骤 ${i + 1}...`, 'processing');
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    
-                    const isValid = await step.validation();
-                    
-                    if (isValid) {
-                        console.log(`✅ 步骤 ${i + 1} 验证通过`);
-                        
-                        // 标记为完成
-                        if (!this.isStepCompleted(step.id)) {
-                            this.markStepCompleted(step.id, true);
-                        }
-                        
-                        // 在当前步骤显示完成状态
-                        this.showStepStatus(step.id, `已完成当前步骤`, 'success');
-                        
-                        // 延迟后继续检查下一步，或停留在当前步骤（如果是最后一步）
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                        continue;
-                    } else {
-                        console.log(`❌ 步骤 ${i + 1} 验证未通过，停在此步骤`);
+            // 首先检查步骤是否已经有完成标记
+            if (hasCompletedMark) {
+                console.log(`✅ 步骤 ${i + 1} 已有完成标记，需要验证是否仍然有效`);
+                
+                // 如果有完成标记，还需要验证是否仍然有效
+                if (step.validation && typeof step.validation === 'function') {
+                    try {
                         this.goToStep(i, { clearTargetStatus: true });
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                        
+                        const isValid = await step.validation();
+                        if (isValid) {
+                            console.log(`✅ 步骤 ${i + 1} 完成标记有效，继续下一步`);
+                            continue;
+                        } else {
+                            console.log(`❌ 步骤 ${i + 1} 完成标记已失效，停在此步骤`);
+                            return;
+                        }
+                    } catch (error) {
+                        console.log(`❌ 步骤 ${i + 1} 验证失败:`, error.message);
+                        this.goToStep(i, { clearTargetStatus: true });
+                        this.showStepStatus(step.id, `步骤 ${i + 1} 验证失败: ${error.message}`, 'error');
                         return;
                     }
-                } catch (error) {
-                    console.log(`❌ 步骤 ${i + 1} 验证失败:`, error.message);
+                } else {
+                    // 没有验证函数但有完成标记，直接继续
+                    console.log(`✅ 步骤 ${i + 1} 有完成标记且无验证函数，继续下一步`);
                     this.goToStep(i, { clearTargetStatus: true });
-                    this.showStepStatus(step.id, `步骤 ${i + 1} 验证失败: ${error.message}`, 'error');
-                    return;
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                    continue;
                 }
             } else {
-                // 没有验证函数的步骤
-                if (this.isStepCompleted(step.id)) {
-                    console.log(`✅ 步骤 ${i + 1} 已完成且无验证函数，继续下一步`);
-                    this.goToStep(i, { clearTargetStatus: true });
-                    this.showStepStatus(step.id, `已完成当前步骤`, 'success');
-                    
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    continue;
-                } else {
-                    console.log(`⚠️ 步骤 ${i + 1} 没有验证函数且未完成，停在此步骤等待用户操作`);
-                    this.goToStep(i, { clearTargetStatus: true });
-                    return;
-                }
+                // 没有完成标记，停在此步骤等待用户操作
+                console.log(`⏸️ 步骤 ${i + 1} 没有完成标记，停在此步骤等待用户操作`);
+                this.goToStep(i, { clearTargetStatus: true });
+                await new Promise(resolve => setTimeout(resolve, 600));
+                return;
             }
         }
         
@@ -441,14 +484,14 @@ class SettingsStepManager {
         for (let i = 0; i < this.steps.length; i++) {
             const step = this.steps[i];
             if (!this.isStepCompleted(step.id) || (step.validation && !(await step.validation()))) {
-                console.log(`📍 跳转到第一个需要用户操作的步骤: ${i + 1}`);
+                // console.log(`📍 跳转到第一个需要用户操作的步骤: ${i + 1}`);
                 this.goToStep(i, { clearTargetStatus: true });
                 return;
             }
         }
         
         // 如果所有步骤都完成，跳转到最后一步
-        console.log('✅ 所有步骤都已完成，跳转到最后一步');
+        // console.log('✅ 所有步骤都已完成，跳转到最后一步');
         this.goToStep(this.steps.length - 1, { clearTargetStatus: true });
     }
 
@@ -501,7 +544,7 @@ class SettingsStepManager {
             return;
         }
         
-        console.log(`📍 已切换到步骤 ${stepIndex + 1} (${step.id})`);
+        // console.log(`📍 已切换到步骤 ${stepIndex + 1} (${step.id})`);
     }
 
     // 已删除goToNextStep函数，使用goToStep替代
@@ -630,11 +673,16 @@ class SettingsStepManager {
             this.showStepStatus(previousStep.id, previousStepStatus, previousStepType);
         }
         
-        // 如果是回到之前的步骤，清除目标步骤的完成状态
+        // 如果是回到之前的步骤，清除目标步骤及其之后所有步骤的完成状态
         if (stepIndex < previousStepIndex) {
-            const targetStepId = this.steps[stepIndex].id;
-            console.log(`🔄 回到上一步 (${targetStepId})，清除完成状态`);
-            this.clearStepCompletion(targetStepId);
+            // console.log(`🔄 回到上一步 (步骤 ${stepIndex + 1})，清除从该步骤到步骤 ${previousStepIndex + 1} 的所有完成状态`);
+            
+            // 清除从目标步骤到当前步骤（包括当前步骤）的所有完成状态
+            for (let i = stepIndex; i <= previousStepIndex; i++) {
+                const stepId = this.steps[i].id;
+                this.clearStepCompletion(stepId);
+                // console.log(`🔄 已清除步骤 ${i + 1} (${stepId}) 的完成状态`);
+            }
         }
         
         // 隐藏当前步骤
@@ -676,7 +724,7 @@ class SettingsStepManager {
         
         this.updateStepVisuals();
         
-        console.log(`📍 已跳转到步骤 ${stepIndex + 1} (${step.id})`);
+        // console.log(`📍 已跳转到步骤 ${stepIndex + 1} (${step.id})`);
     }
     
     // 滚动到指定步骤
@@ -695,7 +743,7 @@ class SettingsStepManager {
                     behavior: 'smooth'
                 });
                 
-                console.log(`📜 自动滚动到步骤，数字圆位置: ${circleOffsetTop}，滚动位置: ${scrollTop}`);
+                // console.log(`📜 自动滚动到步骤，数字圆位置: ${circleOffsetTop}，滚动位置: ${scrollTop}`);
             } else {
                 console.error(`❌ 滚动失败: container=${!!container}, stepCircle=${!!stepCircle}`);
             }
@@ -761,18 +809,32 @@ class SettingsStepManager {
                 // 标记当前步骤为完成
                 this.markStepCompleted(stepId, true);
                 
-                // 调用函数A（切换函数）实现跳转
-                const nextIndex = this.currentStepIndex + 1;
-                if (nextIndex < this.steps.length) {
-                    this.goToStep(nextIndex);
-                } else {
-                    // 最后一步完成
-                    this.handleSetupComplete();
-                }
+                // 显示成功状态
+                this.showStepStatus(stepId, '步骤验证通过，即将跳转...', 'success');
+                
+                // 延迟跳转，让用户看到成功消息
+                setTimeout(() => {
+                    // 调用函数A（切换函数）实现跳转
+                    const nextIndex = this.currentStepIndex + 1;
+                    if (nextIndex < this.steps.length) {
+                        this.goToStep(nextIndex);
+                    } else {
+                        // 最后一步完成
+                        this.handleSetupComplete();
+                    }
+                }, 1500);
             }
         } catch (error) {
             console.error('自动跳转检查失败:', error);
             this.showStepStatus(stepId, error.message, 'error');
+        }
+    }
+
+    // 主动触发当前步骤的自动跳转检查
+    triggerAutoJumpCheck() {
+        if (this.currentStepIndex >= 0 && this.currentStepIndex < this.steps.length) {
+            const currentStep = this.steps[this.currentStepIndex];
+            this.checkAutoJump(currentStep.id);
         }
     }
 
@@ -784,7 +846,7 @@ class SettingsStepManager {
      * @param {boolean} autoAdvance - 是否自动跳转，默认true
      */
     async showStepWarning(stepId, message, waitTime = 2000) {
-        console.log(`⚠️ 显示步骤警告: ${stepId}, 消息: ${message}, 等待: ${waitTime}ms, 自动跳转: ${autoAdvance}`);
+        // console.log(`⚠️ 显示步骤警告: ${stepId}, 消息: ${message}, 等待: ${waitTime}ms, 自动跳转: ${autoAdvance}`);
         
         // 显示警告状态
         this.showStepStatus(stepId, message, 'warning');
@@ -812,7 +874,7 @@ class SettingsStepManager {
                 statusDiv.className = 'step-status';
                 statusDiv.style.display = 'none'; // 默认隐藏
                 stepContent.appendChild(statusDiv); // 添加到step-content的末尾，在按钮容器之后
-                console.log(`✅ 已创建缺失的状态元素: ${selector}`);
+                // console.log(`✅ 已创建缺失的状态元素: ${selector}`);
                 
                 // 重新获取元素
                 const newStatusElement = this.overlay.querySelector(selector);
@@ -843,12 +905,12 @@ class SettingsStepManager {
             statusElement.className = `step-status ${type}`;
             statusElement.textContent = message;
             statusElement.style.display = 'block'; // 显示状态
-            console.log(`📊 状态更新 [${stepId}]: ${message} (${type})`);
+            // console.log(`📊 状态更新 [${stepId}]: ${message} (${type})`);
         } else {
             // 如果没有内容，隐藏状态元素
             statusElement.style.display = 'none';
             statusElement.textContent = '';
-            console.log(`📊 状态隐藏 [${stepId}]: 无内容显示`);
+            // console.log(`📊 状态隐藏 [${stepId}]: 无内容显示`);
         }
     }
 
@@ -917,38 +979,38 @@ class SettingsStepManager {
     // 显示按钮并确保可交互
     showButton(stepId, buttonId) {
         const buttonSelector = `#${this.settingId}-${stepId}-${buttonId}`;
-        console.log('========== SettingsStepManager.showButton 被调用 ==========');
-        console.log('settingId:', this.settingId);
-        console.log('stepId:', stepId);
-        console.log('buttonId:', buttonId);
-        console.log('buttonSelector:', buttonSelector);
-        console.log('overlay存在:', !!this.overlay);
+        // console.log('========== SettingsStepManager.showButton 被调用 ==========');
+        // console.log('settingId:', this.settingId);
+        // console.log('stepId:', stepId);
+        // console.log('buttonId:', buttonId);
+        // console.log('buttonSelector:', buttonSelector);
+        // console.log('overlay存在:', !!this.overlay);
         
         let buttonElement = this.overlay.querySelector(buttonSelector);
-        console.log('🔘 找到按钮元素:', !!buttonElement);
+        // console.log('🔘 找到按钮元素:', !!buttonElement);
         
         if (buttonElement) {
-            console.log('按钮当前状态:');
-            console.log('- display:', buttonElement.style.display);
-            console.log('- disabled:', buttonElement.disabled);
-            console.log('- classList:', Array.from(buttonElement.classList));
+            // console.log('按钮当前状态:');
+            // console.log('- display:', buttonElement.style.display);
+            // console.log('- disabled:', buttonElement.disabled);
+            // console.log('- classList:', Array.from(buttonElement.classList));
         }
         
         if (buttonElement) {
-            console.log('📝 设置按钮显示和交互状态');
+            // console.log('📝 设置按钮显示和交互状态');
             buttonElement.style.display = 'inline-block';
             buttonElement.disabled = false; // 确保按钮可点击
             buttonElement.classList.add('force-interact');
             buttonElement.classList.remove('force-no-interact'); // 移除禁用类
             
-            console.log('设置后的按钮状态:');
-            console.log('- display:', buttonElement.style.display);
-            console.log('- disabled:', buttonElement.disabled);
-            console.log('- classList:', Array.from(buttonElement.classList));
-            console.log('✅ 按钮已显示并启用');
+            // console.log('设置后的按钮状态:');
+            // console.log('- display:', buttonElement.style.display);
+            // console.log('- disabled:', buttonElement.disabled);
+            // console.log('- classList:', Array.from(buttonElement.classList));
+            // console.log('✅ 按钮已显示并启用');
         } else {
             // 按钮不存在，尝试动态创建
-            console.log('🔨 按钮不存在，尝试动态创建...');
+            // console.log('🔨 按钮不存在，尝试动态创建...');
             
             const step = this.steps.find(s => s.id === stepId);
             if (!step) {
@@ -975,7 +1037,7 @@ class SettingsStepManager {
                         completeContainer.id = `${this.settingId}-${stepId}-complete`;
                         stepContent.appendChild(completeContainer);
                         buttonsContainer = completeContainer;
-                        console.log('✅ 动态创建完成设置按钮容器');
+                        // console.log('✅ 动态创建完成设置按钮容器');
                     }
                 }
             } else {
@@ -989,7 +1051,7 @@ class SettingsStepManager {
                         regularContainer.id = `${this.settingId}-${stepId}-buttons`;
                         stepContent.appendChild(regularContainer);
                         buttonsContainer = regularContainer;
-                        console.log('✅ 动态创建常规按钮容器');
+                        // console.log('✅ 动态创建常规按钮容器');
                     }
                 }
             }
@@ -1013,7 +1075,7 @@ class SettingsStepManager {
             `;
             
             buttonsContainer.insertAdjacentHTML('beforeend', newButtonHtml);
-            console.log('✅ 动态创建按钮成功');
+            // console.log('✅ 动态创建按钮成功');
             
             // 重新获取按钮元素并设置事件监听器
             buttonElement = this.overlay.querySelector(buttonSelector);
@@ -1025,7 +1087,7 @@ class SettingsStepManager {
                 });
                 
                 buttonElement.classList.add('force-interact');
-                console.log('✅ 按钮事件监听器已添加');
+                // console.log('✅ 按钮事件监听器已添加');
             }
         }
     }
@@ -1043,6 +1105,7 @@ class SettingsStepManager {
     disableButton(stepId, buttonId) {
         const buttonElement = this.overlay.querySelector(`#${this.settingId}-${stepId}-${buttonId}`);
         if (buttonElement) {
+            buttonElement.disabled = true;
             buttonElement.classList.add('force-no-interact');
         }
     }
@@ -1051,6 +1114,7 @@ class SettingsStepManager {
     enableButton(stepId, buttonId) {
         const buttonElement = this.overlay.querySelector(`#${this.settingId}-${stepId}-${buttonId}`);
         if (buttonElement) {
+            buttonElement.disabled = false;
             buttonElement.classList.remove('force-no-interact');
             buttonElement.classList.add('force-interact');
         }
@@ -1136,4 +1200,4 @@ class SettingsStepManager {
 // 导出给全局使用
 window.SettingsStepManager = SettingsStepManager;
 
-console.log('📋 设置步骤管理器已加载');
+// console.log('📋 设置步骤管理器已加载');

@@ -12,13 +12,13 @@ class CursorIndicator {
     init() {
         // 检测是否为移动设备
         if (this.isMobileDevice()) {
-            console.log('📱 检测到移动设备，跳过光标指示器初始化');
+            // console.log('📱 检测到移动设备，跳过光标指示器初始化');
             return;
         }
         
         this.createIndicator();
         this.bindEvents();
-        console.log('🖱️ 自定义光标指示器已初始化');
+        // console.log('🖱️ 自定义光标指示器已初始化');
     }
     
     // 检测移动设备

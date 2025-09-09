@@ -374,10 +374,6 @@
     position: relative;
 }
 
-.toggle-input {
-    display: none;
-}
-
 .toggle-label {
     display: block;
     width: 50px;
@@ -401,12 +397,22 @@
     transition: transform 0.3s ease;
 }
 
-.toggle-input:checked + .toggle-label {
+/* On状态 - 开启时的样式 */
+.toggle-label.on {
     background: #666AF6;
 }
 
-.toggle-input:checked + .toggle-label::after {
+.toggle-label.on::after {
     transform: translateX(26px);
+}
+
+/* Off状态 - 关闭时的样式（默认状态） */
+.toggle-label.off {
+    background: #333;
+}
+
+.toggle-label.off::after {
+    transform: translateX(0);
 }
 
 .setting-card-content {

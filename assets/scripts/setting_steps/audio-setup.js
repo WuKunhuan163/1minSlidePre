@@ -98,12 +98,12 @@ class AudioSetupManager {
                 title: '创建RAM用户',
                 content: {
                     description: `
-                        创建RAM用户，用于AccessKey配置。
+                        创建用户用于AccessKey配置。
                         <br><br>
                         <strong>操作步骤：</strong><br>
                         1. 前往<a href="https://ram.console.aliyun.com/overview?activeTab=workflow" target="_blank">RAM控制台工作流程</a><br>
                         2. 选择"创建初始用户"下的"账号管理员"<br>
-                        3. 点击"执行配置"完成验证
+                        3. 完成该步
                     `,
                     image: 'assets/images/settings/step_3_create_user.png'
                 },
@@ -462,7 +462,7 @@ class AudioSetupManager {
             throw new Error('缺少AppKey，请先完成第二步配置');
         }
         
-        console.log('🔄 开始验证AccessKey凭据...');
+        // console.log('🔄 开始验证AccessKey凭据...');
         
         try {
             // 调用vercel托管的get-token API来验证凭据
@@ -501,10 +501,10 @@ class AudioSetupManager {
             }
             
             const result = await response.json();
-            console.log('📥 验证API响应:', result);
+            // console.log('📥 验证API响应:', result);
             
             if (result.success) {
-                console.log('✅ AccessKey验证成功，Token获取成功');
+                // console.log('✅ AccessKey验证成功，Token获取成功');
                 return true;
             } else {
                 // 根据错误信息提供更具体的错误提示
@@ -694,7 +694,7 @@ class AudioSetupManager {
 
     // 检测音频输入设备
     async detectAudioDevices() {
-        console.log('🔍 检测音频输入设备...');
+        // console.log('🔍 检测音频输入设备...');
         
         try {
             // 请求麦克风权限
@@ -730,11 +730,11 @@ class AudioSetupManager {
                 // 监听设备选择变化
                 select.addEventListener('change', (e) => {
                     this.selectedDeviceId = e.target.value;
-                    console.log('🔄 音频设备选择已改变:', this.selectedDeviceId);
+                    // console.log('🔄 音频设备选择已改变:', this.selectedDeviceId);
                 });
             }
             
-            console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
+            // console.log(`✅ 检测到 ${audioInputs.length} 个音频输入设备`);
             
         } catch (error) {
             console.error('❌ 检测音频设备失败:', error);
@@ -759,7 +759,7 @@ class AudioSetupManager {
                         if (option) {
                             select.value = config.selectedDeviceId;
                             this.selectedDeviceId = config.selectedDeviceId;
-                            console.log('✅ 已选择录音设备配置中的设备:', config.selectedDeviceName);
+                            // console.log('✅ 已选择录音设备配置中的设备:', config.selectedDeviceName);
                             
                             // 锁定设备选择，禁用下拉菜单
                             select.disabled = true;
@@ -813,7 +813,7 @@ class AudioSetupManager {
 
             // 如果有之前的录音，先清除状态（隐藏下载按钮等）
             if (this.recordingTestCompleted || this.lastRecordedAudio) {
-                console.log('🔄 开始新录音，清除之前的录音状态...');
+                // console.log('🔄 开始新录音，清除之前的录音状态...');
                 // 隐藏之前的下载按钮和完成按钮
                 this.stepManager.hideButton('step5', 'downloadBtn');
                 this.stepManager.hideButton('step5', 'completeBtn');
@@ -833,7 +833,7 @@ class AudioSetupManager {
             };
             
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            console.log('🎤 录音已开始，使用设备:', this.selectedDeviceId);
+            // console.log('🎤 录音已开始，使用设备:', this.selectedDeviceId);
             
             this.mediaRecorder = new MediaRecorder(stream);
             this.audioChunks = [];
@@ -866,7 +866,7 @@ class AudioSetupManager {
                 try {
                     window.BackgroundMusicVolumeController.pause(true); // 暂停背景音乐并保存原始音量
                     await new Promise(resolve => setTimeout(resolve, 200)); // 等待200ms确保生效
-                    console.log('🎵 录音开始，已通过统一API暂停背景音乐');
+                    // console.log('🎵 录音开始，已通过统一API暂停背景音乐');
                 } catch (error) {
                     console.warn('⚠️ 通过统一API暂停背景音乐时出错:', error);
                 }
@@ -891,7 +891,7 @@ class AudioSetupManager {
         if (this.usingEnhancedRecorder && typeof enhancedRecorder !== 'undefined') {
             // 使用增强型录音器
             if (enhancedRecorder.getIsRecording()) {
-                console.log('🛑 停止增强型录音器');
+                // console.log('🛑 停止增强型录音器');
                 enhancedRecorder.stopRecording(); // 这将触发onRecordingComplete回调
             }
         } else if (this.mediaRecorder && this.isRecording) {
@@ -917,7 +917,7 @@ class AudioSetupManager {
             if (window.BackgroundMusicVolumeController) {
                 try {
                     window.BackgroundMusicVolumeController.resume();
-                    console.log('🎵 录音结束，已通过统一API恢复背景音乐');
+                    // console.log('🎵 录音结束，已通过统一API恢复背景音乐');
                 } catch (error) {
                     console.warn('⚠️ 通过统一API恢复背景音乐时出错:', error);
                 }
@@ -945,7 +945,7 @@ class AudioSetupManager {
             try {
                 if (window.convertToMp3) {
                     this.lastRecordedAudio = await window.convertToMp3(audioBlob);
-                    console.log('✅ 录音数据已转换为MP3并保存，文件大小:', (this.lastRecordedAudio.size / 1024).toFixed(2), 'KB');
+                    // console.log('✅ 录音数据已转换为MP3并保存，文件大小:', (this.lastRecordedAudio.size / 1024).toFixed(2), 'KB');
                 } else {
                     console.warn('⚠️ convertToMp3函数不可用，使用原始WAV文件');
                     this.lastRecordedAudio = audioBlob;
@@ -1069,7 +1069,7 @@ class AudioSetupManager {
 
     // 处理增强型录音器完成录音
     async handleEnhancedRecordingComplete(audioBlob, rawAudioData) {
-        console.log('✅ 增强型录音完成');
+        // console.log('✅ 增强型录音完成');
         this.isRecording = false;
         this.resetRecordingUI();
         
@@ -1177,10 +1177,10 @@ class AudioSetupManager {
             throw new Error('缺少必要的配置信息，请先完成前面的步骤');
         }
         
-        console.log('🎤 开始语音识别，配置:', { 
-            appKey: appKey.substring(0, 8) + '...', 
-            accessKeyId: accessKeyId.substring(0, 8) + '...' 
-        });
+        // console.log('🎤 开始语音识别，配置:', { 
+        //     appKey: appKey.substring(0, 8) + '...', 
+        //     accessKeyId: accessKeyId.substring(0, 8) + '...' 
+        // });
         
         try {
             // 将音频转换为PCM格式
@@ -1199,13 +1199,13 @@ class AudioSetupManager {
             // 转换为数组格式（vercel API需要）
             const audioData = Array.from(resampledData);
             
-            console.log('🔊 音频信息:', {
-                duration: audioBuffer.duration,
-                originalSampleRate: originalSampleRate,
-                targetSampleRate: targetSampleRate,
-                originalSize: pcmData.length,
-                resampledSize: audioData.length
-            });
+            // console.log('🔊 音频信息:', {
+            //     duration: audioBuffer.duration,
+            //     originalSampleRate: originalSampleRate,
+            //     targetSampleRate: targetSampleRate,
+            //     originalSize: pcmData.length,
+            //     resampledSize: audioData.length
+            // });
             
             // 使用vercel托管的API避免CORS问题
             const result = await this.callVercelAPI(audioData, appKey, accessKeyId, accessKeySecret);
@@ -1261,7 +1261,7 @@ class AudioSetupManager {
     
     // 解析API错误信息，提供更明确的错误提示
     parseApiError(errorMessage) {
-        console.log('🔍 解析API错误信息:', errorMessage);
+        // console.log('🔍 解析API错误信息:', errorMessage);
         
         try {
             // 尝试从错误信息中提取具体的错误内容
@@ -1366,7 +1366,7 @@ class AudioSetupManager {
             return;
         }
 
-        console.log('📥 开始下载录音文件...');
+        // console.log('📥 开始下载录音文件...');
 
         try {
             // 生成文件名 - 根据音频格式确定扩展名
@@ -1392,7 +1392,7 @@ class AudioSetupManager {
             // 清理URL对象
             URL.revokeObjectURL(url);
 
-            console.log('📥 录音文件下载完成:', fileName);
+            // console.log('📥 录音文件下载完成:', fileName);
             this.stepManager.showStepStatus('step5', '录音文件下载完成', 'success');
 
             // 2秒后清除状态信息
@@ -1408,7 +1408,7 @@ class AudioSetupManager {
 
     // 完成设置
     completeSetup() {
-        console.log('🎯 完成录音文字识别设置');
+        // console.log('🎯 完成录音文字识别设置');
         
         // 标记设置为已测试（这是完成的标志）
         simpleConfig.markSettingTested('recording');
@@ -1416,14 +1416,14 @@ class AudioSetupManager {
         // 启用录音功能
         simpleConfig.set('recordingEnabled', true);
         
-        console.log('✅ 录音功能设置完成并已启用');
+        // console.log('✅ 录音功能设置完成并已启用');
         
         this.stepManager.completeSetup();
     }
     
     // 处理设置完成（步骤管理器回调）
     handleSetupComplete() {
-        console.log('✅ 阿里云语音识别设置完成');
+        // console.log('✅ 阿里云语音识别设置完成');
         
         // 刷新主设置页面显示
         if (window.refreshSettingsDisplay) {
@@ -1560,7 +1560,7 @@ class AudioSetupManager {
     
     // 清空录音结果和重置状态
     clearRecordingResults() {
-        console.log('🧹 清空录音结果和重置状态...');
+        // console.log('🧹 清空录音结果和重置状态...');
         
         // 清空录音结果区域
         const transcriptionResult = document.getElementById('transcriptionResult');
@@ -1610,13 +1610,44 @@ class AudioSetupManager {
         // 清空step-status
         this.stepManager.showStepStatus('step5', '', 'info');
         
-        console.log('✅ 录音结果已清空，状态已重置');
+        // console.log('✅ 录音结果已清空，状态已重置');
+    }
+
+    // 清理资源
+    cleanup() {
+        // console.log('🎙️ 清理音频设置资源...');
+        
+        // 停止录音（如果正在录音）
+        if (this.isRecording) {
+            this.stopRecording();
+        }
+        
+        // 清理录音结果
+        this.clearRecordingResults();
+        
+        // 清理音频流
+        if (this.mediaRecorder && this.mediaRecorder.stream) {
+            this.mediaRecorder.stream.getTracks().forEach(track => {
+                track.stop();
+                // console.log('🔇 已停止音频轨道:', track.kind);
+            });
+        }
+        
+        // 重置状态变量
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.recordingTestCompleted = false;
+        this.audioChunks = [];
+        this.lastRecordedAudio = null;
+        this.selectedDeviceId = null;
+        
+        // console.log('✅ 音频设置资源清理完成');
     }
 }
 
 // 处理设置完成
 function handleSetupComplete() {
-    console.log('✅ 阿里云语音识别设置完成');
+    // console.log('✅ 阿里云语音识别设置完成');
     
     // 刷新主设置页面显示
     if (window.refreshSettingsDisplay) {
@@ -1626,6 +1657,11 @@ function handleSetupComplete() {
 
 // 处理返回设置菜单
 function handleBackToSettings() {
+    // 清理音频录音资源
+    if (window.audioSetupManager) {
+        window.audioSetupManager.cleanup();
+    }
+    
     // 创建新的设置overlay
     const newSettingsOverlay = createSettingsOverlay();
     setupSettingsOverlayEvents(newSettingsOverlay);
@@ -1639,13 +1675,13 @@ function handleBackToSettings() {
 // 导入配置
 function importConfig() {
     // 实现配置导入逻辑
-    console.log('导入音频配置');
+    // console.log('导入音频配置');
 }
 
 // 导出配置
 function exportConfig() {
     // 实现配置导出逻辑
-    console.log('导出音频配置');
+    // console.log('导出音频配置');
 }
 
 // 创建全局实例
@@ -1659,13 +1695,13 @@ window.createAudioSetupOverlayRefactored = () => {
 
 // 兼容性函数：初始化录音设置
 const initAudioSetup = () => {
-    console.log('🎤🎤🎤 initAudioSetup被调用 - 录音设置详细界面已加载');
-    console.log('✅ 使用新的设置管理器系统，initAudioSetup兼容性调用完成');
+    // console.log('🎤🎤🎤 initAudioSetup被调用 - 录音设置详细界面已加载');
+    // console.log('✅ 使用新的设置管理器系统，initAudioSetup兼容性调用完成');
 };
 
 // 兼容性函数：更新移动端进度
 const updateMobileProgress = (step, total) => {
-    console.log(`📱 兼容性调用: updateMobileProgress(${step}, ${total})`);
+    // console.log(`📱 兼容性调用: updateMobileProgress(${step}, ${total})`);
     // 在新系统中，进度管理由管理器自动处理
 };
 
@@ -1681,4 +1717,4 @@ window.getAudioMicrophoneAdvice = (error) => {
     return null;
 };
 
-console.log('🎤 重构后的阿里云语音识别设置管理器已加载');
+// console.log('🎤 重构后的阿里云语音识别设置管理器已加载');

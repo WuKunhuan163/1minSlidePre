@@ -86,13 +86,13 @@ class RecordingInterface {
         // 应用颜色风格
         this.applyColorStyle();
         
-        console.log(`✅ 录音接口容器 ${this.containerId} 初始化完成`);
+        // console.log(`✅ 录音接口容器 ${this.containerId} 初始化完成`);
     }
     
     // 设定录音时间
     setRecordingDuration(seconds) {
         this.config.recordingDuration = seconds;
-        console.log(`🕒 设定录音时长: ${seconds} 秒`);
+        // console.log(`🕒 设定录音时长: ${seconds} 秒`);
     }
     
     // 设定波峰图条数
@@ -100,14 +100,14 @@ class RecordingInterface {
         this.config.waveformBars = count;
         // 重新生成波峰图条
         this.generateWaveformBars();
-        console.log(`📊 设定波峰图条数: ${count}`);
+        // console.log(`📊 设定波峰图条数: ${count}`);
     }
     
     // 设定颜色风格
     setColorStyle(style) {
         this.config.colorStyle = style;
         this.applyColorStyle();
-        console.log(`🎨 设定颜色风格: ${style}`);
+        // console.log(`🎨 设定颜色风格: ${style}`);
     }
     
     // 应用颜色风格
@@ -174,7 +174,7 @@ class RecordingInterface {
             }
         }, 100);
         
-        console.log('⏯️ 录音进度条已开启');
+        // console.log('⏯️ 录音进度条已开启');
     }
     
     // 停止录音进度条
@@ -183,7 +183,7 @@ class RecordingInterface {
             clearInterval(this.progressInterval);
             this.progressInterval = null;
         }
-        console.log('⏸️ 录音进度条已停止');
+        // console.log('⏸️ 录音进度条已停止');
     }
     
     // 写入下一个波峰条的数值
@@ -211,7 +211,7 @@ class RecordingInterface {
         if (textBox) {
             textBox.textContent = text;
         }
-        console.log('📝 文本框内容已更新');
+        // console.log('📝 文本框内容已更新');
     }
     
     // 追加文字到文本框
@@ -278,7 +278,7 @@ class RecordingInterface {
             // 清空文本框
             this.clearTextBox();
             
-            console.log('🎤 录音已开始');
+            // console.log('🎤 录音已开始');
             
             // 自动停止录音
             setTimeout(() => {
@@ -309,7 +309,7 @@ class RecordingInterface {
         this.stopProgressBar();
         this.stopWaveformAnimation();
         
-        console.log('🛑 录音已停止');
+        // console.log('🛑 录音已停止');
     }
     
     // 开始波峰图动画
@@ -364,7 +364,7 @@ class RecordingInterface {
     
     // 验证音频数据
     async validateAudioData(audioBlob) {
-        console.log('🔍 开始验证音频数据...');
+        // console.log('🔍 开始验证音频数据...');
         
         const validationResults = {
             fileSize: audioBlob.size,
@@ -426,7 +426,7 @@ class RecordingInterface {
         // 清空文本框
         this.clearTextBox();
         
-        console.log('🔄 录音接口已重置');
+        // console.log('🔄 录音接口已重置');
     }
     
     // 销毁接口
@@ -441,7 +441,7 @@ class RecordingInterface {
             this.audioStream.getTracks().forEach(track => track.stop());
         }
         
-        console.log('🗑️ 录音接口已销毁');
+        // console.log('🗑️ 录音接口已销毁');
     }
 }
 
