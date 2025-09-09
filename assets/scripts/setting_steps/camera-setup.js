@@ -232,6 +232,13 @@ class CameraSetupManager {
                         show: true
                     },
                     {
+                        id: 'downloadBtn',
+                        text: '下载视频',
+                        type: 'secondary',
+                        onClick: () => this.downloadRecordedVideo(),
+                        show: false  // 默认隐藏，录制完成后显示
+                    },
+                    {
                         id: 'completeBtn',
                         text: '完成设置',
                         type: 'success',
@@ -2086,12 +2093,8 @@ class CameraSetupManager {
     handleRecordingComplete(result) {
         console.log('✅ 录制和转换完成:', result);
         
-        const downloadVideoBtn = document.getElementById('downloadVideoBtn');
         const resultContainer = document.getElementById('resultContainer');
         const videoPreviewContainer = document.getElementById('videoPreviewContainer');
-        
-        // 显示下载按钮
-        downloadVideoBtn.style.display = 'inline-block';
         
         // 显示结果
         resultContainer.style.display = 'block';
@@ -2109,9 +2112,12 @@ class CameraSetupManager {
             this.recordingResult = result;
         }
         
-        // 显示完成设置按钮
-        if (this.stepManager && this.stepManager.currentStep === 3) { // 第四步的索引是3
-            this.stepManager.updateButtonVisibility(3, 'completeBtn', true);
+        // 显示步骤管理器中的按钮
+        if (this.stepManager && this.stepManager.currentStepIndex === 3) { // 第四步的索引是3
+            // 显示下载按钮
+            this.stepManager.showButton('step4', 'downloadBtn');
+            // 显示完成设置按钮
+            this.stepManager.showButton('step4', 'completeBtn');
         }
     }
 

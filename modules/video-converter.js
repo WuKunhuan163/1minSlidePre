@@ -400,7 +400,8 @@ class VideoConverter {
      */
     createVideoPreview(blob) {
         const video = document.createElement('video');
-        video.src = URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
+        video.src = blobUrl;
         video.controls = true;
         video.style.cssText = `
             max-width: 100%;
@@ -408,14 +409,68 @@ class VideoConverter {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         `;
         
-        // 自动清理URL
-        video.addEventListener('loadstart', () => {
-            setTimeout(() => {
-                URL.revokeObjectURL(video.src);
-            }, 1000);
+        // 存储blob URL以便后续清理
+        video.dataset.blobUrl = blobUrl;
+        
+        // 只在视频真正结束播放或元素被移除时清理URL
+        const cleanupUrl = () => {
+            if (video.dataset.blobUrl) {
+                URL.revokeObjectURL(video.dataset.blobUrl);
+                delete video.dataset.blobUrl;
+            }
+        };
+        
+        // 当视频元素被移除时清理
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    mutation.removedNodes.forEach((node) => {
+                        if (node === video) {
+                            cleanupUrl();
+                            observer.disconnect();
+                        }
+                    });
+                }
+            });
         });
         
+        // 观察父节点的变化
+        if (video.parentNode) {
+            observer.observe(video.parentNode, { childList: true });
+        }
+        
+        // 也可以手动调用清理方法
+        video.cleanup = cleanupUrl;
+        
         return video;
+    }
+
+    /**
+     * 下载转换后的视频
+     * @param {string} filename - 文件名
+     */
+    downloadVideo(filename = 'converted_video.mp4') {
+        if (!this.convertedBlob) {
+            console.error('❌ 没有可下载的视频');
+            return;
+        }
+        
+        const url = URL.createObjectURL(this.convertedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // 清理URL
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        this.log(`📥 开始下载视频: ${filename}`);
     }
 }
 

@@ -5,11 +5,13 @@
  */
 
 import PathResolver from './path-resolver.js';
+import FFmpegProgressCalculator from './ffmpeg-progress-calculator.js';
 
 let ffmpeg = null;
 let isLoaded = false;
 let currentTask = null; // 当前执行的任务
 let isCancelled = false; // 取消标志
+let progressCalculator = null; // 进度计算器
 
 // 导入FFmpeg
 async function initFFmpeg() {
@@ -28,15 +30,19 @@ async function initFFmpeg() {
         const { FFmpeg } = module;
         ffmpeg = new FFmpeg();
         
-        // 设置事件监听 - 过滤日志以减少控制台输出
+        // 设置事件监听 - 使用进度计算器处理日志
         ffmpeg.on('log', ({ message }) => {
-            // 如果日志包含时间信息，也发送进度更新
-            if (message.includes('time=') && message.includes('fps=')) {
-                self.postMessage({
-                    type: 'progress',
-                    percent: -1, // 表示来自日志
-                    time: message // 传递完整的日志消息
-                });
+            // 如果日志包含时间信息，使用进度计算器处理
+            if (message.includes('time=') && message.includes('fps=') && progressCalculator) {
+                const result = progressCalculator.calculateProgress(-1, message);
+                if (result.isValid) {
+                    self.postMessage({
+                        type: 'progress',
+                        percent: result.percent,
+                        time: result.time,
+                        message: result.reason
+                    });
+                }
             }
             
             // 只发送重要的日志信息，过滤掉详细的调试信息
@@ -99,6 +105,17 @@ async function convertVideo(data) {
     if (!isLoaded) {
         throw new Error('FFmpeg Worker 未初始化');
     }
+    
+    // 初始化进度计算器
+    progressCalculator = new FFmpegProgressCalculator({
+        enableDebugLog: true,
+        logCallback: (message) => {
+            self.postMessage({
+                type: 'log',
+                message: `[进度计算器] ${message}`
+            });
+        }
+    });
     
     const { webmBuffer, options = {} } = data;
     
@@ -283,6 +300,17 @@ self.onmessage = async function(e) {
 async function compositeVideo(data) {
     const { videoBuffer, options } = data;
     const { pptBackground, videoScale, overlayPosition, outputSize, autoTrimStart = true } = options;
+    
+    // 初始化进度计算器
+    progressCalculator = new FFmpegProgressCalculator({
+        enableDebugLog: true,
+        logCallback: (message) => {
+            self.postMessage({
+                type: 'log',
+                message: `[合成进度计算器] ${message}`
+            });
+        }
+    });
     
     try {
         self.postMessage({ type: 'log', message: '🎬 Worker开始背景合成...' });
