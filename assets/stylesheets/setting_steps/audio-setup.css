@@ -112,9 +112,9 @@
     color: white !important; /* 白色文字 */
 }
 
-.setup-step.completed .progress-fill-thin {
+/* .setup-step.completed .progress-fill-thin {
     background: linear-gradient(90deg, #4CAF50, #66BB6A);
-}
+} */
 
 /* 进度条样式 */
 .mobile-progress-container {

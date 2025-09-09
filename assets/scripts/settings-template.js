@@ -4,576 +4,37 @@
 
 // 创建设置页面覆盖层
 const createSettingsOverlay = () => {
-    const overlay = document.createElement('div');
-    overlay.className = 'slides-overlay'; // 复用PPT页面的样式
+    console.log('🔧 创建设置overlay - 完全使用设置管理器动态生成');
     
-    overlay.innerHTML = `
-        <div class="slides-header">
-            <button class="back-button">
-                <i class='bx bx-arrow-back'></i>
-            </button>
-            <h2>系统设置</h2>
-        </div>
-        <div class="settings-container">
-            <div class="setting-card clickable-card" id="microphoneCard">
-                <div class="new-badge badge-base" id="microphoneNewBadge">NEW</div>
-                <div class="reconfig-badge badge-base" id="microphoneReconfigBadge" style="display: none;">点击重新配置</div>
-                <div class="setting-card-header">
-                    <i class='bx bx-devices'></i>
-                    <h3>录音设备</h3>
-                    <div class="setting-toggle">
-                        <input type="checkbox" id="microphoneToggle" class="toggle-input">
-                        <label for="microphoneToggle" class="toggle-label"></label>
-                    </div>
-                </div>
-                <div class="setting-card-content" id="microphoneSettings">
-                    <!-- 设备信息将由字段管理系统动态填充 -->
+    // 检查设置管理器是否可用
+    if (!window.settingsManager || !window.settingsManager.createSettingsOverlay) {
+        console.error('❌ 设置管理器不可用！无法创建设置界面');
+        
+        // 创建错误提示overlay
+        const errorOverlay = document.createElement('div');
+        errorOverlay.className = 'slides-overlay';
+        errorOverlay.innerHTML = `
+            <div class="slides-header">
+                <button class="back-button">
+                    <i class='bx bx-arrow-back'></i>
+                </button>
+                <h2>系统设置</h2>
+            </div>
+            <div class="settings-container">
+                <div class="error-message">
+                    <h3>⚠️ 设置管理器加载失败</h3>
+                    <p>请刷新页面重试，或联系技术支持。</p>
                 </div>
             </div>
-
-            <div class="setting-card clickable-card" id="recordingCard" style="display: none;">
-                <div class="new-badge badge-base" id="recordingNewBadge" style="display: none;">NEW</div>
-                <div class="reconfig-badge badge-base" id="recordingReconfigBadge" style="display: none;">点击重新配置</div>
-                <div class="setting-card-header">
-                    <i class='bx bx-microphone'></i>
-                    <h3>录音文字识别</h3>
-                    <div class="setting-toggle">
-                        <input type="checkbox" id="recordingToggle" class="toggle-input">
-                        <label for="recordingToggle" class="toggle-label"></label>
-                    </div>
-                </div>
-                <div class="setting-card-content" id="recordingSettings">
-                    <div class="setting-field">
-                        <label>App Key</label>
-                        <input type="text" id="appKey" placeholder="请输入阿里云App Key">
-                    </div>
-                    <div class="setting-field">
-                        <label>AccessKey ID</label>
-                        <input type="text" id="accessKeyId" placeholder="请输入Access Key ID">
-                    </div>
-                    <div class="setting-field">
-                        <label>AccessKey Secret</label>
-                        <input type="password" id="accessKeySecret" placeholder="请输入Access Key Secret">
-                    </div>
-                </div>
-            </div>
-
-            <div class="setting-card clickable-card" id="aiCard">
-                <div class="new-badge badge-base" id="aiNewBadge" style="display: none;">NEW</div>
-                <div class="reconfig-badge badge-base" id="aiReconfigBadge" style="display: none;">点击重新配置</div>
-                <div class="setting-card-header">
-                    <i class='bx bx-brain'></i>
-                    <h3>智谱AI评分</h3>
-                    <div class="setting-toggle">
-                        <input type="checkbox" id="aiToggle" class="toggle-input">
-                        <label for="aiToggle" class="toggle-label"></label>
-                    </div>
-                </div>
-                <div class="setting-card-content" id="aiSettings">
-                    <div class="setting-field">
-                        <label>智谱AI API Key</label>
-                        <input type="password" id="zhipuApiKey" placeholder="请输入智谱AI API Key">
-                    </div>
-                </div>
-            </div>
-
-            <div class="setting-card volume-card" id="effectsVolumeCard">
-                <div class="setting-card-header volume-header">
-                    <i class='bx bx-volume-full'></i>
-                    <h3>计时音效音量</h3>
-                    <div class="inline-volume-control" id="effects-volume-control">
-                        <!-- 计时音效滑动条将通过JavaScript动态生成 -->
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-card volume-card" id="backgroundMusicCard">
-                <div class="setting-card-header volume-header">
-                    <i class='bx bx-music'></i>
-                    <h3>背景音乐音量</h3>
-                    <div class="inline-volume-control" id="background-music-control">
-                        <!-- 背景音乐滑动条将通过JavaScript动态生成 -->
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-footer">
-                <p>音效素材下载自<a href="https://www.aigei.com/" target="_blank">爱给</a></p>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-    return overlay;
+        `;
+        document.body.appendChild(errorOverlay);
+        return errorOverlay;
+    }
+    
+    // 使用设置管理器完全动态生成界面
+    return window.settingsManager.createSettingsOverlay();
 };
 
-// 设置页面的样式（添加到现有CSS中）
-const settingsStyles = `
-.settings-container {
-    max-width: 600px;
-    margin: 0 60px;
-    overflow-y: scroll; 
-    padding: 10px;
-}
-
-/* 设置页面滚动条样式 */
-.settings-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.settings-container::-webkit-scrollbar-track {
-    background: #2a2a2a;
-}
-
-.settings-container::-webkit-scrollbar-thumb {
-    background: #666AF6;
-    border-radius: 3px;
-}
-
-.settings-container::-webkit-scrollbar-thumb:hover {
-    background: #5a5ee6;
-}
-
-@media (max-width: 500px) {
-    .settings-container {
-        margin: 0 auto;
-    }
-}
-
-.setting-card {
-    width: 100%;
-    min-width: 300px;
-    background: #1a1a1a;
-    margin-bottom: 20px;
-    overflow: visible;
-    transition: all 0.3s ease;
-    position: relative;
-    border: 1px solid #333;
-    border-radius: 12px;
-}
-
-.setting-card:hover {
-    border-color: #555;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-
-.setting-card-header {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-    background: #222;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.3s ease;
-    border: 1px solid #333;
-    border-radius: 12px;
-}
-
-.setting-card:hover .setting-card-header {
-    background: #666AF666;
-}
-
-.setting-card.clickable-card {
-    cursor: pointer;
-}
-
-
-.volume-card:hover .setting-card-header {
-    background: #222 !important;
-}
-
-.setting-card-header i {
-    font-size: 24px;
-    color: #666AF6;
-    margin-right: 15px;
-}
-
-.setting-card-header h3 {
-    color: white;
-    font-size: 16px;
-    font-weight: normal;
-    flex: 1;
-    margin: 0;
-}
-
-.setting-toggle {
-    margin-left: 20px;
-    position: relative;
-}
-
-.toggle-input {
-    display: none;
-}
-
-.toggle-label {
-    display: block;
-    width: 50px;
-    height: 24px;
-    background: #333;
-    border-radius: 12px;
-    position: relative;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
-
-.toggle-label::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    transition: transform 0.3s ease;
-}
-
-.toggle-input:checked + .toggle-label {
-    background: #666AF6;
-}
-
-.toggle-input:checked + .toggle-label::after {
-    transform: translateX(26px);
-}
-
-.setting-card-content {
-    padding: 0 20px;
-    max-height: 0;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-.setting-card-content.expanded {
-    padding: 20px;
-    max-height: 300px;
-}
-
-.setting-field {
-    margin-bottom: 15px;
-}
-
-.setting-field:last-child {
-    margin-bottom: 0;
-}
-
-.setting-field label {
-    display: block;
-    color: #ccc;
-    font-size: 14px;
-    margin-bottom: 8px;
-}
-
-.setting-field input {
-    width: 100%;
-    padding: 12px;
-    background: #333;
-    border: 1px solid #555;
-    border-radius: 6px;
-    color: white;
-    font-size: 14px;
-    transition: border-color 0.3s ease;
-}
-
-.setting-field input:focus {
-    outline: none;
-    border-color: #666AF6;
-}
-
-.settings-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-}
-
-.save-button, .test-button {
-    padding: 12px 30px;
-    border: none;
-    border-radius: 25px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.save-button {
-    background: #333;
-    color: white;
-    border: none;
-}
-
-.save-button:hover {
-    background: #666AF6;
-    color: white;
-    transform: translateY(-2px);
-}
-
-.test-button {
-    background: #333;
-    color: white;
-    border: none;
-}
-
-.test-button:hover {
-    background: #666AF6;
-    color: white;
-    transform: translateY(-2px);
-}
-
-.settings-footer {
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #333;
-}
-
-.settings-footer p {
-    color: #666;
-    font-size: 12px;
-    margin: 0;
-}
-
-.settings-footer a {
-    color: #666AF6;
-    text-decoration: none;
-}
-
-.settings-footer a:hover {
-    text-decoration: underline;
-}
-
-.volume-control-content {
-    padding: 15px 0;
-}
-
-.volume-header {
-    justify-content: flex-start !important;
-    align-items: center !important;
-    gap: 15px !important;
-}
-
-.volume-header i {
-    margin-right: 0 !important;
-}
-
-.volume-header h3 {
-    flex: none;
-    margin: 0;
-}
-
-.inline-volume-control {
-    flex: 1;
-    padding: 0 0 0 20px;
-}
-
-.inline-volume-slider {
-    width: 100%;
-    height: 6px;
-    appearance: none;
-    -webkit-appearance: none;
-    background: #333;
-    border-radius: 3px;
-    outline: none;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.inline-volume-slider.editing {
-    background: linear-gradient(to right, #666AF6 var(--volume-percentage, 50%), #333 var(--volume-percentage, 50%));
-    box-shadow: 0 0 8px rgba(102, 106, 246, 0.4);
-}
-
-.inline-volume-slider:not(.editing) {
-    background: linear-gradient(to right, #ccc var(--volume-percentage, 50%), #333 var(--volume-percentage, 50%));
-}
-
-.inline-volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.inline-volume-slider.editing::-webkit-slider-thumb {
-    background: white;
-    box-shadow: 0 0 12px rgba(102, 106, 246, 0.8), 0 2px 4px rgba(0,0,0,0.2);
-    transform: scale(1.1);
-}
-
-.inline-volume-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.inline-volume-slider.editing::-moz-range-thumb {
-    background: white;
-    box-shadow: 0 0 12px rgba(102, 106, 246, 0.8), 0 2px 4px rgba(0,0,0,0.2);
-    transform: scale(1.1);
-}
-
-/* 录音设备设置样式 */
-.device-select {
-    width: 100%;
-    padding: 12px;
-    background: #333;
-    border: 1px solid #555;
-    border-radius: 6px;
-    color: white;
-    font-size: 14px;
-    transition: border-color 0.3s ease;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 12px;
-    padding-right: 40px;
-}
-
-.device-select:focus {
-    outline: none;
-    border-color: #666AF6;
-}
-
-.device-select option {
-    background: #333;
-    color: white;
-}
-
-.audio-test-section {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.volume-meter {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.volume-bar {
-    flex: 1;
-    height: 8px;
-    background: #333;
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-}
-
-.volume-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
-    width: 0%;
-    transition: width 0.1s ease;
-    border-radius: 4px;
-}
-
-.volume-text {
-    color: #ccc;
-    font-size: 12px;
-    min-width: 60px;
-}
-
-.audio-test-section.testing .test-button {
-    background: #dc3545;
-    color: white;
-}
-
-.audio-test-section.testing .test-button:hover {
-    background: #c82333;
-}
-
-/* 通用badge基础样式 */
-.badge-base {
-    position: absolute;
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 12px;
-    z-index: 10;
-    text-align: center;
-    white-space: nowrap;
-    transition: all 0.3s ease;
-}
-
-/* NEW badge样式 */
-.new-badge {
-    top: -5px;
-    left: -5px;
-    background: #ff4444;
-    animation: newBadgePulse 2s infinite;
-    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
-}
-
-/* 重新配置badge样式 */
-.reconfig-badge {
-    top: -5px;
-    left: -5px;
-    background: #666AF6;
-    animation: reconfigBadgePulse 2s infinite;
-    box-shadow: 0 2px 8px rgba(102, 106, 246, 0.4);
-}
-
-/* NEW badge动画 */
-@keyframes newBadgePulse {
-    0%, 100% { 
-        transform: scale(1); 
-        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
-    }
-    50% { 
-        transform: scale(1.1); 
-        box-shadow: 0 4px 16px rgba(255, 68, 68, 0.8);
-    }
-}
-
-/* 重新配置badge动画 */
-@keyframes reconfigBadgePulse {
-    0%, 100% { 
-        transform: scale(1); 
-        box-shadow: 0 2px 8px rgba(102, 106, 246, 0.4);
-    }
-    50% { 
-        transform: scale(1.1); 
-        box-shadow: 0 4px 16px rgba(102, 106, 246, 0.8);
-    }
-}
-
-/* 主菜单NEW badge样式 */
-.main-new-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #ff4444;
-    color: white;
-    font-size: 9px;
-    font-weight: bold;
-    padding: 3px 6px;
-    border-radius: 10px;
-    z-index: 10;
-    animation: newBadgePulse 2s infinite;
-    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
-}
-`;
-
-// 将样式添加到页面
-const addSettingsStyles = () => {
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = settingsStyles;
-    document.head.appendChild(styleSheet);
-};
 
 // 计时音效音量控制初始化函数
 const initEffectsVolumeControl = (overlay) => {
@@ -797,10 +258,8 @@ const updateMainSettingsButton = () => {
 // 初始化设置页面功能
 const initSettingsPage = () => {
     try {
-        addSettingsStyles();
-        
-        // 更新主菜单设置按钮的NEW标识
-        updateMainSettingsButton();
+        // 主菜单badge现在由设置管理器统一处理
+        // updateMainSettingsButton(); // 已移除，由settingsManager处理
     
     // 为设置按钮添加事件监听器
     const settingsButton = document.querySelector('.settings-button');
@@ -815,8 +274,13 @@ const initSettingsPage = () => {
             const overlay = createSettingsOverlay();
             console.log('✅ 设置覆盖层已创建:', overlay);
             
-            // 使用统一的事件设置函数
-            setupSettingsOverlayEvents(overlay);
+    // 使用统一的事件设置函数
+    setupSettingsOverlayEvents(overlay);
+    
+    // 初始化新的设置管理器
+    if (window.settingsManager) {
+        window.settingsManager.initializeSettingsOverlay(overlay);
+    }
         });
     } else {
         console.warn('设置按钮未找到');
@@ -827,6 +291,233 @@ const initSettingsPage = () => {
 };
 
 console.log('📱 设置页面模板已加载');
+
+// 全局背景音乐音量控制接口
+window.BackgroundMusicVolumeController = {
+    // 当前音量值 (0-1)
+    currentVolume: 0.5,
+    
+    // 原始音量值（用于恢复）
+    originalVolume: null,
+    
+    // 背景音乐元素引用（私有，不应直接访问）
+    _backgroundMusicElement: null,
+    
+    // 设置滑动条引用（私有，不应直接访问）
+    _sliderElement: null,
+    
+    // 保护属性：检测直接访问
+    get backgroundMusicElement() {
+        console.warn('⚠️ 直接访问backgroundMusicElement已废弃，请使用BackgroundMusicVolumeController的API方法');
+        return this._backgroundMusicElement;
+    },
+    
+    set backgroundMusicElement(value) {
+        console.warn('⚠️ 直接设置backgroundMusicElement已废弃，请使用setBackgroundMusicElement()方法');
+        this._backgroundMusicElement = value;
+    },
+    
+    get sliderElement() {
+        console.warn('⚠️ 直接访问sliderElement已废弃，请使用BackgroundMusicVolumeController的API方法');
+        return this._sliderElement;
+    },
+    
+    set sliderElement(value) {
+        console.warn('⚠️ 直接设置sliderElement已废弃，请使用setSliderReference()方法');
+        this._sliderElement = value;
+    },
+    
+    // 初始化控制器
+    init() {
+        console.log('🎵 初始化背景音乐音量控制器...');
+        
+        // 查找背景音乐元素
+        this._backgroundMusicElement = document.querySelector('#background-music') || 
+                                      document.querySelector('audio[src*="background"]') ||
+                                      window.backgroundMusic;
+        
+        // 从配置加载当前音量
+        if (simpleConfig) {
+            const savedVolume = simpleConfig.get('backgroundMusicVolume');
+            if (savedVolume !== null) {
+                this.currentVolume = savedVolume;
+            }
+        }
+        
+        console.log('🎵 背景音乐控制器初始化完成, 当前音量:', this.currentVolume);
+        console.log('🎵 背景音乐元素:', this._backgroundMusicElement);
+    },
+    
+    // 设置音量 (0-1)
+    setVolume(volume, saveAsOriginal = false) {
+        // 确保音量在有效范围内
+        volume = Math.max(0, Math.min(1, volume));
+        
+        console.log(`🎵 设置背景音乐音量: ${volume} (保存为原始: ${saveAsOriginal})`);
+        
+        // 如果需要保存为原始音量
+        if (saveAsOriginal && this.originalVolume === null) {
+            this.originalVolume = this.currentVolume;
+            console.log(`🎵 保存原始音量: ${this.originalVolume}`);
+        }
+        
+        // 更新当前音量
+        this.currentVolume = volume;
+        
+        // 更新实际的背景音乐音量
+        this.updateBackgroundMusicVolume();
+        
+        // 更新滑动条显示
+        this.updateSliderDisplay();
+        
+        // 保存到配置
+        this.saveToConfig();
+        
+        // 更新设置管理器状态
+        this.updateSettingsManagerState();
+        
+        return this.currentVolume;
+    },
+    
+    // 获取当前音量
+    getVolume() {
+        return this.currentVolume;
+    },
+    
+    // 暂停背景音乐（设置音量为0）
+    pause(saveOriginal = true) {
+        console.log('🎵 暂停背景音乐...');
+        return this.setVolume(0, saveOriginal);
+    },
+    
+    // 恢复背景音乐音量
+    resume() {
+        console.log('🎵 恢复背景音乐音量...');
+        if (this.originalVolume !== null) {
+            const volumeToRestore = this.originalVolume;
+            this.originalVolume = null; // 清除原始音量
+            return this.setVolume(volumeToRestore);
+        } else {
+            console.log('🎵 没有保存的原始音量，保持当前音量');
+            return this.currentVolume;
+        }
+    },
+    
+    // 更新实际的背景音乐音量
+    updateBackgroundMusicVolume() {
+        if (this._backgroundMusicElement) {
+            // 背景音乐使用4倍放大，最大为1.0
+            const actualVolume = Math.min(this.currentVolume * 4.0, 1.0);
+            this._backgroundMusicElement.volume = actualVolume;
+            console.log(`🎵 更新背景音乐实际音量: ${actualVolume} (原始: ${this.currentVolume})`);
+        } else {
+            console.log('🎵 背景音乐元素未找到，无法更新音量');
+        }
+        
+        // 同时更新全局变量
+        if (window.backgroundMusic && window.backgroundMusic !== this._backgroundMusicElement) {
+            const actualVolume = Math.min(this.currentVolume * 4.0, 1.0);
+            window.backgroundMusic.volume = actualVolume;
+            console.log(`🎵 更新全局背景音乐音量: ${actualVolume}`);
+        }
+    },
+    
+    // 更新滑动条显示
+    updateSliderDisplay() {
+        // 查找当前的滑动条元素
+        if (!this._sliderElement) {
+            this._sliderElement = document.querySelector('#background-music-control input[type="range"]');
+        }
+        
+        if (this._sliderElement) {
+            this._sliderElement.value = this.currentVolume;
+            
+            // 更新滑动条样式
+            const percentage = this.currentVolume * 100;
+            this._sliderElement.style.setProperty('--volume-percentage', `${percentage}%`);
+            
+            console.log(`🎚️ 更新滑动条显示: ${this.currentVolume}`);
+        }
+    },
+    
+    // 保存到配置
+    saveToConfig() {
+        if (simpleConfig) {
+            simpleConfig.set('backgroundMusicVolume', this.currentVolume);
+            console.log(`💾 保存背景音乐音量到配置: ${this.currentVolume}`);
+        }
+    },
+    
+    // 更新设置管理器状态
+    updateSettingsManagerState() {
+        if (window.settingsManager && window.settingsManager.settingsState.backgroundMusic) {
+            window.settingsManager.settingsState.backgroundMusic.config = { volume: this.currentVolume };
+            window.settingsManager.settingsState.backgroundMusic.lastUpdate = Date.now();
+            console.log(`⚙️ 更新设置管理器状态: ${this.currentVolume}`);
+        }
+    },
+    
+    // 设置滑动条引用（由设置管理器调用）
+    setSliderReference(sliderElement) {
+        this._sliderElement = sliderElement;
+        console.log('🎚️ 设置滑动条引用:', sliderElement);
+    },
+    
+    // 设置背景音乐元素引用
+    setBackgroundMusicElement(element) {
+        this._backgroundMusicElement = element;
+        console.log('🎵 设置背景音乐元素引用:', element);
+        
+        // 立即更新音量
+        this.updateBackgroundMusicVolume();
+    },
+    
+    // 添加保护全局backgroundMusic的访问
+    _protectGlobalBackgroundMusic() {
+        if (window.backgroundMusic && !window.backgroundMusic._protected) {
+            const originalBackgroundMusic = window.backgroundMusic;
+            
+            // 创建保护的代理对象
+            window.backgroundMusic = new Proxy(originalBackgroundMusic, {
+                set(target, property, value) {
+                    if (property === 'volume') {
+                        console.warn('⚠️ 直接设置window.backgroundMusic.volume已废弃，请使用BackgroundMusicVolumeController.setVolume()');
+                        console.warn('   建议使用: window.BackgroundMusicVolumeController.setVolume(' + (value / 4.0) + ')');
+                    } else if (property === 'pause' || property === 'play') {
+                        console.warn('⚠️ 直接调用window.backgroundMusic.' + property + '()已废弃，请使用BackgroundMusicVolumeController.pause()/resume()');
+                    }
+                    return Reflect.set(target, property, value);
+                },
+                get(target, property) {
+                    if (property === 'pause') {
+                        console.warn('⚠️ 直接调用window.backgroundMusic.pause()已废弃，请使用BackgroundMusicVolumeController.pause()');
+                    } else if (property === 'play') {
+                        console.warn('⚠️ 直接调用window.backgroundMusic.play()已废弃，请使用BackgroundMusicVolumeController.resume()');
+                    }
+                    return Reflect.get(target, property);
+                }
+            });
+            
+            window.backgroundMusic._protected = true;
+        }
+    }
+};
+
+// 页面加载时初始化控制器
+document.addEventListener('DOMContentLoaded', () => {
+    window.BackgroundMusicVolumeController.init();
+    // 启用全局backgroundMusic保护
+    window.BackgroundMusicVolumeController._protectGlobalBackgroundMusic();
+});
+
+// 如果页面已经加载完成，立即初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.BackgroundMusicVolumeController.init();
+    });
+} else {
+    window.BackgroundMusicVolumeController.init();
+}
 
 // 统一的overlay管理系统
 const overlayManager = {
@@ -870,33 +561,27 @@ const setupSettingsOverlayEvents = (overlay) => {
 // 完整的设置overlay功能初始化
 const setupFullSettingsOverlayFunctionality = (overlay) => {
     
+    // 使用统一的设置管理器初始化
+    if (window.settingsManager) {
+        window.settingsManager.initializeSettingsOverlay(overlay);
+        return;
+    }
+    
+    // 降级处理：使用旧的初始化逻辑
+    console.warn('⚠️ 统一设置管理器未加载，使用降级处理');
+    
     // 获取所有必要的元素
-            const recordingToggle = overlay.querySelector('#recordingToggle');
-            const aiToggle = overlay.querySelector('#aiToggle');
-            const microphoneSettings = overlay.querySelector('#microphoneSettings');
-            const recordingSettings = overlay.querySelector('#recordingSettings');
-            const aiSettings = overlay.querySelector('#aiSettings');
-            const audioInputSelect = overlay.querySelector('#audioInputSelect');
+    const microphoneSettings = overlay.querySelector('#microphoneSettings');
+    const recordingSettings = overlay.querySelector('#recordingSettings');
+    const aiSettings = overlay.querySelector('#aiSettings');
+    const audioInputSelect = overlay.querySelector('#audioInputSelect');
+    
+    // 注意：不再处理toggle，因为这些应该由设置管理器处理
             
-    // 录音文字识别设置卡片点击事件（只为装饰，实际通过header进入设置）
-            const recordingCard = overlay.querySelector('#recordingCard');
-            if (recordingCard) {
-        
-        // 禁用toggle功能，只作装饰
-        if (recordingToggle) {
-            // 添加hover事件用于调试
-            recordingToggle.addEventListener('mouseenter', () => {
-                console.log('🖱️ 录音文字识别toggle鼠标悬停 - disabled:', recordingToggle.disabled, 'checked:', recordingToggle.checked);
-            });
-            
-            recordingToggle.addEventListener('click', (e) => {
-                console.log('🖱️ 录音文字识别toggle点击事件 - disabled:', e.target.disabled, 'checked:', e.target.checked);
-            });
-            
-            recordingToggle.disabled = true;
-            recordingToggle.style.pointerEvents = 'none';
-            recordingToggle.style.opacity = '0.7';
-        }
+    // 录音文字识别设置卡片（toggle由设置管理器处理）
+    const recordingCard = overlay.querySelector('#recordingCard');
+    if (recordingCard) {
+        // toggle交互由设置管理器统一处理，这里不再干预
         
         // 只为header区域添加点击事件
         const recordingHeader = recordingCard.querySelector('.setting-card-header');
@@ -1056,25 +741,10 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
         });
     }
     
-    // AI设置卡片点击事件（只为装饰，实际通过header进入设置）
+    // AI设置卡片（toggle由设置管理器处理）
     const aiCard = overlay.querySelector('#aiCard');
     if (aiCard) {
-        
-        // 禁用toggle功能，只作装饰
-        if (aiToggle) {
-            // 添加hover事件用于调试
-            aiToggle.addEventListener('mouseenter', () => {
-                console.log('🖱️ AI评分toggle鼠标悬停 - disabled:', aiToggle.disabled, 'checked:', aiToggle.checked);
-            });
-            
-            aiToggle.addEventListener('click', (e) => {
-                console.log('🖱️ AI评分toggle点击事件 - disabled:', e.target.disabled, 'checked:', e.target.checked);
-            });
-            
-            aiToggle.disabled = true;
-            aiToggle.style.pointerEvents = 'none';
-            aiToggle.style.opacity = '0.7';
-        }
+        // toggle交互由设置管理器统一处理，这里不再干预
         
         // 只为header区域添加点击事件
         const aiHeader = aiCard.querySelector('.setting-card-header');
@@ -1157,25 +827,30 @@ const updateOverlayFromSharedState = (overlay) => {
         setupAISettingsFieldCopy(overlay);
     }
             
-            // 检测系统并显示音量设置卡片
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const effectsVolumeCard = overlay.querySelector('#effectsVolumeCard');
-            const backgroundMusicCard = overlay.querySelector('#backgroundMusicCard');
-            
-            if (!isIOS) {
-                // 非iOS系统显示音量设置卡片
-                if (effectsVolumeCard) effectsVolumeCard.style.display = 'block';
-                if (backgroundMusicCard) backgroundMusicCard.style.display = 'block';
-                initEffectsVolumeControl(overlay);
-                initBackgroundMusicVolumeControl(overlay);
-    } else {
-        // iOS系统隐藏音量设置卡片
-        if (effectsVolumeCard) effectsVolumeCard.style.display = 'none';
-        if (backgroundMusicCard) backgroundMusicCard.style.display = 'none';
-    }
+            // 音量设置卡片的显示/隐藏现在由设置管理器统一处理
+            // 这里保留兼容性代码，以防设置管理器不可用
+            if (!window.settingsManager) {
+                console.log('⚠️ 设置管理器不可用，使用兼容性代码初始化滑动条');
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const effectsVolumeCard = overlay.querySelector('#effectsVolumeCard');
+                const backgroundMusicCard = overlay.querySelector('#backgroundMusicCard');
+                
+                if (!isIOS) {
+                    // 非iOS系统显示音量设置卡片
+                    if (effectsVolumeCard) effectsVolumeCard.style.display = 'block';
+                    if (backgroundMusicCard) backgroundMusicCard.style.display = 'block';
+                    // 使用旧的初始化函数
+                    initEffectsVolumeControl(overlay);
+                    initBackgroundMusicVolumeControl(overlay);
+                } else {
+                    // iOS系统隐藏音量设置卡片
+                    if (effectsVolumeCard) effectsVolumeCard.style.display = 'none';
+                    if (backgroundMusicCard) backgroundMusicCard.style.display = 'none';
+                }
+            }
     
-        // 更新其他UI状态
-        updateNewBadges(overlay);
+        // badge状态现在由设置管理器统一处理
+        // updateNewBadges(overlay); // 已移除，由settingsManager处理
 };
 
 // 为主设置界面的字段添加复制功能并禁用输入
@@ -1660,7 +1335,7 @@ const updateSettingFieldsUI = (settingId, fields) => {
         contentContainer.insertAdjacentHTML('beforeend', fieldHtml);
     });
     
-    console.log(`✅ 已更新 ${settingId} 设置UI显示`);
+    // console.log(`✅ 已更新 ${settingId} 设置UI显示`);
 };
 
 // 生成单个字段的HTML

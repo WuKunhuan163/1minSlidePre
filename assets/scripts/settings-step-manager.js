@@ -180,8 +180,8 @@ class SettingsStepManager {
                     <div class="mobile-step-indicator">第${stepNumber}/${totalSteps}步</div>
                     <div class="step-title">${step.title}</div>
                     ${contentHtml}
+                    <div id="${this.settingId}-${step.id}-status" class="step-status" style="display: none;"></div>
                     ${buttonsHtml}
-                    <div id="${this.settingId}-${step.id}-status" class="step-status"></div>
                 </div>
             </div>
         `;
@@ -347,49 +347,268 @@ class SettingsStepManager {
 
     // 初始化步骤状态
     initializeSteps() {
-        // 找到应该显示的步骤（第一个未完成的步骤或第一个步骤）
-        let targetStepIndex = 0;
+        // 总是从第一步开始
+        this.goToStep(0);
+        this.updateStepVisuals();
+        
+        // 从第一步开始逐步验证，自动跳转到第一个需要用户操作的步骤
+        this.autoAdvanceToFirstIncompleteStep();
+    }
+    
+    // 自动推进到第一个未完成的步骤
+    async autoAdvanceToFirstIncompleteStep() {
+        console.log('🔄 开始自动验证步骤并推进到第一个需要操作的步骤...');
+        
         for (let i = 0; i < this.steps.length; i++) {
-            if (!this.isStepCompleted(this.steps[i].id)) {
-                targetStepIndex = i;
-                break;
-            }
-            if (i === this.steps.length - 1) {
-                // 所有步骤都完成了，显示最后一步
-                targetStepIndex = i;
+            console.log(`🔍 检查步骤 ${i + 1} 的验证状态...`);
+            
+            const step = this.steps[i];
+            
+            // 检查步骤是否有验证函数
+            if (step.validation && typeof step.validation === 'function') {
+                try {
+                    // 显示检查状态
+                    this.goToStep(i, { clearTargetStatus: true });
+                    this.showStepStatus(step.id, `检查步骤 ${i + 1}...`, 'processing');
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                    const isValid = await step.validation();
+                    
+                    if (isValid) {
+                        console.log(`✅ 步骤 ${i + 1} 验证通过`);
+                        
+                        // 标记为完成
+                        if (!this.isStepCompleted(step.id)) {
+                            this.markStepCompleted(step.id, true);
+                        }
+                        
+                        // 在当前步骤显示完成状态
+                        this.showStepStatus(step.id, `已完成当前步骤`, 'success');
+                        
+                        // 延迟后继续检查下一步，或停留在当前步骤（如果是最后一步）
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        continue;
+                    } else {
+                        console.log(`❌ 步骤 ${i + 1} 验证未通过，停在此步骤`);
+                        this.goToStep(i, { clearTargetStatus: true });
+                        return;
+                    }
+                } catch (error) {
+                    console.log(`❌ 步骤 ${i + 1} 验证失败:`, error.message);
+                    this.goToStep(i, { clearTargetStatus: true });
+                    this.showStepStatus(step.id, `步骤 ${i + 1} 验证失败: ${error.message}`, 'error');
+                    return;
+                }
+            } else {
+                // 没有验证函数的步骤
+                if (this.isStepCompleted(step.id)) {
+                    console.log(`✅ 步骤 ${i + 1} 已完成且无验证函数，继续下一步`);
+                    this.goToStep(i, { clearTargetStatus: true });
+                    this.showStepStatus(step.id, `已完成当前步骤`, 'success');
+                    
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    continue;
+                } else {
+                    console.log(`⚠️ 步骤 ${i + 1} 没有验证函数且未完成，停在此步骤等待用户操作`);
+                    this.goToStep(i, { clearTargetStatus: true });
+                    return;
+                }
             }
         }
         
-        this.goToStep(targetStepIndex);
-        this.updateStepVisuals();
+        // 如果到达这里，说明所有步骤都验证通过
+        // 需要找到第一个未完成的步骤，或者跳转到最后一步
+        for (let i = 0; i < this.steps.length; i++) {
+            const step = this.steps[i];
+            if (!this.isStepCompleted(step.id) || (step.validation && !(await step.validation()))) {
+                console.log(`📍 跳转到第一个需要用户操作的步骤: ${i + 1}`);
+                this.goToStep(i, { clearTargetStatus: true });
+                return;
+            }
+        }
+        
+        // 如果所有步骤都完成，跳转到最后一步
+        console.log('✅ 所有步骤都已完成，跳转到最后一步');
+        this.goToStep(this.steps.length - 1, { clearTargetStatus: true });
     }
 
-    // 跳转到下一步 - 函数A（切换函数）
-    goToNextStep() {
-        const nextIndex = this.currentStepIndex + 1;
-        if (nextIndex < this.steps.length) {
-            this.goToStep(nextIndex);
-        } else {
-            // 最后一步完成
-            this.handleSetupComplete();
+    /**
+     * 统一的步骤切换接口
+     * @param {number} stepIndex - 目标步骤索引
+     * @param {Object} options - 切换选项
+     * @param {string} options.successMessage - 成功信息（可选）
+     * @param {string} options.errorMessage - 错误信息（可选）
+     * @param {string} options.statusType - 状态类型：'success', 'error', 'info', 'warning', 'processing'
+     * @param {number} options.delay - 延迟时间（毫秒）
+     * @param {boolean} options.autoAdvance - 是否自动推进到下一步
+     */
+    async switchToStep(stepIndex, options = {}) {
+        const {
+            successMessage,
+            errorMessage,
+            statusType = 'info',
+            delay = 300,
+            autoAdvance = false
+        } = options;
+        
+        // 确保步骤索引有效
+        if (stepIndex < 0 || stepIndex >= this.steps.length) {
+            console.warn(`无效的步骤索引: ${stepIndex}`);
+            return;
+        }
+        
+        const step = this.steps[stepIndex];
+        
+        // 跳转到目标步骤
+        this.goToStep(stepIndex);
+        
+        // 显示状态信息（如果提供）
+        if (successMessage || errorMessage) {
+            const message = successMessage || errorMessage;
+            const type = errorMessage ? 'error' : statusType;
+            this.showStepStatus(step.id, message, type);
+        }
+        
+        // 延迟处理
+        if (delay > 0) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        // 如果需要自动推进且不是最后一步，跳转到下一步
+        if (autoAdvance && stepIndex < this.steps.length - 1) {
+            // 跳转到下一步，但不显示额外的状态信息
+            this.goToStep(stepIndex + 1);
+            return;
+        }
+        
+        console.log(`📍 已切换到步骤 ${stepIndex + 1} (${step.id})`);
+    }
+
+    // 已删除goToNextStep函数，使用goToStep替代
+    
+    /**
+     * 统一的步骤验证接口
+     * @param {number} stepIndex - 要验证的步骤索引
+     * @param {Object} options - 验证选项
+     * @param {boolean} options.markCompleted - 验证成功时是否标记为完成
+     * @param {boolean} options.autoAdvance - 验证成功时是否自动推进到下一步
+     * @param {string} options.processingMessage - 验证中显示的信息
+     * @param {string} options.successMessage - 验证成功的信息
+     * @param {string} options.errorPrefix - 错误信息前缀
+     * @returns {boolean} 验证结果
+     */
+    async validateStep(stepIndex, options = {}) {
+        const {
+            markCompleted = true,
+            autoAdvance = false,
+            processingMessage = `正在验证步骤 ${stepIndex + 1}...`,
+            successMessage = `已完成当前步骤`,
+            errorPrefix = `步骤 ${stepIndex + 1} 验证失败`
+        } = options;
+        
+        if (stepIndex < 0 || stepIndex >= this.steps.length) {
+            console.warn(`无效的步骤索引: ${stepIndex}`);
+            return false;
+        }
+        
+        const step = this.steps[stepIndex];
+        
+        // 如果没有验证函数，检查是否已完成
+        if (!step.validation || typeof step.validation !== 'function') {
+            const isCompleted = this.isStepCompleted(step.id);
+            const message = isCompleted ? `已完成当前步骤` : `步骤 ${stepIndex + 1} 等待用户操作`;
+            const statusType = isCompleted ? 'success' : 'info';
+            
+            await this.switchToStep(stepIndex, { 
+                successMessage: message, 
+                statusType,
+                delay: isCompleted ? 200 : 0,
+                autoAdvance: isCompleted && autoAdvance
+            });
+            
+            return isCompleted;
+        }
+        
+        try {
+            // 显示验证中状态
+            await this.switchToStep(stepIndex, { 
+                successMessage: processingMessage, 
+                statusType: 'processing',
+                delay: 100
+            });
+            
+            // 执行验证
+            const isValid = await step.validation();
+            
+            if (isValid) {
+                // 验证成功
+                if (markCompleted && !this.isStepCompleted(step.id)) {
+                    this.markStepCompleted(step.id, true);
+                }
+                
+                await this.switchToStep(stepIndex, { 
+                    successMessage, 
+                    statusType: 'success',
+                    delay: autoAdvance ? 300 : 500,
+                    autoAdvance
+                });
+                
+                return true;
+            } else {
+                // 验证失败
+                await this.switchToStep(stepIndex, { 
+                    errorMessage: `${errorPrefix}: 验证未通过`,
+                    delay: 0
+                });
+                
+                return false;
+            }
+        } catch (error) {
+            // 验证异常
+            await this.switchToStep(stepIndex, { 
+                errorMessage: `${errorPrefix}: ${error.message}`,
+                delay: 0
+            });
+            
+            return false;
         }
     }
-    
+
     // 跳转到上一步
     goToPreviousStep() {
         const prevIndex = this.currentStepIndex - 1;
         if (prevIndex >= 0) {
-            this.goToStep(prevIndex);
+            this.switchToStep(prevIndex);
         }
     }
 
     // 跳转到指定步骤
-    goToStep(stepIndex) {
+    /**
+     * 跳转到指定步骤
+     * @param {number} stepIndex - 目标步骤索引
+     * @param {Object} options - 跳转选项
+     * @param {string} options.previousStepStatus - 前一步骤的状态信息
+     * @param {string} options.previousStepType - 前一步骤的状态类型
+     * @param {boolean} options.clearTargetStatus - 是否清除目标步骤的状态
+     */
+    goToStep(stepIndex, options = {}) {
         if (stepIndex < 0 || stepIndex >= this.steps.length) {
             return;
         }
         
+        const {
+            previousStepStatus,
+            previousStepType = 'success',
+            clearTargetStatus = true
+        } = options;
+        
         const previousStepIndex = this.currentStepIndex;
+        
+        // 如果提供了前一步骤的状态信息，设置前一步骤的状态
+        if (previousStepStatus && previousStepIndex >= 0 && previousStepIndex < this.steps.length) {
+            const previousStep = this.steps[previousStepIndex];
+            this.showStepStatus(previousStep.id, previousStepStatus, previousStepType);
+        }
         
         // 如果是回到之前的步骤，清除目标步骤的完成状态
         if (stepIndex < previousStepIndex) {
@@ -399,10 +618,12 @@ class SettingsStepManager {
         }
         
         // 隐藏当前步骤
-        const currentStep = this.overlay.querySelector(`#${this.settingId}-${this.steps[this.currentStepIndex].id}`);
-        if (currentStep) {
-            currentStep.classList.remove('visible', 'current-step');
-            currentStep.classList.add('pending');
+        if (previousStepIndex >= 0 && previousStepIndex < this.steps.length) {
+            const currentStep = this.overlay.querySelector(`#${this.settingId}-${this.steps[previousStepIndex].id}`);
+            if (currentStep) {
+                currentStep.classList.remove('visible', 'current-step');
+                currentStep.classList.add('pending');
+            }
         }
         
         // 显示目标步骤
@@ -416,6 +637,17 @@ class SettingsStepManager {
             this.scrollToStep(targetStep);
         }
         
+        // 清除目标步骤的状态（如果需要）
+        if (clearTargetStatus) {
+            const targetStepObj = this.steps[stepIndex];
+            const statusElement = this.overlay.querySelector(`#${this.settingId}-${targetStepObj.id}-status`);
+            if (statusElement) {
+                statusElement.textContent = '';
+                statusElement.className = 'step-status';
+                statusElement.style.display = 'none';
+            }
+        }
+        
         // 调用步骤进入回调
         const step = this.steps[stepIndex];
         if (step.onEnter && typeof step.onEnter === 'function') {
@@ -423,6 +655,8 @@ class SettingsStepManager {
         }
         
         this.updateStepVisuals();
+        
+        console.log(`📍 已跳转到步骤 ${stepIndex + 1} (${step.id})`);
     }
     
     // 滚动到指定步骤
@@ -508,7 +742,13 @@ class SettingsStepManager {
                 this.markStepCompleted(stepId, true);
                 
                 // 调用函数A（切换函数）实现跳转
-                this.goToNextStep();
+                const nextIndex = this.currentStepIndex + 1;
+                if (nextIndex < this.steps.length) {
+                    this.goToStep(nextIndex);
+                } else {
+                    // 最后一步完成
+                    this.handleSetupComplete();
+                }
             }
         } catch (error) {
             console.error('自动跳转检查失败:', error);
@@ -516,19 +756,155 @@ class SettingsStepManager {
         }
     }
 
+    /**
+     * 显示步骤状态并在指定时间后自动跳转到下一步（warning模式）
+     * @param {string} stepId - 步骤ID
+     * @param {string} message - 警告消息
+     * @param {number} waitTime - 等待时间（毫秒），默认2000ms
+     * @param {boolean} autoAdvance - 是否自动跳转，默认true
+     */
+    async showStepWarningAndAdvance(stepId, message, waitTime = 2000, autoAdvance = true) {
+        console.log(`⚠️ 显示步骤警告: ${stepId}, 消息: ${message}, 等待: ${waitTime}ms, 自动跳转: ${autoAdvance}`);
+        
+        // 显示警告状态
+        this.showStepStatus(stepId, message, 'warning');
+        
+        // 等待指定时间
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        
+        if (autoAdvance) {
+            // 找到当前步骤的索引
+            const currentStepIndex = this.steps.findIndex(step => step.id === stepId);
+            
+            if (currentStepIndex >= 0 && currentStepIndex < this.steps.length - 1) {
+                // 标记当前步骤为完成（即使有警告）
+                this.markStepCompleted(stepId, true);
+                
+                // 跳转到下一步
+                this.goToStep(currentStepIndex + 1);
+                console.log(`✅ 警告等待完成，已跳转到步骤 ${currentStepIndex + 2}`);
+            } else {
+                console.log(`⚠️ 已是最后一步或步骤索引无效，无法自动跳转`);
+            }
+        } else {
+            console.log(`⚠️ 警告等待完成，但不自动跳转`);
+        }
+    }
+
+    /**
+     * 显示步骤警告但不跳转（用于有验证函数的步骤）
+     * @param {string} stepId - 步骤ID
+     * @param {string} message - 警告消息
+     * @param {number} waitTime - 等待时间（毫秒），默认1000ms
+     */
+    async showStepWarningOnly(stepId, message, waitTime = 1000) {
+        return this.showStepWarningAndAdvance(stepId, message, waitTime, false);
+    }
+
     // 显示步骤状态信息
     showStepStatus(stepId, message, type = 'info') {
-        const statusElement = this.overlay.querySelector(`#${this.settingId}-${stepId}-status`);
-        if (!statusElement) return;
+        const selector = `#${this.settingId}-${stepId}-status`;
+        const statusElement = this.overlay.querySelector(selector);
         
-        statusElement.className = `step-status ${type}`;
-        statusElement.textContent = message;
+        if (!statusElement) {
+            console.warn(`状态元素未找到: ${selector}`);
+            // 尝试查找所有可能的状态元素
+            const allStatusElements = this.overlay.querySelectorAll('[id*="status"]');
+            console.warn('所有状态元素:', Array.from(allStatusElements).map(el => el.id));
+            
+            // 尝试创建状态元素（如果不存在）
+            const stepContent = this.overlay.querySelector(`#${this.settingId}-${stepId}-content`);
+            if (stepContent) {
+                const statusDiv = document.createElement('div');
+                statusDiv.id = `${this.settingId}-${stepId}-status`;
+                statusDiv.className = 'step-status';
+                statusDiv.style.display = 'none'; // 默认隐藏
+                stepContent.appendChild(statusDiv); // 添加到step-content的末尾，在按钮容器之后
+                console.log(`✅ 已创建缺失的状态元素: ${selector}`);
+                
+                // 重新获取元素
+                const newStatusElement = this.overlay.querySelector(selector);
+                if (newStatusElement) {
+                    this.setStatusContent(newStatusElement, message, type, stepId);
+                }
+            }
+            return;
+        }
         
-        // 3秒后自动清除状态
-        setTimeout(() => {
+        this.setStatusContent(statusElement, message, type, stepId);
+    }
+    
+    // 设置状态内容的辅助函数
+    setStatusContent(statusElement, message, type, stepId = 'unknown') {
+        
+        // 清除之前的定时器（如果存在）
+        if (statusElement.clearTimer) {
+            clearTimeout(statusElement.clearTimer);
+            delete statusElement.clearTimer;
+        }
+        
+        // 检查消息是否为空或只包含空白字符
+        const hasContent = message && message.trim().length > 0;
+        
+        if (hasContent) {
+            // 设置状态样式和内容
+            statusElement.className = `step-status ${type}`;
+            statusElement.textContent = message;
+            statusElement.style.display = 'block'; // 显示状态
+            console.log(`📊 状态更新 [${stepId}]: ${message} (${type})`);
+        } else {
+            // 如果没有内容，隐藏状态元素
+            statusElement.style.display = 'none';
             statusElement.textContent = '';
-            statusElement.className = 'step-status';
-        }, 3000);
+            console.log(`📊 状态隐藏 [${stepId}]: 无内容显示`);
+        }
+    }
+
+    /**
+     * 公开的状态显示接口 - 供外部组件调用
+     * @param {string|number} stepIdentifier - 步骤ID或索引
+     * @param {string} message - 状态信息
+     * @param {string} type - 状态类型：'success', 'error', 'info', 'warning', 'processing'
+     */
+    updateStatus(stepIdentifier, message, type = 'info') {
+        let stepId;
+        
+        // 如果是数字，转换为步骤ID
+        if (typeof stepIdentifier === 'number') {
+            const step = this.steps[stepIdentifier];
+            if (!step) {
+                console.warn(`无效的步骤索引: ${stepIdentifier}`);
+                return;
+            }
+            stepId = step.id;
+        } else {
+            stepId = stepIdentifier;
+        }
+        
+        this.showStepStatus(stepId, message, type);
+    }
+
+    /**
+     * 清除状态信息 - 隐藏状态元素
+     * @param {string|number} stepIdentifier - 步骤ID或索引
+     */
+    clearStatus(stepIdentifier) {
+        let stepId;
+        
+        // 如果是数字，转换为步骤ID
+        if (typeof stepIdentifier === 'number') {
+            const step = this.steps[stepIdentifier];
+            if (!step) {
+                console.warn(`无效的步骤索引: ${stepIdentifier}`);
+                return;
+            }
+            stepId = step.id;
+        } else {
+            stepId = stepIdentifier;
+        }
+        
+        // 使用空消息来隐藏状态
+        this.showStepStatus(stepId, '', 'info');
     }
 
     // 处理设置完成
@@ -549,16 +925,35 @@ class SettingsStepManager {
     // 显示按钮并确保可交互
     showButton(stepId, buttonId) {
         const buttonSelector = `#${this.settingId}-${stepId}-${buttonId}`;
-        console.log('🔍 查找按钮元素:', buttonSelector);
+        console.log('========== SettingsStepManager.showButton 被调用 ==========');
+        console.log('settingId:', this.settingId);
+        console.log('stepId:', stepId);
+        console.log('buttonId:', buttonId);
+        console.log('buttonSelector:', buttonSelector);
+        console.log('overlay存在:', !!this.overlay);
         
         let buttonElement = this.overlay.querySelector(buttonSelector);
         console.log('🔘 找到按钮元素:', !!buttonElement);
         
         if (buttonElement) {
+            console.log('按钮当前状态:');
+            console.log('- display:', buttonElement.style.display);
+            console.log('- disabled:', buttonElement.disabled);
+            console.log('- classList:', Array.from(buttonElement.classList));
+        }
+        
+        if (buttonElement) {
             console.log('📝 设置按钮显示和交互状态');
             buttonElement.style.display = 'inline-block';
+            buttonElement.disabled = false; // 确保按钮可点击
             buttonElement.classList.add('force-interact');
-            console.log('✅ 按钮已显示:', buttonElement.style.display);
+            buttonElement.classList.remove('force-no-interact'); // 移除禁用类
+            
+            console.log('设置后的按钮状态:');
+            console.log('- display:', buttonElement.style.display);
+            console.log('- disabled:', buttonElement.disabled);
+            console.log('- classList:', Array.from(buttonElement.classList));
+            console.log('✅ 按钮已显示并启用');
         } else {
             // 按钮不存在，尝试动态创建
             console.log('🔨 按钮不存在，尝试动态创建...');

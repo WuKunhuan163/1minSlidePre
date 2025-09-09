@@ -768,12 +768,6 @@ body {
     font-size: 16px;
 }
 
-.step-status {
-    font-size: 18px;
-    min-width: 30px;
-    text-align: center;
-}
-
 .step-status.success {
     color: #28a745;
 }

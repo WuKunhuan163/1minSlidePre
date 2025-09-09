@@ -1,0 +1,457 @@
+.settings-container {
+    max-width: 600px;
+    margin: 0 60px;
+    overflow-y: scroll; 
+    padding: 10px;
+}
+
+/* 设置页面滚动条样式 */
+.settings-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.settings-container::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+.settings-container::-webkit-scrollbar-thumb {
+    background: #666AF6;
+    border-radius: 3px;
+}
+
+.settings-container::-webkit-scrollbar-thumb:hover {
+    background: #5a5ee6;
+}
+
+@media (max-width: 500px) {
+    .settings-container {
+        margin: 0 auto;
+    }
+}
+
+.setting-card {
+    width: 100%;
+    min-width: 300px;
+    background: #1a1a1a;
+    margin-bottom: 20px;
+    overflow: visible;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 1px solid #333;
+    border-radius: 12px;
+}
+
+.setting-card:hover {
+    border-color: #555;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.setting-card-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: #222;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+    border: 1px solid #333;
+    border-radius: 12px;
+}
+
+.setting-card:hover .setting-card-header {
+    background: #666AF666;
+}
+
+.setting-card.clickable-card {
+    cursor: pointer;
+}
+
+
+.volume-card:hover .setting-card-header {
+    background: #222 !important;
+}
+
+.setting-card-header i {
+    font-size: 24px;
+    color: #666AF6;
+    margin-right: 15px;
+}
+
+.setting-card-header h3 {
+    color: white;
+    font-size: 16px;
+    font-weight: normal;
+    flex: 1;
+    margin: 0;
+}
+
+.setting-toggle {
+    margin-left: 20px;
+    position: relative;
+}
+
+.toggle-input {
+    display: none;
+}
+
+.toggle-label {
+    display: block;
+    width: 50px;
+    height: 24px;
+    background: #333;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.toggle-label::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.toggle-input:checked + .toggle-label {
+    background: #666AF6;
+}
+
+.toggle-input:checked + .toggle-label::after {
+    transform: translateX(26px);
+}
+
+.setting-card-content {
+    padding: 0 20px;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.setting-card-content.expanded {
+    padding: 20px;
+    max-height: 300px;
+}
+
+.setting-field {
+    margin-bottom: 15px;
+}
+
+.setting-field:last-child {
+    margin-bottom: 0;
+}
+
+.setting-field label {
+    display: block;
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.setting-field input {
+    width: 100%;
+    padding: 12px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.setting-field input:focus {
+    outline: none;
+    border-color: #666AF6;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.save-button, .test-button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-button {
+    background: #333;
+    color: white;
+    border: none;
+}
+
+.save-button:hover {
+    background: #666AF6;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.test-button {
+    background: #333;
+    color: white;
+    border: none;
+}
+
+.test-button:hover {
+    background: #666AF6;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.settings-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+}
+
+.settings-footer p {
+    color: #666;
+    font-size: 12px;
+    margin: 0;
+}
+
+.settings-footer a {
+    color: #666AF6;
+    text-decoration: none;
+}
+
+.settings-footer a:hover {
+    text-decoration: underline;
+}
+
+.volume-control-content {
+    padding: 15px 0;
+}
+
+.volume-header {
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 15px !important;
+}
+
+.volume-header i {
+    margin-right: 0 !important;
+}
+
+.volume-header h3 {
+    flex: none;
+    margin: 0;
+}
+
+.inline-volume-control {
+    flex: 1;
+    padding: 0 0 0 20px;
+}
+
+.inline-volume-slider {
+    width: 100%;
+    height: 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: #333;
+    border-radius: 3px;
+    outline: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.inline-volume-slider.editing {
+    background: linear-gradient(to right, #666AF6 var(--volume-percentage, 50%), #333 var(--volume-percentage, 50%));
+    box-shadow: 0 0 8px rgba(102, 106, 246, 0.4);
+}
+
+.inline-volume-slider:not(.editing) {
+    background: linear-gradient(to right, #ccc var(--volume-percentage, 50%), #333 var(--volume-percentage, 50%));
+}
+
+.inline-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.inline-volume-slider.editing::-webkit-slider-thumb {
+    background: white;
+    box-shadow: 0 0 12px rgba(102, 106, 246, 0.8), 0 2px 4px rgba(0,0,0,0.2);
+    transform: scale(1.1);
+}
+
+.inline-volume-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.inline-volume-slider.editing::-moz-range-thumb {
+    background: white;
+    box-shadow: 0 0 12px rgba(102, 106, 246, 0.8), 0 2px 4px rgba(0,0,0,0.2);
+    transform: scale(1.1);
+}
+
+/* 录音设备设置样式 */
+.device-select {
+    width: 100%;
+    padding: 12px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    padding-right: 40px;
+}
+
+.device-select:focus {
+    outline: none;
+    border-color: #666AF6;
+}
+
+.device-select option {
+    background: #333;
+    color: white;
+}
+
+.audio-test-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.volume-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.volume-bar {
+    flex: 1;
+    height: 8px;
+    background: #333;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.volume-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+    width: 0%;
+    transition: width 0.1s ease;
+    border-radius: 4px;
+}
+
+.volume-text {
+    color: #ccc;
+    font-size: 12px;
+    min-width: 60px;
+}
+
+.audio-test-section.testing .test-button {
+    background: #dc3545;
+    color: white;
+}
+
+.audio-test-section.testing .test-button:hover {
+    background: #c82333;
+}
+
+/* 通用badge基础样式 */
+.badge-base {
+    position: absolute;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 12px;
+    z-index: 10;
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+/* NEW badge样式 */
+.new-badge {
+    top: -5px;
+    left: -5px;
+    background: #ff4444;
+    animation: newBadgePulse 2s infinite;
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
+}
+
+/* 重新配置badge样式 */
+.reconfig-badge {
+    top: -5px;
+    left: -5px;
+    background: #666AF6;
+    animation: reconfigBadgePulse 2s infinite;
+    box-shadow: 0 2px 8px rgba(102, 106, 246, 0.4);
+}
+
+/* NEW badge动画 */
+@keyframes newBadgePulse {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
+    }
+    50% { 
+        transform: scale(1.1); 
+        box-shadow: 0 4px 16px rgba(255, 68, 68, 0.8);
+    }
+}
+
+/* 重新配置badge动画 */
+@keyframes reconfigBadgePulse {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 2px 8px rgba(102, 106, 246, 0.4);
+    }
+    50% { 
+        transform: scale(1.1); 
+        box-shadow: 0 4px 16px rgba(102, 106, 246, 0.8);
+    }
+}
+
+/* 主菜单NEW badge样式 */
+.main-new-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4444;
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 10px;
+    z-index: 10;
+    animation: newBadgePulse 2s infinite;
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
+}

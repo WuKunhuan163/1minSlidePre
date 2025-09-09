@@ -172,11 +172,13 @@ class AISetupManager {
 
     // 加载保存的API Key
     loadSavedApiKey() {
-        const config = simpleConfig.getAll();
-        if (config.zhipuApiKey) {
-            this.stepManager.setStepFormData('step2', {
-                aiApiKey: config.zhipuApiKey
-            });
+        if (typeof simpleConfig !== 'undefined' && simpleConfig.getAll) {
+            const config = simpleConfig.getAll();
+            if (config.zhipuApiKey) {
+                this.stepManager.setStepFormData('step2', {
+                    aiApiKey: config.zhipuApiKey
+                });
+            }
         }
     }
 
@@ -272,7 +274,9 @@ class AISetupManager {
                 const testResult = await this.testApiConnection(apiKey);
                 if (testResult.success) {
                     // 保存API Key
-                    simpleConfig.set('zhipuApiKey', apiKey);
+                    if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+                        simpleConfig.set('zhipuApiKey', apiKey);
+                    }
                     
                     this.stepManager.showStepStatus('step2', 'API Key验证成功！', 'success');
                     
@@ -297,7 +301,9 @@ class AISetupManager {
             this.stepManager.showStepStatus('step2', error.message, 'error');
             
             // 验证失败时，确保清除可能已经设置的启用状态
-            simpleConfig.set('aiEnabled', false);
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+                simpleConfig.set('aiEnabled', false);
+            }
             
             // 恢复按钮状态为错误状态
             const validateBtn = document.getElementById(`${this.settingId}-step2-validateBtn`);
@@ -554,8 +560,11 @@ class AISetupManager {
     async callAIAPI(message) {
         try {
             // 获取API Key
-            const config = simpleConfig.getAll();
-            const apiKey = config.zhipuApiKey;
+            let apiKey = null;
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.getAll) {
+                const config = simpleConfig.getAll();
+                apiKey = config.zhipuApiKey;
+            }
             
             if (!apiKey) {
                 throw new Error('未找到API Key，请先完成第2步验证');
@@ -622,11 +631,19 @@ class AISetupManager {
 
     // 完成设置
     completeSetup() {
-        // 启用AI功能
-        simpleConfig.set('aiEnabled', true);
+        console.log('🎯 完成智谱AI设置');
         
-        // 标记设置为已配置
-        simpleConfig.markSettingConfigured('ai');
+        // 标记设置为已测试（这是完成的标志）
+        if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
+            simpleConfig.markSettingTested('ai');
+        }
+        
+        // 启用AI功能
+        if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+            simpleConfig.set('aiEnabled', true);
+        }
+        
+        console.log('✅ AI功能设置完成并已启用');
         
         this.stepManager.completeSetup();
     }

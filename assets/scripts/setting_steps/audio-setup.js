@@ -98,7 +98,7 @@ class AudioSetupManager {
                 title: '创建RAM用户',
                 content: {
                     description: `
-                        创建RAM用户，用于后续的AccessKey配置。
+                        创建RAM用户，用于AccessKey配置。
                         <br><br>
                         <strong>操作步骤：</strong><br>
                         1. 前往<a href="https://ram.console.aliyun.com/overview?activeTab=workflow" target="_blank">RAM控制台工作流程</a><br>
@@ -306,42 +306,100 @@ class AudioSetupManager {
         return true; // 简化验证，直接返回true
     }
 
-    // 验证AppKey
+    // 通用格式检查接口
+    validateFieldFormat(value, fieldName, length, description) {
+        if (!value) {
+            return { valid: false, error: `请输入${fieldName}` };
+        }
+        
+        // 创建正则表达式：指定长度的A-Za-z0-9字符
+        const pattern = new RegExp(`^[A-Za-z0-9]{${length}}$`);
+        
+        if (!pattern.test(value)) {
+            return { 
+                valid: false, 
+                error: `${fieldName}格式不正确`, 
+                isFormatError: true,
+                suggestion: `${fieldName}应该是${length}位的${description}`
+            };
+        }
+        
+        return { valid: true };
+    }
+
+    // AppKey格式检查（使用通用接口）
+    validateAppKeyFormat(appKey) {
+        return this.validateFieldFormat(appKey, 'AppKey', 16, '字母和数字组合');
+    }
+
+    // AccessKeyID格式检查
+    validateAccessKeyIdFormat(accessKeyId) {
+        return this.validateFieldFormat(accessKeyId, 'AccessKey ID', 24, '字母和数字组合');
+    }
+
+    // AccessKeySecret格式检查
+    validateAccessKeySecretFormat(accessKeySecret) {
+        return this.validateFieldFormat(accessKeySecret, 'AccessKey Secret', 30, '字母和数字组合');
+    }
+
+    // 验证AppKey（实际验证在第5步进行）
     async validateAppKey() {
         const formData = this.stepManager.getStepFormData('step2');
         const appKey = formData.audioAppKey?.trim();
         
-        if (!appKey) {
-            throw new Error('请输入AppKey');
+        // 进行格式检查
+        const formatCheck = this.validateAppKeyFormat(appKey);
+        if (!formatCheck.valid) {
+            if (formatCheck.isFormatError) {
+                // 格式错误但不阻止流程，返回警告信息
+                return { 
+                    valid: true, 
+                    warning: true, 
+                    message: formatCheck.error + '，' + formatCheck.suggestion,
+                    suggestion: '将在第5步语音识别时进行实际验证'
+                };
+            } else {
+                // 其他错误（如空值）直接抛出
+                throw new Error(formatCheck.error);
+            }
         }
         
-        if (appKey.length < 10) {
-            throw new Error('AppKey格式不正确');
-        }
-        
-        return true;
+        // 格式正确，返回成功但说明实际验证在第5步
+        return { 
+            valid: true, 
+            message: '格式检查通过，将在第5步语音识别时进行实际验证' 
+        };
     }
 
     // 验证步骤2
     async validateStep2() {
         try {
-            this.stepManager.showStepStatus('step2', '正在验证AppKey...', 'processing');
+            this.stepManager.showStepStatus('step2', '正在检查AppKey格式...', 'processing');
             
-            const isValid = await this.validateAppKey();
-            if (isValid) {
-                // 保存AppKey
-                const formData = this.stepManager.getStepFormData('step2');
+            const validationResult = await this.validateAppKey();
+            
+            // 保存AppKey
+            const formData = this.stepManager.getStepFormData('step2');
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
                 simpleConfig.set('appKey', formData.audioAppKey.trim());
-                
-                this.stepManager.showStepStatus('step2', 'AppKey验证成功！', 'success');
+            }
+            
+            if (validationResult.warning) {
+                // 格式有问题，显示警告并等待跳转
+                const warningMessage = `${validationResult.message}。${validationResult.suggestion}`;
+                await this.stepManager.showStepWarningAndAdvance('step2', warningMessage, 2000);
+            } else {
+                // 格式正确，正常跳转
+                this.stepManager.showStepStatus('step2', validationResult.message, 'success');
                 
                 setTimeout(() => {
                     this.stepManager.markStepCompleted('step2', true);
                     this.stepManager.goToStep(2); // 跳转到步骤3
                 }, 1000);
-                
-                return true;
             }
+            
+            return true;
+            
         } catch (error) {
             this.stepManager.showStepStatus('step2', error.message, 'error');
             return false;
@@ -489,6 +547,35 @@ class AudioSetupManager {
                 validateBtn.disabled = true;
                 validateBtn.style.opacity = '0.6';
                 validateBtn.style.cursor = 'not-allowed';
+            }
+            
+            // 首先进行格式检查
+            const formData = this.stepManager.getStepFormData('step4');
+            const accessKeyId = formData.audioAccessKeyId?.trim();
+            const accessKeySecret = formData.audioAccessKeySecret?.trim();
+            
+            // 检查AccessKeyID格式
+            const idFormatCheck = this.validateAccessKeyIdFormat(accessKeyId);
+            // 检查AccessKeySecret格式
+            const secretFormatCheck = this.validateAccessKeySecretFormat(accessKeySecret);
+            
+            let hasFormatWarning = false;
+            let warningMessages = [];
+            
+            if (!idFormatCheck.valid && idFormatCheck.isFormatError) {
+                hasFormatWarning = true;
+                warningMessages.push(`${idFormatCheck.error}，${idFormatCheck.suggestion}`);
+            }
+            
+            if (!secretFormatCheck.valid && secretFormatCheck.isFormatError) {
+                hasFormatWarning = true;
+                warningMessages.push(`${secretFormatCheck.error}，${secretFormatCheck.suggestion}`);
+            }
+            
+            // 如果有格式警告，先显示警告信息
+            if (hasFormatWarning) {
+                const warningMessage = warningMessages.join('；') + '。将进行实际API验证';
+                await this.stepManager.showStepWarningOnly('step4', warningMessage, 1500);
             }
             
             this.stepManager.showStepStatus('step4', '正在验证AccessKey...', 'processing');
@@ -902,19 +989,32 @@ class AudioSetupManager {
             } catch (recognitionError) {
                 console.error('❌ 语音识别失败:', recognitionError);
                 
+                // 解析错误信息
+                const errorInfo = this.parseApiError(recognitionError.message || '');
+                
                 const transcriptionResult = document.getElementById('transcriptionResult');
                 if (transcriptionResult) {
                     transcriptionResult.innerHTML = `
                         <div class="recording-text error">
-                            <strong>识别失败：</strong><br>
-                            ${recognitionError.message || '语音识别服务暂不可用'}
+                            <strong>${errorInfo.title}：</strong><br>
+                            ${errorInfo.message}<br>
+                            <small style="color: #888; margin-top: 8px; display: block;">
+                                💡 ${errorInfo.suggestion}
+                            </small>
                         </div>
                     `;
                 }
                 
-                // 即使识别失败，也允许完成设置，但警告用户
-                this.recordingTestCompleted = true;
-                this.stepManager.showStepStatus('step5', '录音功能正常，语音识别配置需要检查', 'warning');
+                // 根据错误类型决定是否允许完成设置
+                if (errorInfo.type === 'network_error' || errorInfo.type === 'server_error') {
+                    // 网络或服务器错误，录音功能正常，可以完成设置
+                    this.recordingTestCompleted = true;
+                    this.stepManager.showStepStatus('step5', '录音功能正常，但语音识别服务暂不可用', 'warning');
+                } else {
+                    // 配置错误，不允许完成设置
+                    this.recordingTestCompleted = false;
+                    this.stepManager.showStepStatus('step5', errorInfo.title + '，请修正配置后重试', 'error');
+                }
             }
             
             // 恢复录音按钮状态
@@ -1005,21 +1105,32 @@ class AudioSetupManager {
         } catch (recognitionError) {
             console.error('❌ 增强型语音识别失败:', recognitionError);
             
+            // 解析错误信息
+            const errorInfo = this.parseApiError(recognitionError.message || '');
+            
             const transcriptionResult = document.getElementById('transcriptionResult');
             if (transcriptionResult) {
                 transcriptionResult.innerHTML = `
                     <div class="recording-text error">
-                        <strong>识别失败：</strong><br>
-                        ${recognitionError.message || '增强型语音识别服务暂不可用'}<br>
-                        <small style="color: #666; margin-top: 10px; display: block;">
-                            建议：尝试使用简单录音器或检查网络连接
+                        <strong>${errorInfo.title}：</strong><br>
+                        ${errorInfo.message}<br>
+                        <small style="color: #888; margin-top: 8px; display: block;">
+                            💡 ${errorInfo.suggestion}
                         </small>
                     </div>
                 `;
             }
             
-            this.recordingTestCompleted = false;
-            this.stepManager.showStepStatus('step5', '增强型语音识别失败，请重试', 'error');
+            // 根据错误类型决定是否允许完成设置
+            if (errorInfo.type === 'network_error' || errorInfo.type === 'server_error') {
+                // 网络或服务器错误，录音功能正常，可以完成设置
+                this.recordingTestCompleted = true;
+                this.stepManager.showStepStatus('step5', '录音功能正常，但语音识别服务暂不可用', 'warning');
+            } else {
+                // 配置错误，不允许完成设置
+                this.recordingTestCompleted = false;
+                this.stepManager.showStepStatus('step5', errorInfo.title + '，请修正配置后重试', 'error');
+            }
         }
         
         // 检查是否完成测试
@@ -1127,6 +1238,94 @@ class AudioSetupManager {
         }
         
         return output;
+    }
+    
+    // 解析API错误信息，提供更明确的错误提示
+    parseApiError(errorMessage) {
+        console.log('🔍 解析API错误信息:', errorMessage);
+        
+        try {
+            // 尝试从错误信息中提取具体的错误内容
+            if (errorMessage.includes('APPKEY_NOT_EXIST')) {
+                return {
+                    type: 'appkey_error',
+                    title: 'AppKey配置错误',
+                    message: 'AppKey不存在或无效，请检查第二步的AppKey配置是否正确',
+                    suggestion: '请返回第二步重新输入正确的AppKey'
+                };
+            }
+            
+            if (errorMessage.includes('InvalidAccessKeyId')) {
+                return {
+                    type: 'accesskey_error',
+                    title: 'AccessKey ID错误',
+                    message: 'AccessKey ID无效，请检查第四步的AccessKey ID配置',
+                    suggestion: '请返回第四步重新输入正确的AccessKey ID'
+                };
+            }
+            
+            if (errorMessage.includes('SignatureDoesNotMatch')) {
+                return {
+                    type: 'secret_error',
+                    title: 'AccessKey Secret错误',
+                    message: 'AccessKey Secret无效，请检查第四步的AccessKey Secret配置',
+                    suggestion: '请返回第四步重新输入正确的AccessKey Secret'
+                };
+            }
+            
+            if (errorMessage.includes('Forbidden') || errorMessage.includes('权限')) {
+                return {
+                    type: 'permission_error',
+                    title: 'AccessKey权限不足',
+                    message: 'AccessKey权限不足，请确保已添加"AliyunNLSFullAccess"权限',
+                    suggestion: '请检查第三步和第四步的权限配置'
+                };
+            }
+            
+            if (errorMessage.includes('400') && (errorMessage.includes('BadRequest') || errorMessage.includes('参数'))) {
+                return {
+                    type: 'config_error',
+                    title: '配置参数错误',
+                    message: '请求参数错误，可能是配置信息不完整或格式不正确',
+                    suggestion: '请检查所有步骤的配置是否完整和正确'
+                };
+            }
+            
+            if (errorMessage.includes('500') || errorMessage.includes('服务器')) {
+                return {
+                    type: 'server_error',
+                    title: '服务器错误',
+                    message: '阿里云语音识别服务暂时不可用',
+                    suggestion: '请稍后重试，如果问题持续请检查阿里云服务状态'
+                };
+            }
+            
+            if (errorMessage.includes('网络') || errorMessage.includes('连接')) {
+                return {
+                    type: 'network_error',
+                    title: '网络连接错误',
+                    message: '网络连接失败，无法访问语音识别服务',
+                    suggestion: '请检查网络连接后重试'
+                };
+            }
+            
+            // 默认错误
+            return {
+                type: 'unknown_error',
+                title: '语音识别配置错误',
+                message: '语音识别配置存在问题，请检查所有步骤的配置',
+                suggestion: '建议重新检查AppKey和AccessKey配置'
+            };
+            
+        } catch (parseError) {
+            console.warn('⚠️ 解析错误信息失败:', parseError);
+            return {
+                type: 'parse_error',
+                title: '语音识别配置错误',
+                message: '无法识别具体错误原因，请检查配置',
+                suggestion: '建议重新检查所有步骤的配置'
+            };
+        }
     }
     
     // 旧的API调用方法 - 已废弃，使用增强音频处理器

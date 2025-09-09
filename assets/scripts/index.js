@@ -95,13 +95,98 @@ const initializeDefaultSlideRequirements = () => {
     });
 };
 
-document.addEventListener('DOMContentLoaded', function() {
+// 从assets/slides目录加载预设PPT文件
+const loadPresetSlides = async () => {
+    console.log('📁 开始加载预设PPT文件...');
+    
+    try {
+        // 预设文件列表（基于assets/slides目录中的实际文件）
+        const presetFiles = [
+            {
+                name: 'Day2-1',
+                image: 'assets/slides/Day2-1.jpg',
+                requirement: 'assets/slides/Day2-1.requirement.txt',
+                nameFile: 'assets/slides/Day2-1.name.txt'
+            }
+            // 可以在这里添加更多预设文件
+        ];
+        
+        for (let i = 0; i < presetFiles.length; i++) {
+            const preset = presetFiles[i];
+            
+            try {
+                // 加载图片
+                const imageResponse = await fetch(preset.image);
+                if (imageResponse.ok) {
+                    const imageBlob = await imageResponse.blob();
+                    const imageUrl = URL.createObjectURL(imageBlob);
+                    slides.push(imageUrl);
+                    
+                    console.log(`✅ 已加载图片: ${preset.name}`);
+                } else {
+                    console.warn(`⚠️ 无法加载图片: ${preset.image}`);
+                    continue;
+                }
+                
+                // 加载演讲要求文件
+                try {
+                    const reqResponse = await fetch(preset.requirement);
+                    if (reqResponse.ok) {
+                        const requirements = await reqResponse.text();
+                        const trimmedRequirements = requirements.trim();
+                        slideRequirements[i] = truncateText(trimmedRequirements, 4096);
+                        console.log(`✅ 已加载要求文件: ${preset.name}.requirement.txt`);
+                    }
+                } catch (reqError) {
+                    console.warn(`⚠️ 无法加载要求文件: ${preset.requirement}`, reqError);
+                }
+                
+                // 加载名称文件
+                try {
+                    const nameResponse = await fetch(preset.nameFile);
+                    if (nameResponse.ok) {
+                        const nameContent = await nameResponse.text();
+                        const firstName = nameContent.split('\n')[0].trim();
+                        slideNames[i] = firstName || preset.name;
+                        console.log(`✅ 已加载名称文件: ${preset.name}.name.txt`);
+                    }
+                } catch (nameError) {
+                    console.warn(`⚠️ 无法加载名称文件: ${preset.nameFile}`, nameError);
+                    slideNames[i] = preset.name; // 使用默认名称
+                }
+                
+            } catch (error) {
+                console.error(`❌ 加载预设PPT失败: ${preset.name}`, error);
+            }
+        }
+        
+        console.log(`✅ 预设PPT加载完成，共加载 ${slides.length} 张PPT`);
+        
+        // 保存到session
+        pptSession.saveToSession();
+        
+        return slides.length > 0;
+        
+    } catch (error) {
+        console.error('❌ 加载预设PPT时发生错误:', error);
+        return false;
+    }
+};
+
+document.addEventListener('DOMContentLoaded', async function() {
     // 尝试从session恢复数据
     const hasSessionData = pptSession.loadFromSession();
     
     if (!hasSessionData) {
-        // 如果没有session数据，初始化默认PPT的演讲要求
-        initializeDefaultSlideRequirements();
+        // 如果没有session数据，尝试加载预设PPT文件
+        console.log('📁 没有session数据，尝试加载预设PPT...');
+        const presetLoaded = await loadPresetSlides();
+        
+        if (!presetLoaded) {
+            // 如果预设PPT加载失败，初始化默认PPT的演讲要求
+            console.log('📁 预设PPT加载失败，使用默认初始化');
+            initializeDefaultSlideRequirements();
+        }
     } else {
         // 如果恢复了session数据，在页面加载完成后重新渲染缩略图
         setTimeout(() => {
@@ -1518,8 +1603,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM加载完成，开始初始化');
     console.log('🚀 当前时间:', new Date().toLocaleTimeString());
     
-    // 初始化设置页面
-    initAudioSetup();
+    // 初始化设置页面（已在后面的延迟初始化中处理）
+    // initAudioSetup(); // 已移除，使用统一的设置页面初始化
     
     // 延迟初始化设置页面，确保所有脚本都已加载
     setTimeout(() => {

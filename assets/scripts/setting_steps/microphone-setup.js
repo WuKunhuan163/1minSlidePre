@@ -53,9 +53,14 @@ class MicrophoneSetupManager {
                 buttons: [
                     {
                         id: 'requestBtn',
-                        text: '重新请求权限',
+                        text: '请求权限',
                         type: 'secondary',
-                        onClick: () => this.requestMicrophonePermission(),
+                        onClick: () => {
+                            console.log('========== 请求权限按钮被点击 ==========');
+                            console.log('当前管理器实例:', this);
+                            console.log('stepManager存在:', !!this.stepManager);
+                            this.requestMicrophonePermission();
+                        },
                         show: false  // 默认隐藏，只在权限失败时显示
                     }
                 ],
@@ -96,6 +101,13 @@ class MicrophoneSetupManager {
                         show: true
                     },
                     {
+                        id: 'downloadBtn',
+                        text: '下载录音',
+                        type: 'normal',
+                        onClick: () => this.downloadRecording(),
+                        show: false
+                    },
+                    {
                         id: 'completeBtn',
                         text: '完成设置',
                         type: 'success',
@@ -115,7 +127,7 @@ class MicrophoneSetupManager {
         // 创建步骤管理器实例
         this.stepManager = new SettingsStepManager({
             settingId: this.settingId,
-            title: '录音设备设置',
+            title: '录音设置',
             steps: this.steps,
             config: this.config,
             onComplete: () => this.handleSetupComplete(),
@@ -208,13 +220,19 @@ class MicrophoneSetupManager {
         if (deviceSection) deviceSection.style.display = 'none';
         
         // 显示请求权限按钮，等待用户手动点击
+        console.log('🔘 准备显示请求权限按钮...');
+        console.log('stepManager存在:', !!this.stepManager);
+        console.log('stepManager.showButton方法存在:', typeof this.stepManager?.showButton);
+        
         this.stepManager.showButton('step1', 'requestBtn');
+        
+        console.log('🔘 showButton命令已执行');
         
         // 更新按钮文本和状态提示
         setTimeout(() => {
             const statusElement = document.getElementById('micStatus');
             if (statusElement) {
-                statusElement.textContent = '请点击下方按钮申请麦克风权限';
+                statusElement.textContent = '请申请麦克风权限';
             }
         }, 100);
         
@@ -223,10 +241,19 @@ class MicrophoneSetupManager {
 
     // 请求麦克风权限
     async requestMicrophonePermission() {
+        console.log('========== 请求麦克风权限方法被调用 ==========');
+        console.log('当前settingId:', this.settingId);
+        
         const micStatus = document.getElementById('micStatus');
         const micIcon = document.getElementById('micIcon');
         const requestBtn = document.getElementById(`${this.settingId}-step1-requestBtn`);
         const nextBtn = document.getElementById(`${this.settingId}-step1-nextBtn`);
+        
+        console.log('DOM元素查找结果:');
+        console.log('- micStatus:', !!micStatus);
+        console.log('- micIcon:', !!micIcon);
+        console.log('- requestBtn:', !!requestBtn);
+        console.log('- nextBtn:', !!nextBtn);
         
         try {
             console.log('🎤 开始请求麦克风权限...');
@@ -289,7 +316,10 @@ class MicrophoneSetupManager {
             
             // 直接调用函数A（切换函数）跳转到下一步
             setTimeout(() => {
-                this.stepManager.goToNextStep();
+                this.stepManager.goToStep(1, {
+                    previousStepStatus: '已完成当前步骤',
+                    previousStepType: 'success'
+                });
             }, 1500); // 1.5秒后自动跳转，让用户看到成功消息
             
         } catch (error) {
@@ -399,7 +429,10 @@ class MicrophoneSetupManager {
 
     // 跳转到下一步
     goToNextStep() {
-        this.stepManager.goToStep(1);
+        this.stepManager.goToStep(1, {
+            previousStepStatus: '已完成当前步骤',
+            previousStepType: 'success'
+        });
     }
 
     // 初始化录音测试
@@ -407,6 +440,12 @@ class MicrophoneSetupManager {
         this.recordingTestCompleted = false;
         this.isRecording = false;
         this.audioChunks = [];
+        
+        // 重置录音相关状态
+        this.currentRecordingUrl = null;
+        this.currentRecordingFileName = null;
+        this.totalAmplitude = 0;
+        this.sampleCount = 0;
         
         // 填充设备选择下拉框
         this.populateDeviceSelect();
@@ -630,6 +669,9 @@ class MicrophoneSetupManager {
             this.mediaRecorder.start();
             console.log('🎤 开始录音，MediaRecorder状态:', this.mediaRecorder.state);
             
+            // 录音开始时暂停背景音乐
+            this.pauseBackgroundMusic();
+            
             // 设置波峰图和进度条
             this.setupWaveform(stream);
             
@@ -779,6 +821,9 @@ class MicrophoneSetupManager {
             
             // 停止所有音频轨道
             this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            
+            // 录音停止时恢复背景音乐
+            this.resumeBackgroundMusic();
             
             // 更新UI
             const recordBtn = document.getElementById(`${this.settingId}-step2-recordBtn`);
@@ -1065,19 +1110,31 @@ class MicrophoneSetupManager {
                 recordBtn.classList.remove('force-interact');
             }
             
-            // 显示录音结果（简化版，无质量评分）
-            await this.showSimpleRecordingResult(audioBlob);
+            // 显示录音结果
+            await this.showRecordingResult(audioBlob);
             
-            // 录音测试完成
-            this.recordingTestCompleted = true;
-            this.stepManager.showStepStatus('step2', '录音测试完成！', 'success');
+            // 检查录音质量
+            const hasValidAudio = this.hasValidRecording();
             
-            // 显示完成按钮
-            console.log('🔘 准备显示完成按钮...');
-            console.log('步骤管理器存在:', !!this.stepManager);
-            console.log('showButton方法存在:', typeof this.stepManager.showButton);
+            if (hasValidAudio) {
+                // 录音测试完成且质量合格
+                this.recordingTestCompleted = true;
+                this.stepManager.showStepStatus('step2', '录音测试完成！', 'success');
+            } else {
+                // 录音质量不合格
+                this.recordingTestCompleted = false;
+                this.stepManager.showStepStatus('step2', '录音音量过低，请重新录音', 'warning');
+                console.warn('录音质量检验未通过，平均音量:', this.sampleCount > 0 ? this.totalAmplitude / this.sampleCount : 0);
+            }
             
-            this.stepManager.showButton('step2', 'completeBtn');
+            // 只有录音质量合格时才显示完成按钮
+            if (hasValidAudio) {
+                console.log('🔘 准备显示完成按钮...');
+                console.log('步骤管理器存在:', !!this.stepManager);
+                console.log('showButton方法存在:', typeof this.stepManager.showButton);
+                
+                this.stepManager.showButton('step2', 'completeBtn');
+            }
             
             // 恢复录音按钮为可重新录音状态
             if (recordBtn) {
@@ -1108,7 +1165,7 @@ class MicrophoneSetupManager {
     }
 
     // 显示简化的录音结果
-    async showSimpleRecordingResult(audioBlob) {
+    async showRecordingResult(audioBlob) {
         const transcriptionResult = document.getElementById('transcriptionResult');
         const audioTestSection = document.getElementById('audioTestSection');
         
@@ -1127,16 +1184,33 @@ class MicrophoneSetupManager {
             try {
                 // 转换为MP3
                 let mp3Blob;
-                if (window.convertToMp3) {
-                    mp3Blob = await window.convertToMp3(audioBlob);
-                } else {
-                    console.warn('MP3转换函数不可用，使用原始WAV文件');
+                
+                // 使用我们自己的MP3编码方法
+                const arrayBuffer = await audioBlob.arrayBuffer();
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // 获取PCM数据
+                const pcmData = audioBuffer.getChannelData(0);
+                const sampleRate = audioBuffer.sampleRate;
+                
+                // 编码为MP3
+                try {
+                    if (window.convertToMp3) {
+                        mp3Blob = await window.convertToMp3(audioBlob);
+                        console.log('✅ MP3编码完成');
+                    } else {
+                        console.warn('⚠️ convertToMp3函数不可用，使用原始WAV文件');
+                        mp3Blob = audioBlob;
+                    }
+                } catch (error) {
+                    console.warn('⚠️ MP3编码失败，使用原始WAV文件:', error);
                     mp3Blob = audioBlob;
                 }
                 
                 // 创建音频URL
                 const audioUrl = URL.createObjectURL(mp3Blob);
-                const fileFormat = mp3Blob === audioBlob ? 'WAV' : 'MP3';
+                const fileFormat = mp3Blob !== audioBlob ? 'MP3' : 'WAV';
                 
                 // 更新显示内容
                 transcriptionResult.innerHTML = `
@@ -1220,23 +1294,59 @@ class MicrophoneSetupManager {
 
     // 添加下载按钮到步骤管理器
     addDownloadButton(audioUrl, fileName) {
-        // 移除之前的下载按钮（如果存在）
-        this.stepManager.hideButton('step2', 'downloadBtn');
+        // 保存当前录音信息供下载使用
+        this.currentRecordingUrl = audioUrl;
+        this.currentRecordingFileName = fileName;
         
-        // 添加下载按钮
-        this.stepManager.addButton('step2', {
-            id: 'downloadBtn',
-            text: '下载录音',
-            type: 'secondary',
-            onClick: () => this.downloadRecording(audioUrl, fileName),
-            show: true
-        });
+        // 显示下载按钮
+        this.stepManager.showButton('step2', 'downloadBtn');
         
-        console.log('✅ 下载按钮已添加到步骤按钮容器');
+        console.log('✅ 下载按钮已显示到步骤按钮容器');
+    }
+
+    // 下载录音文件
+    downloadRecording() {
+        if (!this.currentRecordingUrl || !this.currentRecordingFileName) {
+            console.warn('⚠️ 没有可下载的录音文件');
+            this.stepManager.showStepStatus('step2', '没有可下载的录音文件', 'error');
+            return;
+        }
+
+        console.log('📥 开始下载录音文件:', this.currentRecordingFileName);
+
+        try {
+            // 创建下载链接
+            const downloadLink = document.createElement('a');
+            downloadLink.href = this.currentRecordingUrl;
+            // 确保文件名不为undefined，提供默认文件名
+            const safeFileName = this.currentRecordingFileName || this.generateRecordingFileName('mp3');
+            downloadLink.download = safeFileName;
+            downloadLink.style.display = 'none';
+
+            // 添加到页面并触发下载
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+
+            console.log('📥 录音文件已开始下载:', safeFileName);
+        } catch (error) {
+            console.error('❌ 下载录音文件失败:', error);
+        }
+    }
+
+    // 将Float32Array转换为Int16Array
+    convertFloat32ToInt16(buffer) {
+        const length = buffer.length;
+        const result = new Int16Array(length);
+        for (let i = 0; i < length; i++) {
+            const sample = Math.max(-1, Math.min(1, buffer[i]));
+            result[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+        }
+        return result;
     }
 
     // 生成录音文件名
-    generateRecordingFileName(audioType) {
+    generateRecordingFileName(audioType = 'mp3') {
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1249,28 +1359,29 @@ class MicrophoneSetupManager {
         const hash = Math.random().toString(36).substr(2, 4).toUpperCase();
         
         const dateTime = `${year}${month}${day}_${hours}${minutes}${seconds}`;
-        const extension = audioType.toLowerCase();
+        
+        // 统一使用MP3格式
+        const extension = 'mp3';
+        
+        console.log('📝 生成录音文件名:', `录音设备设置_${dateTime}_${hash}.${extension}`);
         
         return `录音设备设置_${dateTime}_${hash}.${extension}`;
     }
 
-    // 下载录音文件
-    downloadRecording(audioUrl, fileName) {
-        const downloadLink = document.createElement('a');
-        downloadLink.href = audioUrl;
-        downloadLink.download = fileName;
-        downloadLink.style.display = 'none';
-        
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        
-        console.log('📥 录音文件已开始下载:', fileName);
-    }
 
     // 降低背景音乐音量
     pauseBackgroundMusic() {
         console.log('🎵 开始降低背景音乐音量...');
+        
+        // 使用新的全局背景音乐音量控制器
+        if (window.BackgroundMusicVolumeController) {
+            window.BackgroundMusicVolumeController.pause(true);
+            console.log('🎵 通过全局控制器暂停背景音乐');
+            return;
+        }
+        
+        // 兼容性代码：使用原有的控制方式
+        console.log('⚠️ 全局背景音乐控制器不可用，使用兼容性代码');
         
         // 查找页面中的背景音乐元素
         const backgroundAudio = document.querySelector('audio[id*="background"], audio[src*="background"], audio.background-music');
@@ -1307,6 +1418,16 @@ class MicrophoneSetupManager {
     // 恢复背景音乐音量
     resumeBackgroundMusic() {
         console.log('🎵 开始恢复背景音乐音量...');
+        
+        // 使用新的全局背景音乐音量控制器
+        if (window.BackgroundMusicVolumeController) {
+            window.BackgroundMusicVolumeController.resume();
+            console.log('🎵 通过全局控制器恢复背景音乐');
+            return;
+        }
+        
+        // 兼容性代码：使用原有的控制方式
+        console.log('⚠️ 全局背景音乐控制器不可用，使用兼容性代码');
         
         if (this.originalBackgroundVolume === undefined) {
             console.log('🎵 没有保存的原始音量，跳过恢复');
@@ -1376,32 +1497,6 @@ class MicrophoneSetupManager {
         });
     }
 
-    // 显示录音结果
-    showRecordingResult(audioBlob, quality) {
-        const recordingResult = document.getElementById('recordingResult');
-        const resultInfo = document.getElementById('resultInfo');
-        const recordingPlayback = document.getElementById('recordingPlayback');
-        
-        if (recordingResult) recordingResult.style.display = 'block';
-        
-        if (resultInfo) {
-            resultInfo.innerHTML = `
-                <div class="quality-score ${quality.score >= 70 ? 'good' : 'poor'}">
-                    <strong>质量评分：${quality.score}/100 (${quality.quality})</strong>
-                </div>
-                <div class="recording-stats">
-                    <div>录音时长：${quality.duration}秒</div>
-                    <div>文件大小：${(quality.size / 1024).toFixed(1)}KB</div>
-                </div>
-            `;
-        }
-        
-        if (recordingPlayback) {
-            const audioUrl = URL.createObjectURL(audioBlob);
-            recordingPlayback.src = audioUrl;
-        }
-    }
-
     // 保存麦克风配置
     saveMicrophoneConfig() {
         const selectedDevice = this.availableDevices.find(d => d.deviceId === this.selectedDeviceId);
@@ -1451,7 +1546,23 @@ class MicrophoneSetupManager {
 
     // 验证录音测试
     validateRecordingTest() {
-        return this.recordingTestCompleted;
+        // 如果是新进入这一步，强制返回false
+        // 只有在录音完成并通过质量检验后才返回true
+        return this.recordingTestCompleted && this.hasValidRecording();
+    }
+
+    // 检查是否有有效的录音
+    hasValidRecording() {
+        // 检查录音是否存在且有声音
+        if (!this.currentRecordingUrl) {
+            return false;
+        }
+        
+        // 检查录音音量是否达到最低标准
+        const averageAmplitude = this.sampleCount > 0 ? this.totalAmplitude / this.sampleCount : 0;
+        const minimumAmplitude = 0.01; // 最低音量阈值
+        
+        return averageAmplitude >= minimumAmplitude;
     }
 
     // 完成设置

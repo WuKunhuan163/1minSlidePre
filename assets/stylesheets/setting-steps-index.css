@@ -264,10 +264,13 @@
 
 /* 统一的步骤状态样式类 */
 .step-status {
-    margin-top: 15px;
+    margin: 15px 0px;
     padding: 10px;
     border-radius: 6px;
     display: none;
+    font-size: 14px;
+    min-width: 30px;
+    text-align: center;
 }
 
 /* 成功状态样式 - 应用到外层容器 */
@@ -293,6 +296,20 @@
     background: rgba(102, 106, 246, 0.2); /* 增加背景透明度 */
     border: 1px solid #9C27B0; /* 更亮的紫色边框 */
     color: #CE93D8; /* 更亮的紫色文字 */
+}
+
+/* 信息状态样式 - 应用到外层容器 */
+.step-status.info {
+    background: rgba(33, 150, 243, 0.2); /* 蓝色背景 */
+    border: 1px solid #64B5F6; /* 蓝色边框 */
+    color: #90CAF9; /* 蓝色文字 */
+}
+
+/* 警告状态样式 - 应用到外层容器 */
+.step-status.warning {
+    background: rgba(255, 193, 7, 0.2); /* 黄色背景 */
+    border: 1px solid #FFD54F; /* 黄色边框 */
+    color: #FFF176; /* 黄色文字 */
 }
 
 /* 保留旧的内层类以防兼容性问题 */
