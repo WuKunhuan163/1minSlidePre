@@ -583,86 +583,30 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
     if (recordingCard) {
         // toggle交互由设置管理器统一处理，这里不再干预
         
-        // 只为header区域添加点击事件
-        const recordingHeader = recordingCard.querySelector('.setting-card-header');
-        if (recordingHeader) {
-            recordingHeader.addEventListener('click', (e) => {
-                console.log('🖱️ 录音设置header被点击');
-                
-                // 直接进入录音设置，不管当前状态
-                console.log('🔄 进入录音设置页面');
-                overlay.remove();
-                
-                // 使用新的管理器（如果可用），否则使用旧版本
-                let audioSetupOverlay;
-                if (typeof AudioSetupManager !== 'undefined') {
-                    const audioManager = new AudioSetupManager();
-                    audioSetupOverlay = audioManager.createSetup();
-                } else if (typeof createAudioSetupOverlay !== 'undefined') {
-                    audioSetupOverlay = createAudioSetupOverlay();
-                } else {
-                    console.error('录音设置管理器不可用');
-                    return;
-                }
-                
-                // 添加返回按钮事件（如果需要）
-                if (audioSetupOverlay && audioSetupOverlay.querySelector('.back-button')) {
-                    audioSetupOverlay.querySelector('.back-button').addEventListener('click', () => {
-                        console.log('🔙 从录音设置返回');
-                        const newSettingsOverlay = createSettingsOverlay();
-                        setupSettingsOverlayEvents(newSettingsOverlay);
-                        overlayManager.switchToOverlay(newSettingsOverlay);
-                    });
-                }
-            });
-        }
+        // Header点击事件完全由设置管理器统一处理，这里不添加任何事件监听器
+        console.log('✅ 录音文字识别header事件由设置管理器统一管理');
     }
     
-    // 录音设备卡片点击事件
+    // 录音设备卡片和toggle事件完全由设置管理器处理
     const microphoneCard = overlay.querySelector('#microphoneCard');
     const microphoneToggle = overlay.querySelector('#microphoneToggle');
     
     if (microphoneCard) {
-        const microphoneHeader = microphoneCard.querySelector('.setting-card-header');
-        if (microphoneHeader) {
-            microphoneHeader.addEventListener('click', (e) => {
-                // 如果点击的是toggle区域，不处理header点击
-                if (e.target.closest('.setting-toggle')) {
-                    return;
-                }
-                
-                console.log('🖱️ 录音设备header被点击');
-                
-                // 进入录音设备设置页面
-                console.log('🔄 进入录音设备设置页面');
-                overlay.remove();
-                
-                // 使用新的管理器（如果可用），否则使用旧版本
-                if (typeof MicrophoneSetupManager !== 'undefined') {
-                    const microphoneManager = new MicrophoneSetupManager();
-                    const microphoneSetupOverlay = microphoneManager.createSetup();
-                } else if (typeof createMicrophoneSetupOverlay !== 'undefined') {
-                    const microphoneSetupOverlay = createMicrophoneSetupOverlay();
-                } else {
-                    console.error('录音设备设置管理器不可用');
-                    return;
-                }
-            });
-        }
+        console.log('✅ 录音设备卡片事件由设置管理器统一管理');
     }
     
-    // 录音设备toggle事件处理
     if (microphoneToggle) {
-        // 添加hover事件用于调试
-        microphoneToggle.addEventListener('mouseenter', () => {
-            console.log('🖱️ 录音设备toggle鼠标悬停 - disabled:', microphoneToggle.disabled, 'checked:', microphoneToggle.checked);
-        });
-        
-        microphoneToggle.addEventListener('click', (e) => {
-            console.log('🖱️ 录音设备toggle点击事件 - disabled:', e.target.disabled, 'checked:', e.target.checked);
-        });
-        
-        microphoneToggle.addEventListener('change', (e) => {
+        console.log('✅ 录音设备toggle事件由设置管理器统一管理');
+        // 所有toggle事件处理都移交给设置管理器，避免重复处理
+    }
+    
+    // 以下代码块已移除，由设置管理器统一处理：
+    // - microphoneHeader click事件
+    // - microphoneToggle change事件
+    // 这样可以避免重复执行和日志混乱
+    
+    // 保留旧的change事件处理作为备份（但不执行）
+    const oldMicrophoneChangeHandler = (e) => {
             console.log('========== 录音设备Toggle点击事件 ==========');
             
             const microphoneConfig = localStorage.getItem('microphoneConfig');
@@ -738,47 +682,16 @@ const setupFullSettingsOverlayFunctionality = (overlay) => {
             }
             
             console.log('========== Toggle事件处理完成 ==========');
-        });
-    }
+        }; // 注意：这个函数现在只是备份，不会被实际调用
     
-    // AI设置卡片（toggle由设置管理器处理）
+    // 所有录音设备相关的事件处理已移交给设置管理器
+    console.log('✅ 录音设备相关事件处理完全由设置管理器接管');
+    
+    // AI设置卡片（完全由设置管理器处理）
     const aiCard = overlay.querySelector('#aiCard');
     if (aiCard) {
-        // toggle交互由设置管理器统一处理，这里不再干预
-        
-        // 只为header区域添加点击事件
-        const aiHeader = aiCard.querySelector('.setting-card-header');
-        if (aiHeader) {
-            aiHeader.addEventListener('click', (e) => {
-                console.log('🖱️ AI设置header被点击');
-                
-                // 直接进入AI设置，不管当前状态
-                console.log('🔄 进入AI设置页面');
-                overlay.remove();
-                
-                // 使用新的管理器（如果可用），否则使用旧版本
-                let aiSetupOverlay;
-                if (typeof AISetupManager !== 'undefined') {
-                    const aiManager = new AISetupManager();
-                    aiSetupOverlay = aiManager.createSetup();
-                } else if (typeof createAISetupOverlay !== 'undefined') {
-                    aiSetupOverlay = createAISetupOverlay();
-                } else {
-                    console.error('AI设置管理器不可用');
-                    return;
-                }
-                
-                // 添加返回按钮事件
-                if (aiSetupOverlay && aiSetupOverlay.querySelector('.back-button')) {
-                    aiSetupOverlay.querySelector('.back-button').addEventListener('click', () => {
-                        console.log('🔙 从AI设置返回');
-                        const newSettingsOverlay = createSettingsOverlay();
-                        setupSettingsOverlayEvents(newSettingsOverlay);
-                        overlayManager.switchToOverlay(newSettingsOverlay);
-                    });
-                }
-            });
-        }
+        // 所有交互都由设置管理器统一处理，这里不添加任何事件监听器
+        console.log('✅ AI设置卡片由设置管理器统一管理');
     }
     
     // 更新overlay显示状态（基于共享本地状态）
@@ -1335,11 +1248,8 @@ const updateSettingFieldsUI = (settingId, fields) => {
         contentContainer.insertAdjacentHTML('beforeend', fieldHtml);
     });
     
-    // 如果有字段内容，自动展开设置卡片
-    if (fields && fields.length > 0) {
-        contentContainer.classList.add('expanded');
-        console.log(`✅ 已展开 ${settingId} 设置卡片内容`);
-    }
+    // 注释：expanded类现在由CSS自动管理，基于toggle状态
+    // 如果设置已配置且启用，内容会自动展开
     
     // console.log(`✅ 已更新 ${settingId} 设置UI显示`);
 };

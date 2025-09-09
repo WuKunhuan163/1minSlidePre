@@ -339,33 +339,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     const handleSlideUpload = () => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/*';
+        input.accept = 'image/*,.txt'; // 支持图片和txt文件
         input.multiple = true;
 
-        input.onchange = (e) => {
+        input.onchange = async (e) => {
             const files = Array.from(e.target.files);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const newIndex = slides.length;
-                    slides.push(e.target.result);
-                    // 通过加号添加的图片，要求默认为空
-                    // slideRequirements[newIndex] 不设置，保持undefined
-                    
-                    // 保存到session
-                    pptSession.saveToSession();
-                    
-                    window.renderThumbnails(document.querySelector('.slides-overlay'));
-                    
-                    // 如果是第一张PPT，自动触发测试下载（已注释，以后可能有用）
-                    // if (slides.length === 1) {
-                    //     setTimeout(() => {
-                    //         testDownloadFirstSlide();
-                    //     }, 1000);
-                    // }
-                };
-                reader.readAsDataURL(file);
-            });
+            
+            try {
+                await processUploadedFiles(files, { clearExisting: false, actionName: '添加' });
+            } catch (error) {
+                console.error('❌ 文件上传处理失败:', error);
+                showMessage('文件上传失败: ' + error.message, 'error');
+            }
         };
 
         input.click();
@@ -453,49 +438,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             const files = Array.from(e.dataTransfer.files);
             console.log(`🎯 拖拽放置了 ${files.length} 个文件`);
             
-            // 过滤出图片文件
-            const imageFiles = files.filter(file => {
-                const extension = file.name.toLowerCase().split('.').pop();
-                return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension);
-            });
-            
-            if (imageFiles.length === 0) {
-                showMessage('没有找到支持的图片文件', 'warning');
-                return;
-            }
-            
-            console.log(`📸 找到 ${imageFiles.length} 个图片文件`);
-            
             try {
-                // 处理每个图片文件
-                let addedCount = 0;
-                for (const file of imageFiles) {
-                    try {
-                        const imageUrl = await blobToDataURL(file);
-                        slides.push(imageUrl);
-                        addedCount++;
-                        console.log(`✅ 添加图片: ${file.name} (使用Data URL)`);
-                    } catch (error) {
-                        console.warn(`⚠️ 处理图片失败: ${file.name}`, error);
-                    }
-                }
-                
-                // 保存到session
-                pptSession.saveToSession();
-                
-                    // 重新渲染缩略图
-                    window.renderThumbnails(overlay);
-                    
-                    // 显示成功消息
-                    showMessage(`成功添加 ${addedCount} 张PPT`, 'info');
-                    
-                    // 测试功能：自动下载第一张PPT进行验证（已注释，以后可能有用）
-                    // if (slides.length > 0) {
-                    //     setTimeout(() => {
-                    //         testDownloadFirstSlide();
-                    //     }, 1000);
-                    // }
-                
+                await processUploadedFiles(files, { clearExisting: false, actionName: '添加' });
             } catch (error) {
                 console.error('❌ 拖拽上传处理失败:', error);
                 showMessage('拖拽上传失败: ' + error.message, 'error');
@@ -2156,17 +2100,6 @@ const batchImportSlides = () => {
             // 调用通用的文件处理函数（和文件夹导入相同的逻辑）
             await processZipFiles(files);
             
-            console.log(`✅ 成功导入 ${slides.length} 张PPT`);
-            
-            // 保存到session
-            pptSession.saveToSession();
-            
-            // 重新渲染缩略图
-            const overlay = document.querySelector('.slides-overlay');
-            if (overlay) {
-                window.renderThumbnails(overlay);
-            }
-            
         } catch (error) {
             console.error('❌ 批量导入失败:', error);
             showMessage('批量导入失败: ' + error.message, 'error');
@@ -2475,137 +2408,29 @@ const batchImportFolder = () => {
 
 // 处理ZIP中的文件（基于文件夹处理逻辑）
 const processZipFiles = async (files) => {
-    console.log(`📁 处理ZIP中的 ${files.length} 个文件`);
-    
-    // 收集图片、txt文件和名称文件
-    const imageFiles = {};
-    const textFiles = {};
-    const nameFiles = {};
-    
-    // 支持的图片格式
-    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-    
-    files.forEach(file => {
-        const fileName = file.name.toLowerCase();
-        const extension = fileName.split('.').pop();
-        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-        
-        console.log(`📄 分析文件: ${file.name}`);
-        console.log(`  - extension: ${extension}`);
-        console.log(`  - nameWithoutExt: ${nameWithoutExt}`);
-        
-        if (imageExtensions.includes(extension)) {
-            // 如果已经有同名的图片，跳过（只选择第一个）
-            if (!imageFiles[nameWithoutExt]) {
-                imageFiles[nameWithoutExt] = file;
-                console.log(`  ✅ 识别为图片文件，添加到 imageFiles[${nameWithoutExt}]`);
-            } else {
-                console.log(`  ⚠️ 图片文件重复，跳过`);
-            }
-        } else if (extension === 'txt') {
-            if (nameWithoutExt.endsWith('.name')) {
-                // 这是名称文件 (新格式: NAME.name.txt)
-                const slideBaseName = nameWithoutExt.replace('.name', '');
-                nameFiles[slideBaseName] = file;
-                console.log(`  ✅ 识别为名称文件，添加到 nameFiles[${slideBaseName}]`);
-            } else if (nameWithoutExt.endsWith('.requirement')) {
-                // 这是演讲要求文件 (新格式: NAME.requirement.txt)
-                const slideBaseName = nameWithoutExt.replace('.requirement', '');
-                textFiles[slideBaseName] = file;
-                console.log(`  ✅ 识别为演讲要求文件，添加到 textFiles[${slideBaseName}]`);
-            } else {
-                // 兼容旧格式: NAME.txt (演讲要求)
-                textFiles[nameWithoutExt] = file;
-                console.log(`  ✅ 识别为旧格式演讲要求文件，添加到 textFiles[${nameWithoutExt}]`);
-            }
-        } else {
-            console.log(`  ❌ 不支持的文件类型，跳过`);
-        }
-    });
-    
-    // 输出分类结果汇总
-    console.log('📊 ZIP文件分类汇总:');
-    console.log(`  - 图片文件: ${Object.keys(imageFiles).length} 个`);
-    console.log('    imageFiles:', Object.keys(imageFiles));
-    console.log(`  - 演讲要求文件: ${Object.keys(textFiles).length} 个`);
-    console.log('    textFiles:', Object.keys(textFiles));
-    console.log(`  - 名称文件: ${Object.keys(nameFiles).length} 个`);
-    console.log('    nameFiles:', Object.keys(nameFiles));
-    
-    // 按文件名排序（保持原文件夹的排序）
-    const sortedImageNames = Object.keys(imageFiles).sort();
-    
-    console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
-    console.log('🔢 排序后的图片文件名:', sortedImageNames);
-    
-    if (sortedImageNames.length === 0) {
-        throw new Error('ZIP文件中没有找到支持的图片文件');
-    }
-    
-    // 清空现有的slides、requirements和names
-    slides.length = 0;
-    Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
-    Object.keys(slideNames).forEach(key => delete slideNames[key]);
-    
-    // 导入图片和对应的演讲要求、名称
-    console.log('🔄 开始处理每个PPT:');
-    for (let i = 0; i < sortedImageNames.length; i++) {
-        const baseName = sortedImageNames[i];
-        const imageFile = imageFiles[baseName];
-        const textFile = textFiles[baseName];
-        const nameFile = nameFiles[baseName];
-        
-        console.log(`\n📋 处理PPT ${i + 1} (baseName: ${baseName}):`);
-        console.log(`  - 图片文件: ${imageFile ? '✅' : '❌'}`);
-        console.log(`  - 演讲要求文件: ${textFile ? '✅' : '❌'}`);
-        console.log(`  - 名称文件: ${nameFile ? '✅' : '❌'}`);
-        
-        // 读取图片（从ZIP）
-        const imageBlob = await imageFile.zipEntry.async('blob');
-        const imageUrl = await blobToDataURL(imageBlob);
-        slides.push(imageUrl);
-        console.log(`  - 图片已读取 (大小: ${imageBlob.size} bytes)`);
-        
-        // 读取对应的演讲要求
-        if (textFile) {
-            const requirements = await textFile.zipEntry.async('text');
-            // 去除前后的连续空行，然后应用4096字符限制
-            const trimmedRequirements = requirements.trim();
-            slideRequirements[i] = truncateText(trimmedRequirements, 4096);
-            console.log(`  - 演讲要求已读取 (长度: ${trimmedRequirements.length} 字符)`);
-        } else {
-            console.log(`  - 没有演讲要求文件`);
-        }
-        
-        // 读取对应的名称
-        if (nameFile) {
-            const name = await nameFile.zipEntry.async('text');
-            // 只读取第一行作为名称
-            const firstName = name.split('\n')[0].trim();
-            slideNames[i] = firstName || (i + 1).toString();
-            console.log(`  - 名称已读取: "${slideNames[i]}"`);
-        } else {
-            // 如果没有名称文件，使用默认名称
-            slideNames[i] = (i + 1).toString();
-            console.log(`  - 使用默认名称: "${slideNames[i]}"`);
-        }
-    }
-    
-    console.log(`✅ 成功处理 ${slides.length} 张PPT`);
-    
-    // 显示配对情况
-    console.log('\n📋 配对情况汇总:');
-    for (let i = 0; i < slides.length; i++) {
-        const baseName = sortedImageNames[i];
-        console.log(`PPT ${i + 1} (${baseName}):`);
-        console.log(`  - 名称: "${slideNames[i]}"`);
-        console.log(`  - 演讲要求: ${slideRequirements[i] ? `有 (${slideRequirements[i].length}字符)` : '无'}`);
-    }
+    // ZIP文件需要特殊处理，因为需要使用zipEntry.async()来读取内容
+    // 但我们可以使用统一的分类逻辑，然后特殊处理读取部分
+    return await processUploadedFilesFromZip(files, { actionName: '导入' });
 };
 
 // 处理文件夹中的文件
 const processFolderFiles = async (files) => {
-    console.log(`📁 处理文件夹中的 ${files.length} 个文件`);
+    return await processUploadedFiles(files, { actionName: '导入' });
+};
+
+// 将File对象转换为Data URL
+const fileToDataURL = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
+// 统一的文件处理接口
+const processUploadedFiles = async (files, options = {}) => {
+    console.log(`📁 统一处理 ${files.length} 个文件`);
     
     // 收集图片、txt文件和名称文件
     const imageFiles = {};
@@ -2615,7 +2440,14 @@ const processFolderFiles = async (files) => {
     // 支持的图片格式
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
     
+    // 分类文件
     files.forEach(file => {
+        // 跳过系统文件
+        if (file.name.startsWith('__MACOSX') || file.name.startsWith('.')) {
+            console.log(`⏭️ 跳过系统文件: ${file.name}`);
+            return;
+        }
+        
         const fileName = file.name.toLowerCase();
         const extension = fileName.split('.').pop();
         const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
@@ -2624,19 +2456,23 @@ const processFolderFiles = async (files) => {
             // 如果已经有同名的图片，跳过（只选择第一个）
             if (!imageFiles[nameWithoutExt]) {
                 imageFiles[nameWithoutExt] = file;
+                console.log(`📸 收集图片文件: ${file.name}`);
             }
         } else if (extension === 'txt') {
             if (nameWithoutExt.endsWith('.name')) {
                 // 这是名称文件 (新格式: NAME.name.txt)
                 const slideBaseName = nameWithoutExt.replace('.name', '');
                 nameFiles[slideBaseName] = file;
+                console.log(`📝 收集名称文件: ${file.name} -> ${slideBaseName}`);
             } else if (nameWithoutExt.endsWith('.requirement')) {
                 // 这是演讲要求文件 (新格式: NAME.requirement.txt)
                 const slideBaseName = nameWithoutExt.replace('.requirement', '');
                 textFiles[slideBaseName] = file;
+                console.log(`📄 收集要求文件: ${file.name} -> ${slideBaseName}`);
             } else {
                 // 兼容旧格式: NAME.txt (演讲要求)
                 textFiles[nameWithoutExt] = file;
+                console.log(`📄 收集要求文件(旧格式): ${file.name} -> ${nameWithoutExt}`);
             }
         }
     });
@@ -2647,13 +2483,19 @@ const processFolderFiles = async (files) => {
     console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
     
     if (sortedImageNames.length === 0) {
-        throw new Error('文件夹中没有找到支持的图片文件');
+        throw new Error('没有找到支持的图片文件');
     }
     
-    // 清空现有的slides、requirements和names
-    slides.length = 0;
-    Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
-    Object.keys(slideNames).forEach(key => delete slideNames[key]);
+    // 根据选项决定是否清空现有数据
+    if (options.clearExisting !== false) {
+        // 清空现有的slides、requirements和names
+        slides.length = 0;
+        Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
+        Object.keys(slideNames).forEach(key => delete slideNames[key]);
+        console.log('🗑️ 已清空现有PPT数据');
+    }
+    
+    const startIndex = slides.length; // 记录开始添加的位置
     
     // 导入图片和对应的演讲要求、名称
     for (let i = 0; i < sortedImageNames.length; i++) {
@@ -2664,6 +2506,7 @@ const processFolderFiles = async (files) => {
         
         // 读取图片
         const imageUrl = await fileToDataURL(imageFile);
+        const slideIndex = slides.length;
         slides.push(imageUrl);
         
         // 读取对应的演讲要求
@@ -2671,7 +2514,7 @@ const processFolderFiles = async (files) => {
             const requirements = await readTextFile(textFile);
             // 去除前后的连续空行，然后应用4096字符限制
             const trimmedRequirements = requirements.trim();
-            slideRequirements[i] = truncateText(trimmedRequirements, 4096);
+            slideRequirements[slideIndex] = truncateText(trimmedRequirements, 4096);
         }
         
         // 读取对应的名称
@@ -2679,14 +2522,15 @@ const processFolderFiles = async (files) => {
             const name = await readTextFile(nameFile);
             // 只读取第一行作为名称
             const firstName = name.split('\n')[0].trim();
-            slideNames[i] = firstName || (i + 1).toString();
+            slideNames[slideIndex] = firstName || baseName || (slideIndex + 1).toString();
         } else {
-            // 如果没有名称文件，使用默认名称
-            slideNames[i] = (i + 1).toString();
+            // 如果没有名称文件，使用基础名称或默认名称
+            slideNames[slideIndex] = baseName || (slideIndex + 1).toString();
         }
     }
     
-    console.log(`✅ 成功导入 ${slides.length} 张PPT`);
+    const addedCount = slides.length - startIndex;
+    console.log(`✅ 成功处理 ${addedCount} 张PPT`);
     
     // 保存到session
     pptSession.saveToSession();
@@ -2698,17 +2542,139 @@ const processFolderFiles = async (files) => {
     }
     
     // 显示成功提示
-    showMessage(`成功导入 ${slides.length} 张PPT`, 'info');
+    const actionName = options.actionName || '导入';
+    showMessage(`成功${actionName} ${addedCount} 张PPT`, 'info');
+    
+    return {
+        addedCount,
+        totalCount: slides.length,
+        processedImages: sortedImageNames
+    };
 };
 
-// 将File对象转换为Data URL
-const fileToDataURL = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+// 专门处理ZIP文件的统一接口
+const processUploadedFilesFromZip = async (files, options = {}) => {
+    console.log(`📁 统一处理ZIP中的 ${files.length} 个文件`);
+    
+    // 收集图片、txt文件和名称文件
+    const imageFiles = {};
+    const textFiles = {};
+    const nameFiles = {};
+    
+    // 支持的图片格式
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    
+    // 分类文件
+    files.forEach(file => {
+        // 跳过系统文件
+        if (file.name.startsWith('__MACOSX') || file.name.startsWith('.')) {
+            console.log(`⏭️ 跳过系统文件: ${file.name}`);
+            return;
+        }
+        
+        const fileName = file.name.toLowerCase();
+        const extension = fileName.split('.').pop();
+        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+        
+        if (imageExtensions.includes(extension)) {
+            // 如果已经有同名的图片，跳过（只选择第一个）
+            if (!imageFiles[nameWithoutExt]) {
+                imageFiles[nameWithoutExt] = file;
+                console.log(`📸 收集图片文件: ${file.name}`);
+            }
+        } else if (extension === 'txt') {
+            if (nameWithoutExt.endsWith('.name')) {
+                // 这是名称文件 (新格式: NAME.name.txt)
+                const slideBaseName = nameWithoutExt.replace('.name', '');
+                nameFiles[slideBaseName] = file;
+                console.log(`📝 收集名称文件: ${file.name} -> ${slideBaseName}`);
+            } else if (nameWithoutExt.endsWith('.requirement')) {
+                // 这是演讲要求文件 (新格式: NAME.requirement.txt)
+                const slideBaseName = nameWithoutExt.replace('.requirement', '');
+                textFiles[slideBaseName] = file;
+                console.log(`📄 收集要求文件: ${file.name} -> ${slideBaseName}`);
+            } else {
+                // 兼容旧格式: NAME.txt (演讲要求)
+                textFiles[nameWithoutExt] = file;
+                console.log(`📄 收集要求文件(旧格式): ${file.name} -> ${nameWithoutExt}`);
+            }
+        }
     });
+    
+    // 按文件名排序（保持原文件夹的排序）
+    const sortedImageNames = Object.keys(imageFiles).sort();
+    
+    console.log(`📊 找到 ${sortedImageNames.length} 个图片文件`);
+    
+    if (sortedImageNames.length === 0) {
+        throw new Error('ZIP文件中没有找到支持的图片文件');
+    }
+    
+    // 根据选项决定是否清空现有数据
+    if (options.clearExisting !== false) {
+        // 清空现有的slides、requirements和names
+        slides.length = 0;
+        Object.keys(slideRequirements).forEach(key => delete slideRequirements[key]);
+        Object.keys(slideNames).forEach(key => delete slideNames[key]);
+        console.log('🗑️ 已清空现有PPT数据');
+    }
+    
+    const startIndex = slides.length; // 记录开始添加的位置
+    
+    // 导入图片和对应的演讲要求、名称
+    for (let i = 0; i < sortedImageNames.length; i++) {
+        const baseName = sortedImageNames[i];
+        const imageFile = imageFiles[baseName];
+        const textFile = textFiles[baseName];
+        const nameFile = nameFiles[baseName];
+        
+        // 读取图片（从ZIP使用特殊方法）
+        const imageBlob = await imageFile.zipEntry.async('blob');
+        const imageUrl = await blobToDataURL(imageBlob);
+        const slideIndex = slides.length;
+        slides.push(imageUrl);
+        
+        // 读取对应的演讲要求
+        if (textFile) {
+            const requirements = await textFile.zipEntry.async('text');
+            // 去除前后的连续空行，然后应用4096字符限制
+            const trimmedRequirements = requirements.trim();
+            slideRequirements[slideIndex] = truncateText(trimmedRequirements, 4096);
+        }
+        
+        // 读取对应的名称
+        if (nameFile) {
+            const name = await nameFile.zipEntry.async('text');
+            // 只读取第一行作为名称
+            const firstName = name.split('\n')[0].trim();
+            slideNames[slideIndex] = firstName || baseName || (slideIndex + 1).toString();
+        } else {
+            // 如果没有名称文件，使用基础名称或默认名称
+            slideNames[slideIndex] = baseName || (slideIndex + 1).toString();
+        }
+    }
+    
+    const addedCount = slides.length - startIndex;
+    console.log(`✅ 成功处理 ${addedCount} 张PPT`);
+    
+    // 保存到session
+    pptSession.saveToSession();
+    
+    // 重新渲染缩略图
+    const overlay = document.querySelector('.slides-overlay');
+    if (overlay) {
+        window.renderThumbnails(overlay);
+    }
+    
+    // 显示成功提示
+    const actionName = options.actionName || '导入';
+    showMessage(`成功${actionName} ${addedCount} 张PPT`, 'info');
+    
+    return {
+        addedCount,
+        totalCount: slides.length,
+        processedImages: sortedImageNames
+    };
 };
 
 // 读取文本文件内容
@@ -3019,6 +2985,7 @@ const batchDownloadAllSlides = async () => {
 
 // 导出函数供全局使用
 window.cancelSpeechRequirements = cancelSpeechRequirements;
+window.showMessage = showMessage;
 window.saveSpeechRequirements = saveSpeechRequirements;
 window.batchExportSlides = batchExportSlides;
 window.batchImportSlides = batchImportSlides;

@@ -1,8 +1,10 @@
 .settings-container {
     max-width: 600px;
-    margin: 0 60px;
-    overflow-y: scroll; 
+    margin: 0 auto; /* 使用auto margin居中 */
+    overflow-y: auto; /* 只在需要时显示滚动条 */
+    overflow-x: hidden; /* 确保不出现水平滚动条 */
     padding: 10px;
+    box-sizing: border-box;
 }
 
 /* 设置页面滚动条样式 */
@@ -23,11 +25,7 @@
     background: #5a5ee6;
 }
 
-@media (max-width: 500px) {
-    .settings-container {
-        margin: 0 auto;
-    }
-}
+/* 小屏幕下的样式已移除，使用默认的auto margin */
 
 .setting-card {
     width: 100%;
@@ -45,7 +43,7 @@
 .setting-card.quick-testing {
     border-color: #8B5CF6;
     box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
-    overflow: hidden;
+    overflow: visible; /* 保持visible以确保badge不被切掉 */
 }
 
 /* 流体测试背景 */
@@ -229,15 +227,16 @@
 /* 消息框样式 */
 .message-box {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     max-width: 400px;
     background: #1a1a1a;
     border: 1px solid #333;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     z-index: 10000;
-    animation: slideInRight 0.3s ease-out;
+    animation: slideInUp 0.3s ease-out;
 }
 
 .message-box.message-error {
@@ -307,6 +306,7 @@
     padding: 12px 16px;
 }
 
+.message-content div,
 .message-content p {
     color: #ccc;
     font-size: 13px;
@@ -314,13 +314,13 @@
     line-height: 1.4;
 }
 
-@keyframes slideInRight {
+@keyframes slideInUp {
     from {
-        transform: translateX(100%);
+        transform: translateX(-50%) translateY(100%);
         opacity: 0;
     }
     to {
-        transform: translateX(0);
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
     }
 }
@@ -416,7 +416,8 @@
     transition: all 0.3s ease;
 }
 
-.setting-card-content.expanded {
+.setting-card-content.expanded,
+.setting-card.toggle-checked .setting-card-content {
     padding: 20px;
     max-height: 300px;
 }

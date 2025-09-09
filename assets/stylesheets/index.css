@@ -373,10 +373,11 @@ body {
 
 .thumbnails-container-scroll {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
     padding: 0px 5px;
     min-height: min-content;
+    
+    /* 默认布局将由下面的媒体查询定义 */
 }
 
 .thumbnail {
@@ -689,13 +690,57 @@ body {
     }
 }
 
-@media screen and (max-width: 540px) {
-    /* 暂时注释掉，让手机端一行也能显示两个thumbnail */
-    /* .thumbnails-container-scroll {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+/* PPT缩略图响应式布局 - 简化版：一排ceil(x/300)张 */
+
+/* 300px以下: ceil(299/300) = 1列 */
+@media screen and (max-width: 299px) {
+    .thumbnails-container-scroll {
+        grid-template-columns: 1fr;
         gap: 15px;
-    } */
-    
+    }
+}
+
+/* 300-599px: ceil(300/300) = 1列, ceil(599/300) = 2列 */
+@media screen and (min-width: 300px) and (max-width: 599px) {
+    .thumbnails-container-scroll {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+}
+
+/* 600-899px: ceil(600/300) = 2列, ceil(899/300) = 3列 */
+@media screen and (min-width: 600px) and (max-width: 899px) {
+    .thumbnails-container-scroll {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+    }
+}
+
+/* 900-1199px: ceil(900/300) = 3列, ceil(1199/300) = 4列 */
+@media screen and (min-width: 900px) and (max-width: 1199px) {
+    .thumbnails-container-scroll {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+}
+
+/* 1200-1499px: ceil(1200/300) = 4列, ceil(1499/300) = 5列 */
+@media screen and (min-width: 1200px) and (max-width: 1499px) {
+    .thumbnails-container-scroll {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+}
+
+/* 1500px以上: ceil(1500/300) = 5列及以上 */
+@media screen and (min-width: 1500px) {
+    .thumbnails-container-scroll {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 20px;
+    }
+}
+
+@media screen and (max-width: 540px) {
     .speech-requirements {
         padding: 15px;
     }

@@ -327,29 +327,24 @@ class MicrophoneSetupManager {
             console.error('错误消息:', error.message);
             console.error('错误堆栈:', error.stack);
             
-            // 使用权限助手获取详细的解决建议
+            // 使用权限助手获取简化的错误信息
             let errorMessage = '麦克风权限请求失败';
-            let helpText = '';
             
             if (window.microphonePermissionHelper) {
                 const advice = window.microphonePermissionHelper.getMicrophonePermissionAdvice(error);
                 errorMessage = advice.title;
-                helpText = '<br><br>' + window.microphonePermissionHelper.formatAdviceAsHtml(advice);
             } else {
                 // 降级处理
                 if (error.name === 'NotAllowedError') {
                     errorMessage = '麦克风权限被拒绝';
-                    helpText = '<br><br>请在浏览器设置中允许麦克风访问，然后刷新页面重试。';
                 } else if (error.name === 'NotFoundError') {
                     errorMessage = '未检测到麦克风设备';
-                    helpText = '<br><br>请确保麦克风设备已正确连接并被系统识别。';
                 } else if (error.name === 'NotSupportedError') {
                     errorMessage = '浏览器不支持麦克风访问';
-                    helpText = '<br><br>请使用现代浏览器并确保通过HTTPS访问。';
                 }
             }
             
-            // 更新UI显示更详细的错误信息
+            // 更新UI显示简化的错误信息
             if (micStatus) micStatus.textContent = errorMessage;
             if (micIcon) {
                 micIcon.className = 'bx bx-microphone-off';
@@ -359,7 +354,8 @@ class MicrophoneSetupManager {
             // 在权限状态区域显示详细建议
             this.showDetailedPermissionAdvice(error);
             
-            this.stepManager.showStepStatus('step1', errorMessage + helpText, 'error');
+            // status只显示简化的错误信息，详细建议已在permission-advice区域显示
+            this.stepManager.showStepStatus('step1', errorMessage, 'error');
             
             // 显示重新请求按钮
             this.stepManager.showButton('step1', 'requestBtn');
@@ -714,29 +710,24 @@ class MicrophoneSetupManager {
         const micStatus = document.getElementById('micStatus');
         const micIcon = document.getElementById('micIcon');
         
-        // 使用权限助手获取详细的解决建议
+        // 使用权限助手获取简化的错误信息
         let errorMessage = '麦克风权限请求失败';
-        let helpText = '';
         
         if (window.microphonePermissionHelper) {
             const advice = window.microphonePermissionHelper.getMicrophonePermissionAdvice(error);
             errorMessage = advice.title;
-            helpText = '<br><br>' + window.microphonePermissionHelper.formatAdviceAsHtml(advice);
         } else {
             // 降级处理
             if (error.name === 'NotAllowedError') {
                 errorMessage = '麦克风权限被拒绝';
-                helpText = '<br><br>请在浏览器设置中允许麦克风访问，然后刷新页面重试。';
             } else if (error.name === 'NotFoundError') {
                 errorMessage = '未检测到麦克风设备';
-                helpText = '<br><br>请确保麦克风设备已正确连接并被系统识别。';
             } else if (error.name === 'NotSupportedError') {
                 errorMessage = '浏览器不支持麦克风访问';
-                helpText = '<br><br>请使用现代浏览器并确保通过HTTPS访问。';
             }
         }
         
-        // 更新UI显示更详细的错误信息
+        // 更新UI显示简化的错误信息
         if (micStatus) micStatus.textContent = errorMessage;
         if (micIcon) {
             micIcon.className = 'bx bx-microphone-off';
@@ -746,7 +737,8 @@ class MicrophoneSetupManager {
         // 在权限状态区域显示详细建议
         this.showDetailedPermissionAdvice(error);
         
-        this.stepManager.showStepStatus('step1', errorMessage + helpText, 'error');
+        // status只显示简化的错误信息，详细建议已在permission-advice区域显示
+        this.stepManager.showStepStatus('step1', errorMessage, 'error');
         
         // 显示重新请求按钮
         this.stepManager.showButton('step1', 'requestBtn');
