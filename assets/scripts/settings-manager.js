@@ -25,6 +25,18 @@ class SettingsManager {
                 toggleEnabled: true,
                 fields: [] // 动态字段，由管理器注册
             },
+            camera: {
+                id: 'camera',
+                name: '摄像头',
+                icon: 'bx bx-camera',
+                type: 'setup',
+                dependencies: [],
+                dependents: ['screenRecording'],
+                managerClass: 'CameraSetupManager',
+                configKey: 'cameraConfig',
+                toggleEnabled: true,
+                fields: []
+            },
             recording: {
                 id: 'recording',
                 name: '录音文字识别',
