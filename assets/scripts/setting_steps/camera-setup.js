@@ -120,7 +120,26 @@ class CameraSetupManager {
                         </div>
                         <br id="previewBr">
                         <div class="preview-section">
-                            <canvas id="speakerPreviewCanvas" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"></canvas>
+                            <div id="speakerPreviewContainer" style="
+                                position: relative;
+                                width: 100%;
+                                max-width: 400px;
+                                aspect-ratio: 16/9;
+                                border: 1px solid #ddd;
+                                border-radius: 8px;
+                                background-image: url('assets/images/cover.jpg');
+                                background-size: cover;
+                                background-position: center;
+                                background-color: #f0f0f0;
+                                overflow: hidden;
+                            ">
+                                <video id="speakerPreviewVideo" style="
+                                    position: absolute;
+                                    border-radius: 4px;
+                                    object-fit: cover;
+                                    display: none;
+                                " autoplay muted></video>
+                            </div>
                         </div>
                     `
                 },
@@ -853,12 +872,14 @@ class CameraSetupManager {
             clearInterval(this.previewRefreshInterval);
         }
         
-        // 启动新的刷新定时器（仅在"只有演讲者"模式下）
+        // 启动新的刷新定时器（用于检查视频源状态）
         this.previewRefreshInterval = setInterval(() => {
-            if (this.speakerPosition === 'speaker-only') {
+            // 只检查视频源是否需要更新，不重复设置
+            const previewVideo = document.getElementById('speakerPreviewVideo');
+            if (previewVideo && !previewVideo.srcObject && this.isPreviewActive) {
                 this.previewSpeakerMode();
             }
-        }, 100); // 每100ms刷新一次
+        }, 2000); // 每2秒检查一次即可
     }
     
     // 停止预览刷新
@@ -902,51 +923,116 @@ class CameraSetupManager {
     async previewSpeakerMode() {
         // console.log('📹 预览演讲者模式...');
         
-        const canvas = document.getElementById('speakerPreviewCanvas');
-        if (!canvas) {
-            console.error('❌ 找不到预览画布');
+        const container = document.getElementById('speakerPreviewContainer');
+        const previewVideo = document.getElementById('speakerPreviewVideo');
+        
+        if (!container || !previewVideo) {
+            console.error('❌ 找不到预览容器或视频元素');
             return;
         }
         
-        const ctx = canvas.getContext('2d');
+        // 获取容器实际尺寸
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
         
-        // 设置画布尺寸 (16:9比例)
-        const canvasWidth = 400;
-        const canvasHeight = 225;
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
+        // 获取摄像头视频源
+        let sourceVideo = document.getElementById('cameraPreview');
+        if (!sourceVideo || !sourceVideo.srcObject) {
+            sourceVideo = document.getElementById('hiddenCameraPreview');
+        }
         
-        // 如果是"只有演讲者"模式，直接绘制摄像头画面
+        if (!sourceVideo && this.selectedDeviceId && this.isPreviewActive) {
+            sourceVideo = this.createHiddenPreviewVideo();
+        }
+        
+        // 设置预览视频的源（只设置一次，避免闪烁）
+        if (this.isPreviewActive && sourceVideo && sourceVideo.srcObject) {
+            // 只有在还没有设置源时才设置，避免重复设置导致闪烁
+            if (!previewVideo.srcObject) {
+                previewVideo.srcObject = sourceVideo.srcObject;
+            }
+            previewVideo.style.display = 'block';
+            
+            // 计算视频位置和大小
+            this.updateVideoPosition(previewVideo, containerWidth, containerHeight);
+        } else {
+            previewVideo.style.display = 'none';
+        }
+    }
+
+    // 更新视频位置和大小
+    updateVideoPosition(videoElement, containerWidth, containerHeight) {
         if (this.speakerPosition === 'speaker-only') {
-            this.drawSpeakerOnlyMode(ctx, canvasWidth, canvasHeight);
+            // "只有演讲者"模式：全屏显示
+            videoElement.style.left = '0px';
+            videoElement.style.top = '0px';
+            videoElement.style.width = containerWidth + 'px';
+            videoElement.style.height = containerHeight + 'px';
             return;
         }
         
-        // 加载背景图片
-        const backgroundImg = new Image();
-        backgroundImg.onload = () => {
-            // 绘制背景图片
-            ctx.drawImage(backgroundImg, 0, 0, canvasWidth, canvasHeight);
-            
-            // 继续绘制演讲者视频
-            this.drawSpeakerVideo(ctx, canvasWidth, canvasHeight);
-        };
-        backgroundImg.onerror = () => {
-            console.warn('⚠️ 无法加载背景图片，使用默认背景');
-            // 使用默认背景
-            ctx.fillStyle = '#f0f0f0';
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            
-            // 添加文字说明
-            ctx.fillStyle = '#666';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('屏幕录制内容', canvasWidth / 2, canvasHeight / 2);
-            
-            // 继续绘制演讲者视频
-            this.drawSpeakerVideo(ctx, canvasWidth, canvasHeight);
-        };
-        backgroundImg.src = 'assets/images/cover.jpg';
+        // 计算演讲者视频位置和大小
+        const videoAspectRatio = 4 / 3; // 假设摄像头是4:3比例
+        
+        let videoWidth, videoHeight;
+        const scale = this.speakerSize;
+        
+        // 根据容器比例计算视频大小
+        if (containerWidth / containerHeight > videoAspectRatio) {
+            videoHeight = containerHeight * scale;
+            videoWidth = videoHeight * videoAspectRatio;
+        } else {
+            videoWidth = containerWidth * scale;
+            videoHeight = videoWidth / videoAspectRatio;
+        }
+        
+        const marginX = containerWidth * this.speakerMargin;
+        const marginY = containerHeight * this.speakerMargin;
+        
+        let x, y;
+        
+        // 根据位置计算坐标
+        switch (this.speakerPosition) {
+            case 'top-left':
+                x = marginX;
+                y = marginY;
+                break;
+            case 'top':
+                x = (containerWidth - videoWidth) / 2;
+                y = marginY;
+                break;
+            case 'top-right':
+                x = containerWidth - videoWidth - marginX;
+                y = marginY;
+                break;
+            case 'left':
+                x = marginX;
+                y = (containerHeight - videoHeight) / 2;
+                break;
+            case 'right':
+                x = containerWidth - videoWidth - marginX;
+                y = (containerHeight - videoHeight) / 2;
+                break;
+            case 'bottom-left':
+                x = marginX;
+                y = containerHeight - videoHeight - marginY;
+                break;
+            case 'bottom':
+                x = (containerWidth - videoWidth) / 2;
+                y = containerHeight - videoHeight - marginY;
+                break;
+            case 'bottom-right':
+            default:
+                x = containerWidth - videoWidth - marginX;
+                y = containerHeight - videoHeight - marginY;
+                break;
+        }
+        
+        // 设置视频元素的位置和大小
+        videoElement.style.left = x + 'px';
+        videoElement.style.top = y + 'px';
+        videoElement.style.width = videoWidth + 'px';
+        videoElement.style.height = videoHeight + 'px';
     }
 
     // 绘制"只有演讲者"模式
