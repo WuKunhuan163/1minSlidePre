@@ -42,9 +42,7 @@ class MicrophoneSetupManager {
                 title: '请求麦克风权限',
                 content: {
                     description: `
-                        需要麦克风权限以录制音频。
-                        <br><br>
-                        请在弹出的权限对话框中点击"允许"。
+                        需要麦克风权限录制演讲音频。
                     `,
                     custom: () => this.generatePermissionInterface()
                 },

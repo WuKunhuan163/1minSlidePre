@@ -30,9 +30,7 @@ class CameraSetupManager {
                 title: '请求摄像头权限',
                 content: {
                     description: `
-                        需要摄像头权限以录制视频。
-                        <br><br>
-                        请在弹出的权限对话框中点击"允许"。
+                        需要摄像头权限录制演讲视频。
                     `,
                     custom: () => this.generatePermissionInterface()
                 },
@@ -376,15 +374,16 @@ class CameraSetupManager {
             
             this.stepManager.showStepStatus('step1', '摄像头权限获取成功！', 'success');
             
-            // 权限获取成功，自动跳转到下一步
-            console.log('🔄 权限获取成功，准备自动跳转到下一步...');
+            // 隐藏请求按钮
+            this.stepManager.hideButton('step1', 'requestBtn');
             
-            // 使用自动跳转条件让步骤管理器自动跳转
-            if (this.stepManager && typeof this.stepManager.checkAutoJump === 'function') {
-                setTimeout(() => {
-                    this.stepManager.checkAutoJump();
-                }, 1000);
-            }
+            // 直接跳转到下一步
+            setTimeout(() => {
+                this.stepManager.goToStep(1, {
+                    previousStepStatus: '已完成当前步骤',
+                    previousStepType: 'success'
+                });
+            }, 1500); // 1.5秒后自动跳转，让用户看到成功消息
             
             // 检测设备
             await this.detectCameraDevices();
