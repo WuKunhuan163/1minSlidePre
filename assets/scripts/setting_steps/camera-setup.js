@@ -83,48 +83,45 @@ class CameraSetupManager {
                     description: `
                         设置演讲者的位置和大小。
                         <br><br>
-                        <div class="speaker-settings">
-                            <div class="setting-group">
-                                <label for="speakerPosition">演讲者位置：</label>
-                                <select id="speakerPosition" class="form-control">
-                                    <option value="top-left">左上角</option>
-                                    <option value="top">上方中央</option>
-                                    <option value="top-right">右上角</option>
-                                    <option value="left">左侧中央</option>
-                                    <option value="right">右侧中央</option>
-                                    <option value="bottom-left">左下角</option>
-                                    <option value="bottom">下方中央</option>
-                                    <option value="bottom-right" selected>右下角</option>
-                                </select>
-                            </div>
-                            <br>
-                            <div class="setting-group">
-                                <label for="speakerSize">演讲者大小：</label>
-                                <select id="speakerSize" class="form-control">
-                                    <option value="0.12">12%</option>
-                                    <option value="0.15">15%</option>
-                                    <option value="0.20" selected>20%</option>
-                                    <option value="0.25">25%</option>
-                                    <option value="0.33">33%</option>
-                                    <option value="0.40">40%</option>
-                                    <option value="0.50">50%</option>
-                                </select>
-                            </div>
-                            <br>
-                            <div class="setting-group">
-                                <label for="speakerMargin">边界缝隙：</label>
-                                <select id="speakerMargin" class="form-control">
-                                    <option value="0">0% (紧贴边缘)</option>
-                                    <option value="0.02" selected>2%</option>
-                                    <option value="0.05">5%</option>
-                                    <option value="0.10">10%</option>
-                                </select>
-                            </div>
-                            <br>
-                            <div class="preview-section">
-                                <canvas id="speakerPreviewCanvas" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"></canvas>
-                                <button id="previewBtn" class="btn btn-secondary">预览效果</button>
-                            </div>
+                        <div class="setting-group">
+                            <label for="speakerPosition">演讲者位置：</label>
+                            <select id="speakerPosition" class="form-control">
+                                <option value="top-left">左上角</option>
+                                <option value="top">上方中央</option>
+                                <option value="top-right">右上角</option>
+                                <option value="left">左侧中央</option>
+                                <option value="right">右侧中央</option>
+                                <option value="bottom-left">左下角</option>
+                                <option value="bottom">下方中央</option>
+                                <option value="bottom-right" selected>右下角</option>
+                            </select>
+                        </div>
+                        <br>
+                        <div class="setting-group">
+                            <label for="speakerSize">演讲者大小：</label>
+                            <select id="speakerSize" class="form-control">
+                                <option value="0.12">12%</option>
+                                <option value="0.15">15%</option>
+                                <option value="0.20" selected>20%</option>
+                                <option value="0.25">25%</option>
+                                <option value="0.33">33%</option>
+                                <option value="0.40">40%</option>
+                                <option value="0.50">50%</option>
+                            </select>
+                        </div>
+                        <br>
+                        <div class="setting-group">
+                            <label for="speakerMargin">边界缝隙：</label>
+                            <select id="speakerMargin" class="form-control">
+                                <option value="0">0% (紧贴边缘)</option>
+                                <option value="0.02" selected>2%</option>
+                                <option value="0.05">5%</option>
+                                <option value="0.10">10%</option>
+                            </select>
+                        </div>
+                        <br>
+                        <div class="preview-section">
+                            <canvas id="speakerPreviewCanvas" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"></canvas>
                         </div>
                     `
                 },
@@ -600,8 +597,6 @@ class CameraSetupManager {
         const positionSelect = document.getElementById('speakerPosition');
         const sizeSelect = document.getElementById('speakerSize');
         const marginSelect = document.getElementById('speakerMargin');
-        const previewBtn = document.getElementById('previewBtn');
-        
         if (positionSelect) {
             positionSelect.value = this.speakerPosition;
             positionSelect.addEventListener('change', (e) => {
@@ -632,9 +627,6 @@ class CameraSetupManager {
             });
         }
         
-        if (previewBtn) {
-            previewBtn.addEventListener('click', () => this.previewSpeakerMode());
-        }
         
         // 自动预览
         setTimeout(() => this.previewSpeakerMode(), 500);
