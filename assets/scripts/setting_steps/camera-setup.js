@@ -383,9 +383,15 @@ class CameraSetupManager {
             
             this.stepManager.showStepStatus('step1', '摄像头权限获取成功！', 'success');
             
-            // 显示下一步按钮
-            this.stepManager.showButton('step1', 'nextBtn');
-            this.stepManager.hideButton('step1', 'requestBtn');
+            // 权限获取成功，自动跳转到下一步
+            console.log('🔄 权限获取成功，准备自动跳转到下一步...');
+            
+            // 使用自动跳转条件让步骤管理器自动跳转
+            if (this.stepManager && typeof this.stepManager.checkAutoJump === 'function') {
+                setTimeout(() => {
+                    this.stepManager.checkAutoJump();
+                }, 1000);
+            }
             
             // 检测设备
             await this.detectCameraDevices();
