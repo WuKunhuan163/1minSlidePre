@@ -61,8 +61,8 @@ class AISetupManager {
                         <strong>操作步骤：</strong><br>
                         1. 登录<a href="https://bigmodel.cn/usercenter/proj-mgmt/apikeys" target="_blank">智谱AI控制台</a><br>
                         2. 点击"添加新的API Key"按钮<br>
-                        3. 选择一个名称（如"语音识别评分"）<br>
-                        4. 在下方列表中复制生成的API Key<br>
+                        3. 选择名称（如"语音识别评分"）<br>
+                        4. 复制生成的API Key<br>
                         5. 将API Key粘贴到下方输入框中
                     `,
                     form: [
@@ -85,7 +85,7 @@ class AISetupManager {
                     },
                     {
                         id: 'validateBtn',
-                        text: '验证 API Key',
+                        text: '验证',
                         type: 'primary',
                         isPrimary: true,
                         onClick: () => this.validateStep2(),
@@ -101,7 +101,7 @@ class AISetupManager {
                 title: '测试AI对话功能',
                 content: {
                     description: `
-                        测试智谱AI的对话功能，确保API正常工作。
+                        测试智谱AI，确保API正常工作。
                     `,
                     custom: () => this.generateChatTestInterface()
                 },
@@ -121,7 +121,7 @@ class AISetupManager {
                         show: false
                     }
                 ],
-                autoJumpCondition: () => this.validateApiTest(),
+                autoJumpCondition: () => this.apiTestCompleted,
                 onEnter: () => this.initializeChatTest(),
                 validation: () => this.validateApiTest()
             }
@@ -179,7 +179,7 @@ class AISetupManager {
         }
     }
 
-    // 验证API Key格式
+    // 通过API验证API Key（而不是格式检查）
     async validateApiKey() {
         const formData = this.stepManager.getStepFormData('step2');
         const apiKey = formData.aiApiKey?.trim();
@@ -188,16 +188,78 @@ class AISetupManager {
             throw new Error('请输入API Key');
         }
         
-        if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
-            throw new Error('API Key格式不正确');
-        }
+        console.log('🔑 开始验证智谱AI API Key...');
         
-        return true;
+        try {
+            // 使用zhipu_llm_api服务验证API Key
+            const response = await fetch('https://zhipu-llm-api.vercel.app/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    apiKey: apiKey,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: '测试连接'
+                        }
+                    ],
+                    model: 'glm-4-flash' // 使用更便宜的模型进行测试
+                })
+            });
+
+            console.log('📥 智谱API验证响应状态:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ API Key验证失败:', response.status, errorText);
+                
+                // 解析具体错误
+                if (response.status === 401) {
+                    throw new Error('API Key无效，请检查是否正确');
+                } else if (response.status === 400) {
+                    throw new Error('API Key格式不正确');
+                } else if (response.status === 403) {
+                    throw new Error('API Key权限不足或已过期');
+                } else {
+                    throw new Error(`API验证失败: ${response.status} ${response.statusText}`);
+                }
+            }
+
+            const result = await response.json();
+            console.log('✅ 智谱API Key验证成功');
+
+            if (result.success) {
+                return true;
+            } else {
+                throw new Error(result.error || 'API Key验证失败');
+            }
+
+        } catch (error) {
+            console.error('❌ API Key验证异常:', error);
+            
+            // 网络错误处理
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('网络连接失败，请检查网络后重试');
+            }
+            
+            throw error;
+        }
     }
 
     // 验证步骤2
     async validateStep2() {
         try {
+            // 禁用验证按钮并显示验证中状态
+            const validateBtn = document.getElementById(`${this.settingId}-step2-validateBtn`);
+            if (validateBtn) {
+                validateBtn.textContent = '验证中...';
+                validateBtn.disabled = true;
+                validateBtn.style.opacity = '0.6';
+                validateBtn.style.cursor = 'not-allowed';
+            }
+            
             this.stepManager.showStepStatus('step2', '正在验证API Key...', 'info');
             
             const isValid = await this.validateApiKey();
@@ -213,6 +275,13 @@ class AISetupManager {
                     
                     this.stepManager.showStepStatus('step2', 'API Key验证成功！', 'success');
                     
+                    // 恢复按钮状态为成功状态
+                    if (validateBtn) {
+                        validateBtn.textContent = '验证成功';
+                        validateBtn.style.backgroundColor = '#28a745';
+                        validateBtn.style.borderColor = '#28a745';
+                    }
+                    
                     setTimeout(() => {
                         this.stepManager.markStepCompleted('step2', true);
                         this.stepManager.goToStep(2); // 跳转到步骤3
@@ -225,6 +294,28 @@ class AISetupManager {
             }
         } catch (error) {
             this.stepManager.showStepStatus('step2', error.message, 'error');
+            
+            // 验证失败时，确保清除可能已经设置的启用状态
+            simpleConfig.set('aiEnabled', false);
+            
+            // 恢复按钮状态为错误状态
+            const validateBtn = document.getElementById(`${this.settingId}-step2-validateBtn`);
+            if (validateBtn) {
+                validateBtn.textContent = '验证失败，重试';
+                validateBtn.disabled = false;
+                validateBtn.style.opacity = '1';
+                validateBtn.style.cursor = 'pointer';
+                validateBtn.style.backgroundColor = '#dc3545';
+                validateBtn.style.borderColor = '#dc3545';
+                
+                // 3秒后恢复原始状态
+                setTimeout(() => {
+                    validateBtn.textContent = '验证';
+                    validateBtn.style.backgroundColor = '';
+                    validateBtn.style.borderColor = '';
+                }, 3000);
+            }
+            
             return false;
         }
     }
@@ -278,6 +369,71 @@ class AISetupManager {
                 content: '您好！我是智谱AI助手，可以为您的演讲进行评分和建议。请输入任何问题来测试我的功能。'
             }
         ];
+        
+        // 延迟自动发送测试消息进行验证
+        setTimeout(() => {
+            this.autoSendTestMessage();
+        }, 1000);
+    }
+
+    // 自动发送测试消息进行验证
+    async autoSendTestMessage() {
+        console.log('🤖 自动发送测试消息进行API验证');
+        
+        const messagesContainer = document.getElementById('chatbotMessages');
+        if (!messagesContainer) {
+            console.error('❌ 找不到聊天消息容器');
+            return;
+        }
+        
+        // 预设的测试消息
+        const testMessage = '请总结讲师训考评的技巧：「当主持人喊了你的名字，立马开麦演讲。请不要询问"我的声音清晰吗"，而是提前试麦。一共有两次提示音，分别是30秒和1分钟。听到30秒倒计时的时候，我们就准备收尾，记得用金句结尾哦！」的主要内容，30字以内。';
+        
+        // 添加用户消息
+        this.addMessageToChat(testMessage, 'user');
+        
+        try {
+            // 显示正在思考状态
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'message ai-message';
+            thinkingDiv.innerHTML = '<div class="message-content">正在思考...</div>';
+            thinkingDiv.id = 'auto-thinking-message';
+            messagesContainer.appendChild(thinkingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // 调用AI API
+            const aiResponse = await this.callAIAPI(testMessage);
+            
+            // 移除思考状态
+            const thinkingMessage = document.getElementById('auto-thinking-message');
+            if (thinkingMessage) {
+                thinkingMessage.remove();
+            }
+            
+            // 添加AI回复
+            this.addMessageToChat(aiResponse, 'ai');
+            
+            // 标记测试完成并自动验证
+            this.apiTestCompleted = true;
+            this.stepManager.showStepStatus('step3', 'AI对话测试成功！自动验证完成', 'success');
+            
+            // 显示完成按钮
+            this.stepManager.showButton('step3', 'completeBtn');
+            
+            console.log('✅ AI自动验证成功');
+            
+        } catch (error) {
+            console.error('❌ AI自动验证失败:', error);
+            
+            // 移除思考状态
+            const thinkingMessage = document.getElementById('auto-thinking-message');
+            if (thinkingMessage) {
+                thinkingMessage.remove();
+            }
+            
+            this.addMessageToChat('抱歉，自动验证遇到了问题：' + error.message, 'ai');
+            this.stepManager.showStepStatus('step3', 'AI自动验证失败：' + error.message, 'error');
+        }
     }
 
     // 发送测试消息
@@ -368,22 +524,64 @@ class AISetupManager {
     // 调用AI API
     async callAIAPI(message) {
         try {
-            // 这里应该调用实际的智谱AI API
-            // 现在用模拟的方式
-            return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    const responses = [
-                        '我理解您的问题。作为AI助手，我可以帮助您分析演讲内容，提供改进建议，并给出客观的评分。',
-                        '很好的问题！我可以从语言表达、逻辑结构、内容深度等多个维度来评估您的演讲。',
-                        '感谢您的测试。我已经准备好为您的演讲提供专业的分析和建议了。',
-                        '测试成功！我可以识别演讲中的亮点和需要改进的地方，帮助您提升演讲效果。'
-                    ];
-                    
-                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                    resolve(randomResponse);
-                }, 1500);
+            // 获取API Key
+            const config = simpleConfig.getAll();
+            const apiKey = config.zhipuApiKey;
+            
+            if (!apiKey) {
+                throw new Error('未找到API Key，请先完成第2步验证');
+            }
+            
+            console.log('🤖 调用智谱AI API...');
+            
+            // 调用智谱AI API
+            const response = await fetch('https://zhipu-llm-api.vercel.app/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    apiKey: apiKey,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: '你是一个专业的演讲评分助手，可以帮助用户分析演讲内容，提供改进建议，并给出客观的评分。请用友好、专业的语气回复用户。'
+                        },
+                        {
+                            role: 'user',
+                            content: message
+                        }
+                    ],
+                    model: 'glm-4-flash'
+                })
             });
+
+            console.log('📥 智谱AI响应状态:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ 智谱AI调用失败:', response.status, errorText);
+                throw new Error(`API调用失败: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ 智谱AI调用成功');
+
+            if (result.success && result.data && result.data.choices && result.data.choices.length > 0) {
+                const aiResponse = result.data.choices[0].message.content;
+                return aiResponse;
+            } else {
+                throw new Error('API返回格式异常');
+            }
+
         } catch (error) {
+            console.error('❌ AI API调用异常:', error);
+            
+            // 网络错误处理
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('网络连接失败，请检查网络后重试');
+            }
+            
             throw new Error('API调用失败：' + error.message);
         }
     }
