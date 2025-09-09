@@ -703,6 +703,9 @@ class SettingsStepManager {
             this.scrollToStep(targetStep);
         }
         
+        // 更新所有步骤的交互状态
+        this.updateAllStepsInteractionState();
+        
         // 清除目标步骤的状态（如果需要）
         if (clearTargetStatus) {
             const targetStepObj = this.steps[stepIndex];
@@ -765,13 +768,94 @@ class SettingsStepManager {
             stepElement.classList.toggle('current-step', isCurrent);
             stepElement.classList.toggle('visible', isCurrent);
             
-            // 统一使用current-step类控制交互状态
-            // 不再使用active/pending类，完全依赖current-step类
-            
             // 更新圆圈状态
             circleElement.className = `step-circle ${isCompleted ? 'completed' : (isCurrent ? 'current' : '')}`;
             circleElement.innerHTML = isCompleted ? '<i class="bx bx-check"></i>' : (index + 1);
         });
+    }
+
+    // 更新所有步骤的交互状态
+    updateAllStepsInteractionState() {
+        this.steps.forEach((step, index) => {
+            const stepElement = this.overlay.querySelector(`#${this.settingId}-${step.id}`);
+            if (!stepElement) return;
+            
+            const isCurrent = index === this.currentStepIndex;
+            
+            if (isCurrent) {
+                // 当前步骤：启用所有交互元素
+                this.enableStepInteraction(stepElement);
+            } else {
+                // 非当前步骤：禁用所有交互元素
+                this.disableStepInteraction(stepElement);
+            }
+        });
+    }
+
+    // 启用步骤内的所有交互元素
+    enableStepInteraction(stepElement) {
+        // 启用所有交互元素（除了已经被明确禁用的）
+        const interactiveElements = stepElement.querySelectorAll('.btn, input, select, textarea, [data-interactive="true"], .dropdown, .dropdown-container, [class*="dropdown"]');
+        
+        interactiveElements.forEach((element) => {
+            const isForceNoInteract = element.classList.contains('force-no-interact');
+            
+            if (!isForceNoInteract) {
+                // 对于步骤管理的元素，直接恢复状态，不使用enableElement（避免设置data-explicitly-enabled）
+                const tagName = element.tagName.toLowerCase();
+                const isFormElement = ['button', 'input', 'select', 'textarea'].includes(tagName);
+                
+                if (isFormElement) {
+                    element.disabled = false;
+                }
+                
+                // 恢复CSS类和样式
+                element.classList.add('force-interact');
+                element.style.pointerEvents = '';
+                element.style.opacity = '';
+                element.style.cursor = '';
+                
+                // 移除明确启用标记，让元素遵循步骤规则
+                element.removeAttribute('data-explicitly-enabled');
+            }
+        });
+    }
+
+    // 禁用步骤内的所有交互元素（除了被明确启用的元素）
+    disableStepInteraction(stepElement) {
+        // 禁用所有交互元素（包括回退按钮）
+        const interactiveElements = stepElement.querySelectorAll('.btn, input, select, textarea, [data-interactive="true"], .dropdown, .dropdown-container, [class*="dropdown"]');
+        interactiveElements.forEach((element) => {
+            const isExplicitlyEnabled = element.getAttribute('data-explicitly-enabled') === 'true';
+            const isForceNoInteract = element.classList.contains('force-no-interact');
+            
+            // 如果元素被明确启用或强制不可交互，则跳过
+            if (isExplicitlyEnabled || isForceNoInteract) {
+                return;
+            }
+            
+            // 对于步骤管理的元素，不使用disableElement（避免添加force-no-interact类）
+            // 直接设置disabled属性和基本样式，不添加force-no-interact类
+            const tagName = element.tagName.toLowerCase();
+            const isFormElement = ['button', 'input', 'select', 'textarea'].includes(tagName);
+            
+            if (isFormElement) {
+                element.disabled = true;
+            }
+            
+            // 移除force-interact类，但不添加force-no-interact类
+            element.classList.remove('force-interact');
+            
+            // 为非表单元素设置样式
+            if (!isFormElement) {
+                element.style.pointerEvents = 'none';
+                element.style.opacity = '0.6';
+                element.style.cursor = 'not-allowed';
+            }
+        });
+        
+        // 注意：不再保持非当前步骤的回退按钮可用
+        // 只有当前步骤的回退按钮才应该可用
     }
 
     // 处理按钮点击
@@ -992,11 +1076,11 @@ class SettingsStepManager {
         }
         
         if (buttonElement) {
-            // console.log('📝 设置按钮显示和交互状态');
+            // console.log('📝 设置按钮显示状态');
             buttonElement.style.display = 'inline-block';
-            buttonElement.disabled = false; // 确保按钮可点击
-            buttonElement.classList.add('force-interact');
-            buttonElement.classList.remove('force-no-interact'); // 移除禁用类
+            // 不再强制设置disabled=false和force-interact类
+            // 让CSS基于current-step类自动控制交互状态
+            buttonElement.classList.remove('force-no-interact'); // 移除明确的禁用类
             
             // console.log('设置后的按钮状态:');
             // console.log('- display:', buttonElement.style.display);
@@ -1096,23 +1180,119 @@ class SettingsStepManager {
         }
     }
     
-    // 禁用按钮但保持可见
-    disableButton(stepId, buttonId) {
-        const buttonElement = this.overlay.querySelector(`#${this.settingId}-${stepId}-${buttonId}`);
-        if (buttonElement) {
-            buttonElement.disabled = true;
-            buttonElement.classList.add('force-no-interact');
+    // 禁用元素（通用方法）
+    disable(stepId, elementId) {
+        const element = this.overlay.querySelector(`#${this.settingId}-${stepId}-${elementId}`);
+        if (element) {
+            this.disableElement(element);
         }
     }
     
-    // 启用按钮
-    enableButton(stepId, buttonId) {
-        const buttonElement = this.overlay.querySelector(`#${this.settingId}-${stepId}-${buttonId}`);
-        if (buttonElement) {
-            buttonElement.disabled = false;
-            buttonElement.classList.remove('force-no-interact');
-            buttonElement.classList.add('force-interact');
+    // 启用元素（通用方法）
+    enable(stepId, elementId) {
+        const element = this.overlay.querySelector(`#${this.settingId}-${stepId}-${elementId}`);
+        if (element) {
+            this.enableElement(element);
         }
+    }
+
+    // 禁用单个DOM元素
+    disableElement(element) {
+        if (!element) return;
+        
+        const tagName = element.tagName.toLowerCase();
+        const isFormElement = ['button', 'input', 'select', 'textarea'].includes(tagName);
+        const isDropdown = element.classList.contains('dropdown') || 
+                          element.classList.contains('dropdown-container') ||
+                          element.querySelector('.dropdown, .import-dropdown, [class*="dropdown"]');
+        
+        // 根据元素类型设置disabled属性
+        if (isFormElement) {
+            element.disabled = true;
+        }
+        
+        // 设置CSS类和样式
+        element.classList.remove('force-interact');
+        element.classList.add('force-no-interact');
+        
+        // 清除明确启用标记
+        element.removeAttribute('data-explicitly-enabled');
+        
+        // 为非表单元素或dropdown设置pointer-events
+        if (!isFormElement || isDropdown) {
+            element.style.pointerEvents = 'none';
+            element.style.opacity = '0.6';
+            element.style.cursor = 'not-allowed';
+        }
+        
+        // 特殊处理dropdown元素
+        if (isDropdown) {
+            // 禁用dropdown内的所有交互元素
+            const dropdownElements = element.querySelectorAll('button, input, select, textarea, [role="button"], [onclick], [data-toggle]');
+            dropdownElements.forEach(el => {
+                if (el.tagName.toLowerCase() === 'button' || el.tagName.toLowerCase() === 'input' || 
+                    el.tagName.toLowerCase() === 'select' || el.tagName.toLowerCase() === 'textarea') {
+                    el.disabled = true;
+                }
+                el.style.pointerEvents = 'none';
+                el.classList.add('force-no-interact');
+            });
+        }
+    }
+
+    // 启用单个DOM元素
+    enableElement(element) {
+        if (!element) return;
+        
+        const tagName = element.tagName.toLowerCase();
+        const isFormElement = ['button', 'input', 'select', 'textarea'].includes(tagName);
+        const isDropdown = element.classList.contains('dropdown') || 
+                          element.classList.contains('dropdown-container') ||
+                          element.querySelector('.dropdown, .import-dropdown, [class*="dropdown"]');
+        
+        // 根据元素类型设置disabled属性
+        if (isFormElement) {
+            element.disabled = false;
+        }
+        
+        // 设置CSS类和样式
+        element.classList.remove('force-no-interact');
+        element.classList.add('force-interact');
+        
+        // 记录这个元素被明确启用
+        element.setAttribute('data-explicitly-enabled', 'true');
+        
+        // 为非表单元素恢复pointer-events
+        if (!isFormElement || isDropdown) {
+            element.style.pointerEvents = '';
+            element.style.opacity = '';
+            element.style.cursor = '';
+        }
+        
+        // 特殊处理dropdown元素
+        if (isDropdown) {
+            // 启用dropdown内的所有交互元素
+            const dropdownElements = element.querySelectorAll('button, input, select, textarea, [role="button"], [onclick], [data-toggle]');
+            dropdownElements.forEach(el => {
+                if (el.tagName.toLowerCase() === 'button' || el.tagName.toLowerCase() === 'input' || 
+                    el.tagName.toLowerCase() === 'select' || el.tagName.toLowerCase() === 'textarea') {
+                    el.disabled = false;
+                }
+                el.style.pointerEvents = '';
+                el.classList.remove('force-no-interact');
+                el.classList.add('force-interact');
+            });
+        }
+    }
+
+    // 兼容性方法：禁用按钮
+    disableButton(stepId, buttonId) {
+        this.disable(stepId, buttonId);
+    }
+    
+    // 兼容性方法：启用按钮
+    enableButton(stepId, buttonId) {
+        this.enable(stepId, buttonId);
     }
 
     // 返回设置菜单
