@@ -439,8 +439,27 @@ class OptimizedFFmpegConverter {
             await this.ffmpeg.writeFile('input_video.webm', videoData);
             if (this.onLog) this.onLog(`📹 输入视频大小: ${videoData.length} bytes`);
 
-            // 读取PPT背景图片
-            const response = await fetch(pptBackground);
+            // 读取PPT背景图片 - 添加路径调试信息
+            if (this.onLog) this.onLog(`📋 原始PPT路径: ${pptBackground}`);
+            console.log(`[Direct] 尝试加载PPT图片: ${pptBackground}`);
+            console.log(`[Direct] 当前位置: ${window.location.href}`);
+            
+            // 尝试解析相对路径
+            let resolvedPath = pptBackground;
+            if (!pptBackground.startsWith('http') && !pptBackground.startsWith('data:')) {
+                resolvedPath = new URL(pptBackground, window.location.href).href;
+                console.log(`[Direct] 解析后的路径: ${resolvedPath}`);
+                if (this.onLog) this.onLog(`🔧 路径解析: ${pptBackground} -> ${resolvedPath}`);
+            }
+            
+            const response = await fetch(resolvedPath);
+            console.log(`[Direct] PPT图片响应状态: ${response.status} ${response.statusText}`);
+            
+            if (!response.ok) {
+                if (this.onLog) this.onLog(`❌ PPT图片加载失败: ${response.status} ${response.statusText}`);
+                throw new Error(`无法加载PPT图片: ${response.status} ${response.statusText}`);
+            }
+            
             const pptData = new Uint8Array(await response.arrayBuffer());
             await this.ffmpeg.writeFile('background.jpg', pptData);
             if (this.onLog) this.onLog(`📋 PPT背景图片大小: ${pptData.length} bytes`);

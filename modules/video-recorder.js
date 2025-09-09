@@ -96,8 +96,15 @@ class VideoRecorder {
     runCountdown(seconds) {
         return new Promise((resolve) => {
             let remaining = seconds;
+            let isFirstRun = true;
             
             const updateCountdown = () => {
+                // 在倒计时开始时，捕获最后一帧并隐藏视频
+                if (isFirstRun) {
+                    this.captureLastFrameAndHideVideo();
+                    isFirstRun = false;
+                }
+                
                 if (this.onProgress) {
                     this.onProgress({
                         type: 'countdown',
@@ -106,7 +113,9 @@ class VideoRecorder {
                     });
                 }
                 
-                if (this.onLog) this.onLog(`倒计时: ${remaining}秒`);
+                // 修改倒计时文字，提醒用户看摄像头
+                const message = remaining > 0 ? `请看摄像头，${remaining}秒后开始录制` : '开始录制！';
+                if (this.onLog) this.onLog(message);
                 
                 remaining--;
                 
@@ -120,6 +129,95 @@ class VideoRecorder {
             
             updateCountdown();
         });
+    }
+
+    /**
+     * 捕获最后一帧图像并隐藏视频流
+     */
+    captureLastFrameAndHideVideo() {
+        try {
+            // 查找摄像头预览视频元素
+            const cameraPreview = document.getElementById('cameraPreview');
+            const cameraPreviewSection = document.getElementById('cameraPreviewSection');
+            const speakerPreviewVideo = document.getElementById('speakerPreviewVideo');
+            
+            if (cameraPreview && cameraPreview.videoWidth > 0) {
+                // 创建canvas捕获最后一帧
+                const canvas = document.createElement('canvas');
+                canvas.width = cameraPreview.videoWidth;
+                canvas.height = cameraPreview.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(cameraPreview, 0, 0);
+                
+                // 创建静态图像元素
+                const staticImage = document.createElement('img');
+                staticImage.src = canvas.toDataURL('image/png');
+                staticImage.style.cssText = cameraPreview.style.cssText;
+                staticImage.width = cameraPreview.width;
+                staticImage.height = cameraPreview.height;
+                staticImage.id = 'cameraStaticFrame';
+                
+                // 隐藏视频元素，显示静态图像
+                cameraPreview.style.display = 'none';
+                if (cameraPreviewSection) {
+                    cameraPreviewSection.appendChild(staticImage);
+                }
+                
+                if (this.onLog) this.onLog('📸 已捕获最后一帧并隐藏摄像头');
+            }
+            
+            // 同样处理演讲者预览视频
+            if (speakerPreviewVideo && speakerPreviewVideo.videoWidth > 0) {
+                const canvas = document.createElement('canvas');
+                canvas.width = speakerPreviewVideo.videoWidth;
+                canvas.height = speakerPreviewVideo.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(speakerPreviewVideo, 0, 0);
+                
+                const staticImage = document.createElement('img');
+                staticImage.src = canvas.toDataURL('image/png');
+                staticImage.style.cssText = speakerPreviewVideo.style.cssText;
+                staticImage.id = 'speakerStaticFrame';
+                
+                speakerPreviewVideo.style.display = 'none';
+                speakerPreviewVideo.parentNode.appendChild(staticImage);
+                
+                if (this.onLog) this.onLog('📸 已捕获演讲者预览最后一帧');
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ 捕获最后一帧失败:', error);
+        }
+    }
+
+    /**
+     * 恢复视频显示（清理静态图像）
+     */
+    restoreVideoDisplay() {
+        try {
+            // 恢复摄像头预览
+            const cameraPreview = document.getElementById('cameraPreview');
+            const cameraStaticFrame = document.getElementById('cameraStaticFrame');
+            
+            if (cameraPreview && cameraStaticFrame) {
+                cameraPreview.style.display = '';
+                cameraStaticFrame.remove();
+                if (this.onLog) this.onLog('📸 已恢复摄像头显示');
+            }
+            
+            // 恢复演讲者预览
+            const speakerPreviewVideo = document.getElementById('speakerPreviewVideo');
+            const speakerStaticFrame = document.getElementById('speakerStaticFrame');
+            
+            if (speakerPreviewVideo && speakerStaticFrame) {
+                speakerPreviewVideo.style.display = '';
+                speakerStaticFrame.remove();
+                if (this.onLog) this.onLog('📸 已恢复演讲者预览显示');
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ 恢复视频显示失败:', error);
+        }
     }
 
     /**
@@ -261,6 +359,9 @@ class VideoRecorder {
             if (this.onLog) {
                 this.onLog(`录制完成！文件大小: ${(webmBlob.size / 1024 / 1024).toFixed(2)}MB，实际时长: ${actualDuration}ms`);
             }
+            
+            // 恢复视频显示
+            this.restoreVideoDisplay();
             
             // 最后一次进度更新
             if (this.onProgress) {

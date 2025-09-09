@@ -292,11 +292,21 @@ async function compositeVideo(data) {
         await ffmpeg.writeFile('input_video.webm', videoData);
         self.postMessage({ type: 'log', message: `📹 输入视频大小: ${videoData.length} bytes` });
 
-        // 获取PPT背景图片
+        // 获取PPT背景图片 - 添加路径调试信息
         self.postMessage({ type: 'log', message: `📋 加载PPT背景图片: ${pptBackground}` });
         console.log(`[Worker] 尝试加载PPT图片: ${pptBackground}`);
+        console.log(`[Worker] Worker位置: ${self.location.href}`);
+        console.log(`[Worker] Worker基础URL: ${new URL('../', self.location.href).href}`);
         
-        const response = await fetch(pptBackground);
+        // 尝试使用PathResolver解析路径
+        let resolvedPath = pptBackground;
+        if (!pptBackground.startsWith('http') && !pptBackground.startsWith('data:')) {
+            resolvedPath = new URL(pptBackground, new URL('../', self.location.href).href).href;
+            console.log(`[Worker] 解析后的路径: ${resolvedPath}`);
+            self.postMessage({ type: 'log', message: `🔧 路径解析: ${pptBackground} -> ${resolvedPath}` });
+        }
+        
+        const response = await fetch(resolvedPath);
         console.log(`[Worker] PPT图片响应状态: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {

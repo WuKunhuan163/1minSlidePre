@@ -1936,15 +1936,18 @@ class CameraSetupManager {
                         
                         switch (data.type) {
                             case 'countdown':
-                                percent = ((data.total - data.remaining) / data.total) * 20;
-                                status = `倒计时: ${data.remaining}秒`;
+                                // 倒计时时圆环进度不推进，保持在0%
+                                percent = 0;
+                                status = data.remaining > 0 ? `请看摄像头，${data.remaining}秒后开始录制` : '开始录制！';
                                 break;
                             case 'recording':
-                                percent = 20 + (data.progress * 0.3);
+                                // 录制5秒，推进25%
+                                percent = (data.progress * 0.25);
                                 status = `录制中: ${(data.remaining / 1000).toFixed(1)}秒剩余`;
                                 break;
                             case 'conversion':
-                                percent = 50 + (data.progress * 0.5);
+                                // 转换占剩下的75%
+                                percent = 25 + (data.progress * 0.75);
                                 status = `转换中: ${data.progress}%`;
                                 break;
                         }
@@ -1983,8 +1986,8 @@ class CameraSetupManager {
             };
         } else {
             // 需要背景合成
-            // 构建绝对URL路径
-            const backgroundImage = new URL('../../slides/Day2-1.jpg', window.location.href).href;
+            // 构建绝对URL路径 - 修复Worker中的路径解析问题
+            const backgroundImage = new URL('./assets/slides/Day2-1.jpg', window.location.href).href;
             
             // 计算合成参数
             const videoScale = this.calculateVideoScale();
