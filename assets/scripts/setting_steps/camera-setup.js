@@ -1987,7 +1987,7 @@ class CameraSetupManager {
         } else {
             // 需要背景合成
             // 构建绝对URL路径 - 修复Worker中的路径解析问题
-            const backgroundImage = new URL('./assets/slides/Day2-1.jpg', window.location.href).href;
+            const backgroundImage = new URL('./assets/images/cover.jpg', window.location.href).href;
             
             // 计算合成参数
             const videoScale = this.calculateVideoScale();

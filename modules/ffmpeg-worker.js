@@ -343,23 +343,25 @@ async function compositeVideo(data) {
         
         self.postMessage({ type: 'log', message: `📐 调整输出尺寸: ${outputSize} -> ${evenOutputSize} (确保偶数)` });
 
-        // 构建FFmpeg命令 - 修复静态背景与动态视频叠加问题
+        // 构建FFmpeg命令 - 简化版本，减少复杂性
         const command = [
             '-loop', '1',                     // 循环背景图片
             '-i', 'background.jpg',           // 背景图片
             '-i', 'input_video.webm',         // 输入视频
             '-filter_complex', 
-            `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
-            '-map', '[v]',                    // 映射合成的视频流
-            '-map', '1:a',                    // 映射原视频的音频流
+            `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[vid];[bg][vid]overlay=${overlayPosition}[out]`,
+            '-map', '[out]',                  // 映射合成的视频流
+            '-map', '1:a?',                   // 映射原视频的音频流（可选）
             '-c:v', 'libx264',                // H.264编码
-            '-preset', 'fast',                // 快速预设
-            '-crf', '23',                     // 质量设置
+            '-preset', 'ultrafast',           // 使用最快预设
+            '-crf', '28',                     // 降低质量以提高速度
             '-c:a', 'aac',                    // AAC音频
             '-b:a', '128k',                   // 音频比特率
             '-pix_fmt', 'yuv420p',           // 像素格式
+            '-shortest',                      // 使用最短输入的长度
             '-avoid_negative_ts', 'make_zero', // 避免时间戳问题
-            '-t', '30',                       // 限制最长30秒（防止卡死）
+            '-t', '10',                       // 限制最长10秒（更短，减少错误）
+            '-y',                             // 覆盖输出文件
             'output_composite.mp4'
         ];
 
@@ -389,7 +391,14 @@ async function compositeVideo(data) {
             return;
         }
         
-        await ffmpeg.exec(command);
+        try {
+            await ffmpeg.exec(command);
+            self.postMessage({ type: 'log', message: '✅ FFmpeg合成命令执行成功' });
+        } catch (execError) {
+            const execErrorMsg = execError.message || execError.toString() || '未知执行错误';
+            self.postMessage({ type: 'log', message: `❌ FFmpeg执行失败: ${execErrorMsg}` });
+            throw new Error(`FFmpeg合成执行失败: ${execErrorMsg}`);
+        }
         
         // 执行后检查
         self.postMessage({ type: 'log', message: '✅ FFmpeg命令执行完成，检查输出文件...' });
@@ -403,8 +412,18 @@ async function compositeVideo(data) {
             }
             self.postMessage({ type: 'log', message: `📤 输出文件大小: ${outputData.length} bytes` });
         } catch (fileError) {
-            self.postMessage({ type: 'log', message: `❌ 无法读取输出文件: ${fileError.message}` });
-            throw new Error(`合成失败：无法读取输出文件 - ${fileError.message}`);
+            const errorMsg = fileError.message || fileError.toString() || '未知错误';
+            self.postMessage({ type: 'log', message: `❌ 无法读取输出文件: ${errorMsg}` });
+            
+            // 尝试列出所有文件以调试
+            try {
+                const files = await ffmpeg.listDir('/');
+                self.postMessage({ type: 'log', message: `📁 FFmpeg文件系统内容: ${files.join(', ')}` });
+            } catch (listError) {
+                self.postMessage({ type: 'log', message: `❌ 无法列出文件: ${listError.message}` });
+            }
+            
+            throw new Error(`合成失败：无法读取输出文件 - ${errorMsg}`);
         }
 
         // 验证文件大小

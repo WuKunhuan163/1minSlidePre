@@ -474,22 +474,25 @@ class OptimizedFFmpegConverter {
             
             if (this.onLog) this.onLog(`📐 调整输出尺寸: ${outputSize} -> ${evenOutputSize} (确保偶数)`);
 
-            // 构建FFmpeg命令 - 修复静态背景与动态视频叠加问题
+            // 构建FFmpeg命令 - 简化版本，减少复杂性
             const command = [
                 '-loop', '1',                     // 循环背景图片
                 '-i', 'background.jpg',           // 背景图片
                 '-i', 'input_video.webm',         // 输入视频
                 '-filter_complex', 
-                `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
-                '-map', '[v]',                    // 映射合成的视频流
-                '-map', '1:a',                    // 映射原视频的音频流
+                `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[vid];[bg][vid]overlay=${overlayPosition}[out]`,
+                '-map', '[out]',                  // 映射合成的视频流
+                '-map', '1:a?',                   // 映射原视频的音频流（可选）
                 '-c:v', 'libx264',                // H.264编码
-                '-preset', 'fast',                // 快速预设
-                '-crf', '23',                     // 质量设置
+                '-preset', 'ultrafast',           // 使用最快预设
+                '-crf', '28',                     // 降低质量以提高速度
                 '-c:a', 'aac',                    // AAC音频
                 '-b:a', '128k',                   // 音频比特率
                 '-pix_fmt', 'yuv420p',           // 像素格式
-                '-t', '30',                       // 限制最长30秒（防止卡死）
+                '-shortest',                      // 使用最短输入的长度
+                '-avoid_negative_ts', 'make_zero', // 避免时间戳问题
+                '-t', '10',                       // 限制最长10秒（更短，减少错误）
+                '-y',                             // 覆盖输出文件
                 'output_composite.mp4'
             ];
 
