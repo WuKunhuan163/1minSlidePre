@@ -15,7 +15,7 @@ class AISetupManager {
         // AI测试相关变量
         this.apiTestCompleted = false;
         this.chatHistory = [];
-        this.autoTestSent = false; // 防止重复发送自动测试消息
+        this.autoTestSent = false;
         
         // 初始化步骤配置
         this.initializeSteps();
@@ -122,7 +122,7 @@ class AISetupManager {
                         show: false
                     }
                 ],
-                autoJumpCondition: () => this.apiTestCompleted,
+                autoJumpCondition: () => this.triggerAutoTest(),
                 onEnter: () => this.initializeChatTest(),
                 validation: () => this.validateApiTest()
             }
@@ -364,6 +364,7 @@ class AISetupManager {
     // 初始化聊天测试
     initializeChatTest() {
         this.apiTestCompleted = false;
+        this.autoTestSent = false; // 重置自动测试标志
         this.chatHistory = [
             {
                 role: 'assistant',
@@ -371,18 +372,27 @@ class AISetupManager {
             }
         ];
         
-        // 只在第一次初始化时发送自动测试消息
-        if (!this.autoTestSent) {
-            console.log('🤖 准备发送自动测试消息...');
-            // 延迟自动发送测试消息进行验证
-            setTimeout(() => {
-                if (!this.autoTestSent) { // 再次检查，防止竞态条件
-                    this.autoSendTestMessage();
-                }
-            }, 1000);
-        } else {
-            console.log('🤖 自动测试消息已发送过，跳过');
+        console.log('🤖 聊天测试界面已初始化，等待自动验证触发');
+    }
+
+    // 触发自动测试（用于自动跳转条件）
+    triggerAutoTest() {
+        // 如果已经完成测试，直接返回true
+        if (this.apiTestCompleted) {
+            return true;
         }
+        
+        // 如果还没有发送自动测试消息，则发送
+        if (!this.autoTestSent) {
+            console.log('🤖 自动验证条件触发，准备发送测试消息');
+            // 延迟发送，确保DOM已经渲染完成
+            setTimeout(() => {
+                this.autoSendTestMessage();
+            }, 500);
+        }
+        
+        // 返回当前测试状态
+        return this.apiTestCompleted;
     }
 
     // 自动发送测试消息进行验证
