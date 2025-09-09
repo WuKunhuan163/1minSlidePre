@@ -224,12 +224,12 @@ class SettingsStepManager {
         // 步骤状态类
         const stepClasses = [
             'setup-step',
-            isCurrentStep ? 'visible current-step' : 'pending',
+            isCurrentStep ? 'visible current-step' : '',
             isCompleted ? 'completed' : ''
         ].filter(Boolean).join(' ');
 
-        // 圆圈状态
-        const circleClass = isCompleted ? 'completed' : (isCurrentStep ? 'current' : 'pending');
+        // 圆圈状态 - 统一使用步骤状态
+        const circleClass = isCompleted ? 'completed' : (isCurrentStep ? 'current' : '');
         
         // 生成内容HTML
         const contentHtml = this.generateStepContentHtml(step);
@@ -690,7 +690,6 @@ class SettingsStepManager {
             const currentStep = this.overlay.querySelector(`#${this.settingId}-${this.steps[previousStepIndex].id}`);
             if (currentStep) {
                 currentStep.classList.remove('visible', 'current-step');
-                currentStep.classList.add('pending');
             }
         }
         
@@ -698,7 +697,6 @@ class SettingsStepManager {
         this.currentStepIndex = stepIndex;
         const targetStep = this.overlay.querySelector(`#${this.settingId}-${this.steps[stepIndex].id}`);
         if (targetStep) {
-            targetStep.classList.remove('pending');
             targetStep.classList.add('visible', 'current-step');
             
             // 自动滚动到当前步骤
@@ -766,15 +764,12 @@ class SettingsStepManager {
             stepElement.classList.toggle('completed', isCompleted);
             stepElement.classList.toggle('current-step', isCurrent);
             stepElement.classList.toggle('visible', isCurrent);
-            stepElement.classList.toggle('pending', !isCurrent);
             
-            // 为了兼容旧的CSS，也添加active类到content
-            if (contentElement) {
-                contentElement.classList.toggle('active', isCurrent);
-            }
+            // 统一使用current-step类控制交互状态
+            // 不再使用active/pending类，完全依赖current-step类
             
             // 更新圆圈状态
-            circleElement.className = `step-circle ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`;
+            circleElement.className = `step-circle ${isCompleted ? 'completed' : (isCurrent ? 'current' : '')}`;
             circleElement.innerHTML = isCompleted ? '<i class="bx bx-check"></i>' : (index + 1);
         });
     }

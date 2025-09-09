@@ -85,7 +85,9 @@ class CameraSetupManager {
                 content: {
                     description: `
                         设置演讲者的位置和大小。
-                        <br><br>
+                        <br>
+                        演讲者背后是模拟的PPT背景。
+                        <br>
                         <div class="setting-group">
                             <label for="speakerPosition">演讲者位置：</label>
                             <select id="speakerPosition" class="form-control">
@@ -171,10 +173,53 @@ class CameraSetupManager {
                     description: `
                         进行实际的录制测试，确保摄像头和演讲者模式设置正常工作。
                         <br><br>
-                        <div class="test-placeholder" style="text-align: center; padding: 40px; border: 2px dashed #ccc; border-radius: 8px; color: #666;">
-                            <i class='bx bx-video' style="font-size: 48px; margin-bottom: 16px;"></i>
-                            <h4>录制测试功能</h4>
-                            <p>此功能正在开发中...</p>
+                        <div id="recordingTestContainer" style="text-align: center; min-height: 400px;">
+                            
+                            <div id="settingsDisplay" style="
+                                background: rgba(0, 0, 0, 0.05);
+                                border-radius: 8px;
+                                padding: 0px;
+                                margin-bottom: 20px;
+                                text-align: left;
+                                font-size: 14px;
+                                line-height: 1.6;
+                            ">
+                                <div style="margin-bottom: 8px;">
+                                    <strong>演讲者位置:</strong> <span id="displaySpeakerPosition" style="font-weight: normal;">右下角</span>
+                                </div>
+                                <div style="margin-bottom: 8px;">
+                                    <strong>演讲者大小:</strong> <span id="displaySpeakerSize" style="font-weight: normal;">20%</span>
+                                </div>
+                                <div>
+                                    <strong>边界缝隙:</strong> <span id="displaySpeakerMargin" style="font-weight: normal;">2%</span>
+                                </div>
+                            </div>
+                            
+                            <div id="recordingControls" style="margin-bottom: 20px;">
+                                <button id="downloadVideoBtn" class="btn btn-success" style="
+                                    padding: 12px 24px;
+                                    font-size: 16px;
+                                    border-radius: 8px;
+                                    margin: 0 8px;
+                                    display: none;
+                                ">
+                                    <i class='bx bx-download'></i> 下载视频
+                                </button>
+                            </div>
+                            
+                            <div id="progressContainer" style="
+                                display: none;
+                                margin: 15px -15px;
+                                width: calc(100% + 35px);
+                            "></div>
+                            
+                            <div id="resultContainer" style="
+                                display: none;
+                                margin-top: 20px;
+                            ">
+                                <h5>转换结果</h5>
+                                <div id="videoPreviewContainer"></div>
+                            </div>
                         </div>
                     `
                 },
@@ -192,10 +237,10 @@ class CameraSetupManager {
                         type: 'success',
                         isPrimary: true,
                         onClick: () => this.completeSetup(),
-                        show: true
+                        show: false  // 默认隐藏，只在录制转换成功后显示
                     }
                 ],
-                autoJumpCondition: () => false, // 暂时不自动跳转
+                autoJumpCondition: () => false, // 不自动跳转
                 onEnter: () => this.initializeRecordingTest(),
                 validation: () => true
             }
@@ -394,7 +439,7 @@ class CameraSetupManager {
 
     // 初始化设备选择步骤
     initializeDeviceSelection() {
-        console.log('📹 初始化设备选择步骤...');
+        // console.log('📹 初始化设备选择步骤...');
         
         // 防止重复初始化
         if (this.isInitializing) {
@@ -409,10 +454,10 @@ class CameraSetupManager {
         
         // 只有在没有活跃预览时才停止预览
         if (!this.isPreviewActive) {
-            console.log('📹 没有活跃预览，可以安全停止');
+            // console.log('📹 没有活跃预览，可以安全停止');
             this.stopPreview();
         } else {
-            console.log('📹 有活跃预览，跳过停止预览以避免中断验证');
+            // console.log('📹 有活跃预览，跳过停止预览以避免中断验证');
         }
         
         // 重置当前会话的设备选择状态（但不清除保存的配置）
@@ -435,7 +480,7 @@ class CameraSetupManager {
         // 确保下一步按钮可用
         setTimeout(() => {
             this.stepManager.enableButton('step2', 'nextBtn');
-            console.log('📹 第二步初始化完成，下一步按钮已启用');
+            // console.log('📹 第二步初始化完成，下一步按钮已启用');
             
             // 重置初始化标志
             this.isInitializing = false;
@@ -913,10 +958,33 @@ class CameraSetupManager {
     }
 
     // 初始化录制测试步骤
-    initializeRecordingTest() {
-        // console.log('📹 初始化录制测试步骤...');
-        // 这里将来可以添加录制测试的初始化逻辑
-        // console.log('✅ 录制测试步骤已初始化（功能待开发）');
+    async initializeRecordingTest() {
+        console.log('📹 初始化录制测试步骤...');
+        
+        try {
+            // 导入必要的模块
+            if (!window.VideoConverter) {
+                const VideoConverterModule = await import('../../../modules/video-converter.js');
+                window.VideoConverter = VideoConverterModule.default;
+            }
+            
+            // 设置预览视频
+            await this.setupRecordingPreview();
+            
+            // 显示当前设定
+            this.displayCurrentSettings();
+            
+            // 设置事件监听器
+            this.setupRecordingEventListeners();
+            
+            // 立即显示进度UI
+            this.showProgressUI();
+            
+            console.log('✅ 录制测试步骤已初始化');
+            
+        } catch (error) {
+            console.error('❌ 录制测试初始化失败:', error);
+        }
     }
 
     // 预览演讲者模式
@@ -1172,7 +1240,7 @@ class CameraSetupManager {
 
     // 完成设置
     completeSetup() {
-        console.log('📹 完成摄像头设置...');
+        // console.log('📹 完成摄像头设置...');
         
         if (this.saveConfiguration()) {
             // 标记设置为已测试完成
@@ -1573,16 +1641,16 @@ class CameraSetupManager {
                 setTimeout(() => reject(new Error('视频加载超时')), 5000);
             });
             
-            console.log('📹 临时视频元素状态:', {
-                videoWidth: tempVideo.videoWidth,
-                videoHeight: tempVideo.videoHeight,
-                paused: tempVideo.paused,
-                ended: tempVideo.ended
-            });
+            // console.log('📹 临时视频元素状态:', {
+            //     videoWidth: tempVideo.videoWidth,
+            //     videoHeight: tempVideo.videoHeight,
+            //     paused: tempVideo.paused,
+            //     ended: tempVideo.ended
+            // });
             
             // 使用带进度显示的信号检测
             const hasValidStream = await this.checkVideoSignal(tempVideo, true, 'step2');
-            console.log('📹 临时视频验证结果:', hasValidStream);
+            // console.log('📹 临时视频验证结果:', hasValidStream);
             
             // 清理资源
             stream.getTracks().forEach(track => track.stop());
@@ -1726,6 +1794,338 @@ class CameraSetupManager {
         // 如果没有保存的配置，说明用户还没有完成设置
         // console.log('❌ 演讲者设置尚未完成');
         return false;
+    }
+
+    // 设置录制预览
+    async setupRecordingPreview() {
+        // 确保摄像头流可用
+        if (!this.currentStream && this.selectedDeviceId) {
+            // 重新获取摄像头流
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: this.selectedDeviceId } },
+                    audio: true
+                });
+                this.currentStream = stream;
+                this.isPreviewActive = true;
+            } catch (error) {
+                console.error('❌ 获取摄像头流失败:', error);
+                throw error;
+            }
+        }
+        
+        if (!this.currentStream) {
+            throw new Error('摄像头流不可用，请返回上一步检查摄像头设置');
+        }
+    }
+
+
+    // 显示当前设定
+    displayCurrentSettings() {
+        const displayPosition = document.getElementById('displaySpeakerPosition');
+        const displaySize = document.getElementById('displaySpeakerSize');
+        const displayMargin = document.getElementById('displaySpeakerMargin');
+        
+        if (!displayPosition || !displaySize || !displayMargin) return;
+        
+        // 获取演讲者位置的中文描述
+        const positionMap = {
+            'speaker-only': '只有演讲者',
+            'top-left': '左上角',
+            'bottom-left': '左下角',
+            'top-right': '右上角',
+            'bottom-right': '右下角',
+            'left': '左侧中央',
+            'right': '右侧中央',
+            'top': '上方中央',
+            'bottom': '下方中央'
+        };
+        
+        // 更新显示内容
+        displayPosition.textContent = positionMap[this.speakerPosition] || '右下角';
+        displaySize.textContent = Math.round(this.speakerSize * 100) + '%';
+        displayMargin.textContent = Math.round(this.speakerMargin * 100) + '%';
+    }
+
+    // 设置录制事件监听器
+    setupRecordingEventListeners() {
+        const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+        
+        if (downloadVideoBtn) {
+            downloadVideoBtn.addEventListener('click', () => this.downloadRecordedVideo());
+        }
+    }
+
+    // 显示进度UI
+    showProgressUI() {
+        const progressContainer = document.getElementById('progressContainer');
+        if (!progressContainer) return;
+        
+        // 创建临时的VideoConverter来显示进度UI
+        if (!this.progressUI) {
+            // 导入ProgressUI类
+            import('../../../modules/progress-ui.js').then(module => {
+                const ProgressUI = module.default;
+                this.progressUI = new ProgressUI({
+                    title: '视频录制与转换',
+                    showLogs: true
+                });
+                
+                // 创建并显示UI
+                this.progressUI.create(progressContainer);
+                
+                // 设置中心按钮点击事件 - 在创建后设置
+                this.progressUI.setCenterButtonClick(() => {
+                    console.log('录制按钮被点击');
+                    this.startRecordingTest();
+                });
+                
+                this.progressUI.show();
+                progressContainer.style.display = 'block';
+            });
+        }
+    }
+
+    // 开始录制测试
+    async startRecordingTest() {
+        console.log('开始录制测试...');
+        
+        const progressContainer = document.getElementById('progressContainer');
+        const resultContainer = document.getElementById('resultContainer');
+        
+        if (!this.currentStream) {
+            alert('请先确保摄像头预览正常工作');
+            return;
+        }
+        
+        try {
+            // 隐藏结果容器
+            if (resultContainer) {
+                resultContainer.style.display = 'none';
+            }
+            
+            // 获取转换选项
+            const conversionOptions = this.getConversionOptions();
+            
+            // 创建视频转换器
+            if (this.videoConverter) {
+                this.videoConverter.destroy();
+            }
+            
+            this.videoConverter = new window.VideoConverter({
+                recordingDuration: 5000, // 5秒录制
+                useWorker: true,
+                showProgress: false, // 不创建新的进度UI
+                onComplete: (result) => this.handleRecordingComplete(result),
+                onError: (error) => this.handleRecordingError(error),
+                onLog: (message) => {
+                    // 只记录重要日志到控制台，详细日志只存储在UI中
+                    if (message.includes('❌') || message.includes('✅') || message.includes('开始') || message.includes('完成')) {
+                        console.log(`[录制] ${message}`);
+                    }
+                    // 将日志添加到现有的进度UI
+                    if (this.progressUI) {
+                        this.progressUI.addLog(message);
+                    }
+                },
+                onProgress: (data) => {
+                    // 更新现有进度UI
+                    if (this.progressUI) {
+                        let percent = 0;
+                        let status = '';
+                        
+                        switch (data.type) {
+                            case 'countdown':
+                                percent = ((data.total - data.remaining) / data.total) * 20;
+                                status = `倒计时: ${data.remaining}秒`;
+                                break;
+                            case 'recording':
+                                percent = 20 + (data.progress * 0.3);
+                                status = `录制中: ${(data.remaining / 1000).toFixed(1)}秒剩余`;
+                                break;
+                            case 'conversion':
+                                percent = 50 + (data.progress * 0.5);
+                                status = `转换中: ${data.progress}%`;
+                                break;
+                        }
+                        
+                        this.progressUI.updateProgress(percent, status);
+                    }
+                }
+            });
+            
+            // 设置转换选项
+            if (conversionOptions.composite) {
+                this.videoConverter.setCompositeOptions(conversionOptions.composite);
+            } else {
+                this.videoConverter.setConversionOptions(conversionOptions.conversion);
+            }
+            
+            // 开始录制和转换
+            await this.videoConverter.startRecordingAndConversion(this.currentStream);
+            
+        } catch (error) {
+            this.handleRecordingError(error);
+        }
+    }
+
+    // 获取转换选项
+    getConversionOptions() {
+        // 根据演讲者位置判断是否需要背景合成
+        if (this.speakerPosition === 'speaker-only') {
+            // 仅演讲者模式
+            return {
+                conversion: {
+                    preset: 'fast',
+                    crf: 23,
+                    audioBitrate: '128k'
+                }
+            };
+        } else {
+            // 需要背景合成
+            // 构建绝对URL路径
+            const backgroundImage = new URL('../../slides/Day2-1.jpg', window.location.href).href;
+            
+            // 计算合成参数
+            const videoScale = this.calculateVideoScale();
+            const overlayPosition = this.calculateOverlayPosition();
+            const outputSize = '1920:1080'; // 标准1080p输出
+            
+            return {
+                composite: {
+                    pptBackground: backgroundImage,
+                    videoScale: videoScale,
+                    overlayPosition: overlayPosition,
+                    outputSize: outputSize,
+                    autoTrimStart: true
+                }
+            };
+        }
+    }
+
+    // 计算视频缩放参数
+    calculateVideoScale() {
+        const baseWidth = 1920;
+        const baseHeight = 1080;
+        
+        if (this.speakerPosition === 'speaker-only') {
+            return `${baseWidth}:${baseHeight}`;
+        }
+        
+        const speakerWidth = Math.round(baseWidth * this.speakerSize);
+        const speakerHeight = Math.round(speakerWidth * (9/16)); // 保持16:9比例
+        
+        return `${speakerWidth}:${speakerHeight}`;
+    }
+
+    // 计算叠加位置参数
+    calculateOverlayPosition() {
+        const baseWidth = 1920;
+        const baseHeight = 1080;
+        
+        if (this.speakerPosition === 'speaker-only') {
+            return '0:0';
+        }
+        
+        const speakerWidth = Math.round(baseWidth * this.speakerSize);
+        const speakerHeight = Math.round(speakerWidth * (9/16));
+        const margin = Math.round(baseWidth * this.speakerMargin);
+        
+        let x, y;
+        
+        switch (this.speakerPosition) {
+            case 'top-left':
+                x = margin;
+                y = margin;
+                break;
+                
+            case 'top-right':
+                x = baseWidth - speakerWidth - margin;
+                y = margin;
+                break;
+                
+            case 'bottom-left':
+                x = margin;
+                y = baseHeight - speakerHeight - margin;
+                break;
+                
+            case 'bottom-right':
+            default:
+                x = baseWidth - speakerWidth - margin;
+                y = baseHeight - speakerHeight - margin;
+                break;
+                
+            case 'left':
+                x = margin;
+                y = (baseHeight - speakerHeight) / 2;
+                break;
+                
+            case 'right':
+                x = baseWidth - speakerWidth - margin;
+                y = (baseHeight - speakerHeight) / 2;
+                break;
+                
+            case 'top':
+                x = (baseWidth - speakerWidth) / 2;
+                y = margin;
+                break;
+                
+            case 'bottom':
+                x = (baseWidth - speakerWidth) / 2;
+                y = baseHeight - speakerHeight - margin;
+                break;
+        }
+        
+        return `${Math.round(x)}:${Math.round(y)}`;
+    }
+
+    // 处理录制完成
+    handleRecordingComplete(result) {
+        console.log('✅ 录制和转换完成:', result);
+        
+        const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const videoPreviewContainer = document.getElementById('videoPreviewContainer');
+        
+        // 显示下载按钮
+        downloadVideoBtn.style.display = 'inline-block';
+        
+        // 显示结果
+        resultContainer.style.display = 'block';
+        
+        // 创建视频预览
+        if (this.videoConverter) {
+            const videoElement = this.videoConverter.createVideoPreview(result.convertedBlob);
+            videoElement.style.maxWidth = '100%';
+            videoElement.style.marginTop = '10px';
+            
+            videoPreviewContainer.innerHTML = '';
+            videoPreviewContainer.appendChild(videoElement);
+            
+            // 保存转换结果
+            this.recordingResult = result;
+        }
+        
+        // 显示完成设置按钮
+        if (this.stepManager && this.stepManager.currentStep === 3) { // 第四步的索引是3
+            this.stepManager.updateButtonVisibility(3, 'completeBtn', true);
+        }
+    }
+
+    // 处理录制错误
+    handleRecordingError(error) {
+        console.error('❌ 录制失败:', error);
+        
+        alert(`录制失败: ${error.message}`);
+    }
+
+    // 下载录制的视频
+    downloadRecordedVideo() {
+        if (this.videoConverter && this.recordingResult) {
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            const filename = `camera_test_${timestamp}.mp4`;
+            this.videoConverter.downloadVideo(filename);
+        }
     }
 
     // 清理资源

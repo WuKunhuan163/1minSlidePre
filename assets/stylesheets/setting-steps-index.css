@@ -98,9 +98,7 @@
     font-weight: bold;
     transition: all 0.3s;
     z-index: 2;
-}
-
-.step-circle.pending {
+    /* 默认样式（非当前、非完成状态） */
     background: #e9ecef;
     color: #6c757d;
     border: 3px solid #dee2e6;
@@ -175,10 +173,8 @@
     text-decoration: underline;
 }
 
-.step-content.active {
-    border-left-color: #666AF6;
-    background: #f0f0ff;
-}
+/* 使用统一的current-step类控制当前步骤的视觉样式 */
+/* 当前步骤的视觉样式已在 .setup-step.current-step .step-content 中定义 */
 
 .setup-step .step-content.completed {
     border-left-color: #666AF6 !important; /* 完成步骤边框改为紫色 */
@@ -643,40 +639,8 @@
 
 /* 步骤状态控制 - 参考vercel_server的实现 */
 
-/* 待处理状态 - 保持原有外观，只是不允许交互 */
-.step-content.pending {
-    opacity: 0.6;
-    pointer-events: none;
-    user-select: none;
-}
-
-/* 待处理状态的输入框保持原有样式，不改变背景色 */
-.step-content.pending input,
-.step-content.pending select,
-.step-content.pending textarea {
-    cursor: not-allowed !important;
-    pointer-events: none !important;
-    /* 明确保持原有样式 */
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: #f8f8f8 !important;
-}
-
-/* 激活状态 */
-.step-content.active {
-    opacity: 1;
-    user-select: auto;
-    pointer-events: auto;
-}
-
-.step-content.active input,
-.step-content.active select,
-.step-content.active textarea,
-.step-content.active button {
-    pointer-events: auto !important;
-    opacity: 1 !important;
-    cursor: pointer !important;
-}
+/* 已移除旧的 .step-content.pending 和 .step-content.active 规则 */
+/* 现在统一使用 .setup-step:not(.current-step) 规则控制交互状态 */
 
 /* 完成状态 - 不改变输入框样式，保持美观 */
 .step-content.completed {
