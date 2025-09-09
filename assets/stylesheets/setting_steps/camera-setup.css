@@ -119,7 +119,7 @@
 
 .setting-group label {
     display: block;
-    color: #666AF6;
+    color: #ffffff;
     font-size: 14px;
     margin-bottom: 5px;
 }
@@ -133,6 +133,11 @@
     color: white;
     font-size: 14px;
     transition: all 0.3s ease;
+}
+
+.form-control option {
+    color: white;
+    background: #222;
 }
 
 .form-control:focus {

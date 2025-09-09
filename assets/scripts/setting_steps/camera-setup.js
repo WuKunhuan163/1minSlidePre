@@ -81,7 +81,7 @@ class CameraSetupManager {
                 title: '演讲者模式设置',
                 content: {
                     description: `
-                        配置演讲者在录屏中的位置和大小。
+                        设置演讲者的位置和大小。
                         <br><br>
                         <div class="speaker-settings">
                             <div class="setting-group">
@@ -123,7 +123,6 @@ class CameraSetupManager {
                             <br>
                             <div class="preview-section">
                                 <canvas id="speakerPreviewCanvas" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"></canvas>
-                                <br><br>
                                 <button id="previewBtn" class="btn btn-secondary">预览效果</button>
                             </div>
                         </div>
@@ -175,7 +174,6 @@ class CameraSetupManager {
     generateDeviceSelectionInterface() {
         return `
             <div class="form-group" id="deviceSelectionGroup">
-                <label for="cameraDeviceSelect">选择摄像头设备：</label>
                 <select id="cameraDeviceSelect" class="form-control">
                     <option value="">选择设备...</option>
                 </select>
@@ -609,6 +607,8 @@ class CameraSetupManager {
             positionSelect.addEventListener('change', (e) => {
                 this.speakerPosition = e.target.value;
                 console.log('📹 演讲者位置更新:', this.speakerPosition);
+                // 实时更新预览
+                setTimeout(() => this.previewSpeakerMode(), 100);
             });
         }
         
@@ -617,6 +617,8 @@ class CameraSetupManager {
             sizeSelect.addEventListener('change', (e) => {
                 this.speakerSize = parseFloat(e.target.value);
                 console.log('📹 演讲者大小更新:', this.speakerSize);
+                // 实时更新预览
+                setTimeout(() => this.previewSpeakerMode(), 100);
             });
         }
         
@@ -625,6 +627,8 @@ class CameraSetupManager {
             marginSelect.addEventListener('change', (e) => {
                 this.speakerMargin = parseFloat(e.target.value);
                 console.log('📹 演讲者边距更新:', this.speakerMargin);
+                // 实时更新预览
+                setTimeout(() => this.previewSpeakerMode(), 100);
             });
         }
         
@@ -654,31 +658,35 @@ class CameraSetupManager {
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
         
-        // 绘制背景（模拟屏幕内容）
-        ctx.fillStyle = '#f0f0f0';
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        
-        // 绘制网格线（模拟PPT内容）
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < canvasWidth; i += 50) {
-            ctx.beginPath();
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, canvasHeight);
-            ctx.stroke();
-        }
-        for (let i = 0; i < canvasHeight; i += 50) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(canvasWidth, i);
-            ctx.stroke();
-        }
-        
-        // 添加文字说明
-        ctx.fillStyle = '#666';
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('屏幕录制内容', canvasWidth / 2, canvasHeight / 2);
+        // 加载背景图片
+        const backgroundImg = new Image();
+        backgroundImg.onload = () => {
+            // 绘制背景图片
+            ctx.drawImage(backgroundImg, 0, 0, canvasWidth, canvasHeight);
+            
+            // 继续绘制演讲者视频
+            this.drawSpeakerVideo(ctx, canvasWidth, canvasHeight);
+        };
+        backgroundImg.onerror = () => {
+            console.warn('⚠️ 无法加载背景图片，使用默认背景');
+            // 使用默认背景
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // 添加文字说明
+            ctx.fillStyle = '#666';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('屏幕录制内容', canvasWidth / 2, canvasHeight / 2);
+            
+            // 继续绘制演讲者视频
+            this.drawSpeakerVideo(ctx, canvasWidth, canvasHeight);
+        };
+        backgroundImg.src = 'assets/images/cover.jpg';
+    }
+
+    // 绘制演讲者视频
+    drawSpeakerVideo(ctx, canvasWidth, canvasHeight) {
         
         // 计算演讲者视频位置和大小
         const videoAspectRatio = 4 / 3; // 假设摄像头是4:3比例
@@ -737,22 +745,36 @@ class CameraSetupManager {
                 break;
         }
         
-        // 绘制演讲者视频框（模拟）
-        ctx.fillStyle = '#333';
-        ctx.fillRect(x, y, videoWidth, videoHeight);
-        
-        // 绘制摄像头图标
-        ctx.fillStyle = '#fff';
-        ctx.font = `${Math.min(videoWidth, videoHeight) * 0.3}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.fillText('📹', x + videoWidth / 2, y + videoHeight / 2 + 10);
-        
-        // 绘制边框
-        ctx.strokeStyle = '#007bff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, videoWidth, videoHeight);
-        
-        console.log('✅ 演讲者模式预览完成');
+        // 检查是否有活跃的摄像头流
+        const previewVideo = document.getElementById('cameraPreview');
+        if (this.isPreviewActive && previewVideo && previewVideo.videoWidth > 0) {
+            // 绘制真实的摄像头画面
+            ctx.drawImage(previewVideo, x, y, videoWidth, videoHeight);
+            
+            // 绘制边框
+            ctx.strokeStyle = '#28a745';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, videoWidth, videoHeight);
+            
+            console.log('✅ 演讲者模式预览完成（使用真实摄像头画面）');
+        } else {
+            // 绘制演讲者视频框（模拟）
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x, y, videoWidth, videoHeight);
+            
+            // 绘制摄像头图标
+            ctx.fillStyle = '#fff';
+            ctx.font = `${Math.min(videoWidth, videoHeight) * 0.3}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText('📹', x + videoWidth / 2, y + videoHeight / 2 + 10);
+            
+            // 绘制边框
+            ctx.strokeStyle = '#007bff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, videoWidth, videoHeight);
+            
+            console.log('✅ 演讲者模式预览完成（使用模拟画面）');
+        }
     }
 
     // 完成设置
