@@ -104,9 +104,9 @@ class SettingsManager {
         this.quickTestCache = {};
         this.quickTestCounters = {};
         this.quickTestThresholds = {
-            microphone: 1,        // 录音设备：每次都测试
-            recording: 3,         // 录音文字识别：3次后才实际测试
-            ai: 3                 // 智谱AI评分：3次后才实际测试
+            microphone: 0,        // 录音设备：每次都测试（0表示每次实际测试）
+            recording: 2,         // 录音文字识别：2次后才实际测试
+            ai: 2                 // 智谱AI评分：2次后才实际测试
         };
         
         // 初始化
@@ -160,7 +160,10 @@ class SettingsManager {
             lastUpdate: Date.now()
         };
 
-        console.log(`✅ 已加载设置状态 ${settingId}:`, this.settingsState[settingId]);
+        // 减少日志输出：只在调试模式下输出详细信息
+        if (window.DEBUG_SETTINGS) {
+            console.log(`✅ 已加载设置状态 ${settingId}:`, this.settingsState[settingId]);
+        }
     }
 
     // 加载访问过的设置记录
@@ -296,37 +299,57 @@ class SettingsManager {
 
     // 注册设置字段
     registerSettingFields(settingId, fields) {
+        console.log(`📝 registerSettingFields被调用: settingId=${settingId}`);
+        console.log(`📝 要注册的字段:`, fields);
+        
         this.registeredFields[settingId] = fields;
-        console.log(`✅ 已注册 ${settingId} 设置字段:`, fields);
+        console.log(`📝 已保存到registeredFields[${settingId}]`);
+        
+        // 减少日志输出：只在调试模式下输出详细信息
+        if (window.DEBUG_SETTINGS) {
+            console.log(`✅ 已注册 ${settingId} 设置字段:`, fields);
+        }
         
         // 立即更新UI显示
+        console.log(`📝 调用updateSettingFieldsUI更新UI`);
         this.updateSettingFieldsUI(settingId, fields);
     }
 
     // 更新设置字段UI显示
     updateSettingFieldsUI(settingId, fields) {
+        console.log(`🖼️ updateSettingFieldsUI被调用: settingId=${settingId}`);
+        console.log(`🖼️ 要更新的字段:`, fields);
+        
         const contentContainer = document.getElementById(`${settingId}Settings`);
+        console.log(`🖼️ 查找容器元素 ${settingId}Settings:`, !!contentContainer);
+        
         if (!contentContainer) {
             console.warn(`未找到设置容器: ${settingId}Settings`);
+            // 尝试查找所有可能的容器
+            const allContainers = document.querySelectorAll('[id*="Settings"]');
+            console.warn(`所有Settings容器:`, Array.from(allContainers).map(el => el.id));
             return;
         }
         
         // 清空现有内容
+        console.log(`🖼️ 清空现有内容，当前innerHTML长度: ${contentContainer.innerHTML.length}`);
         contentContainer.innerHTML = '';
         
         // 生成字段HTML
-        fields.forEach(field => {
+        console.log(`🖼️ 开始生成${fields.length}个字段的HTML`);
+        fields.forEach((field, index) => {
             const fieldHtml = this.generateFieldHtml(field);
+            console.log(`🖼️ 第${index + 1}个字段HTML:`, fieldHtml);
             contentContainer.insertAdjacentHTML('beforeend', fieldHtml);
         });
         
-        // 如果有字段内容，自动展开设置卡片
-        if (fields && fields.length > 0) {
-            contentContainer.classList.add('expanded');
-            console.log(`✅ 已展开 ${settingId} 设置卡片内容`);
-        }
+        console.log(`🖼️ 更新后的innerHTML长度: ${contentContainer.innerHTML.length}`);
+        console.log(`🖼️ 最终容器内容:`, contentContainer.innerHTML);
         
-        // console.log(`✅ 已更新 ${settingId} 设置UI显示`);
+        // 注释：expanded类现在由CSS自动管理，基于toggle状态
+        // 如果设置已配置且启用，内容会自动展开
+        
+        console.log(`✅ 已完成 ${settingId} 设置UI显示更新`);
     }
 
     // 生成单个字段的HTML
@@ -467,11 +490,9 @@ class SettingsManager {
                         toggleElement.checked = false;
                     }
                     // 建议用户重新配置
-                    this.showMessage(
-                        `${setting.name}验证失败`, 
-                        `${testResult.message}，建议重新完成设置配置。`, 
-                        'error'
-                    );
+                    if (window.showMessage) {
+                        window.showMessage(`${setting.name}验证失败: ${testResult.message}，建议重新完成设置配置。`, 'error');
+                    }
                     return;
                 }
                 
@@ -629,7 +650,10 @@ class SettingsManager {
         const card = document.getElementById(`${settingId}Card`);
         if (card) {
             card.style.display = 'block';
+            // 减少日志输出
+        if (window.DEBUG_SETTINGS) {
             console.log(`✅ 显示设置卡片: ${settingId}`);
+        }
         }
     }
 
@@ -638,18 +662,80 @@ class SettingsManager {
         const card = document.getElementById(`${settingId}Card`);
         if (card) {
             card.style.display = 'none';
+            // 减少日志输出
+        if (window.DEBUG_SETTINGS) {
             console.log(`✅ 隐藏设置卡片: ${settingId}`);
+        }
         }
     }
 
     // 进入设置页面
-    enterSetting(settingId) {
+    async enterSetting(settingId) {
         const setting = this.settings[settingId];
         
         // 滑动条类型的设置不需要进入单独页面
         if (setting.type === 'slider') {
             console.log(`🎚️ ${setting.name} 是滑动条类型，无需进入设置页面`);
             return;
+        }
+        
+        // 检查依赖设置的快速测试
+        if (setting.dependencies && setting.dependencies.length > 0) {
+            console.log(`🔄 检查 ${setting.name} 的依赖项快速测试...`);
+            
+            for (const depId of setting.dependencies) {
+                const depSetting = this.settings[depId];
+                const depState = this.settingsState[depId];
+                
+                // 检查依赖项是否已配置和启用
+                if (!depState || !depState.configured || !depState.enabled) {
+                        if (window.showMessage) {
+                            window.showMessage(`无法进入${setting.name}设置：依赖的${depSetting?.name || depId}未配置或未启用，请先完成该设置。`, 'error');
+                        }
+                    return;
+                }
+                
+                // 如果依赖项有快速测试函数，执行快速测试
+                if (this.quickTestFunctions[depId]) {
+                    console.log(`🧪 测试依赖项: ${depSetting.name}`);
+                    
+                    // 显示测试状态
+                    this.showTestingEffect(depId);
+                    
+                    const depResult = await this.performCachedTest(depId, false);
+                    
+                    // 隐藏测试状态
+                    this.hideTestingEffect(depId);
+                    
+                    if (!depResult.success) {
+                        // 更新依赖项的测试状态指示器为失败状态
+                        console.log(`🔴 依赖项${depSetting.name}测试失败，更新test-status-dot为红色`);
+                        
+                        // 如果是录音设备，进行详细的错误分析
+                        if (depId === 'microphone') {
+                            const errorType = this.analyzeErrorType(depResult.message);
+                            console.log(`📊 依赖项录音设备测试失败: ${errorType} - "${depResult.message}"`);
+                        }
+                        
+                        this.quickTestStates[depId] = 'failed';
+                        this.updateQuickTestIndicator(depId, 'failed', depResult.message);
+                        
+                        // 如果是录音设备测试失败，更新设备状态显示
+                        if (depId === 'microphone') {
+                            this.updateMicrophoneStatusAfterFailedTest(depResult.message);
+                        }
+                        
+                        if (window.showMessage) {
+                            // 优化错误信息：提取最核心的错误信息并自然语言化，去掉中间的"测试失败"
+                            let optimizedMessage = this.optimizeErrorMessage(depResult.message, depSetting.name);
+                            // 进一步简化：去掉"录音测试失败："这样的中间信息
+                            optimizedMessage = optimizedMessage.replace(/^.*测试失败[：:]\s*/, '');
+                            window.showMessage(`无法进入${setting.name}设置：${optimizedMessage}`, 'error');
+                        }
+                        return;
+                    }
+                }
+            }
         }
         
         // 标记设置为已访问
@@ -695,7 +781,10 @@ class SettingsManager {
             this.generateFieldsFromState(settingId);
         }
         
-        console.log(`✅ 已刷新 ${settingId} 设置显示`);
+        // 减少日志输出：只在调试模式下输出详细信息
+        if (window.DEBUG_SETTINGS) {
+            console.log(`✅ 已刷新 ${settingId} 设置显示`);
+        }
     }
 
     // 更新toggle状态
@@ -711,7 +800,24 @@ class SettingsManager {
             } else {
                 toggleElement.disabled = true;
             }
+            
+            // 自动管理展开状态
+            this.updateCardExpandedState(settingId, state.enabled);
         }
+    }
+
+    // 更新卡片展开状态
+    updateCardExpandedState(settingId, isToggleChecked) {
+        const card = document.getElementById(`${settingId}Card`);
+        if (!card) return;
+        
+        if (isToggleChecked) {
+            card.classList.add('toggle-checked');
+        } else {
+            card.classList.remove('toggle-checked');
+        }
+        
+        console.log(`✅ 更新 ${settingId} 卡片展开状态: ${isToggleChecked ? '展开' : '收起'}`);
     }
 
     // 刷新所有设置显示
@@ -814,6 +920,8 @@ class SettingsManager {
             
             toggleElement.addEventListener('change', (e) => {
                 this.handleToggleChange(settingId, e.target.checked);
+                // 自动管理展开状态
+                this.updateCardExpandedState(settingId, e.target.checked);
             });
         } else {
             // 装饰性toggle
@@ -841,8 +949,22 @@ class SettingsManager {
                 return;
             }
             
+            // 防止重复点击
+            if (header.dataset.clicking === 'true') {
+                console.log(`🖱️ ${this.settings[settingId].name} header点击被防抖拦截`);
+                return;
+            }
+            
+            header.dataset.clicking = 'true';
             console.log(`🖱️ ${this.settings[settingId].name} header被点击`);
-            this.enterSetting(settingId);
+            
+            // 执行进入设置的逻辑
+            this.enterSetting(settingId).finally(() => {
+                // 重置防抖标记
+                setTimeout(() => {
+                    header.dataset.clicking = 'false';
+                }, 500);
+            });
         });
     }
 
@@ -1310,9 +1432,10 @@ class SettingsManager {
                 });
                 stream.getTracks().forEach(track => track.stop());
                 
-                return { success: true, message: '录音设备测试通过' };
+                return { success: true, message: '录音测试通过' };
             } catch (error) {
-                return { success: false, message: `录音设备测试失败: ${error.message}` };
+                const optimizedMessage = this.optimizeErrorMessage(error.message, '录音');
+                return { success: false, message: optimizedMessage };
             }
         };
         
@@ -1387,11 +1510,13 @@ class SettingsManager {
     }
     
     // 保存测试缓存
-    saveTestCache() {
+    saveTestCache(silent = false) {
         try {
             localStorage.setItem('quickTestCache', JSON.stringify(this.quickTestCache));
             localStorage.setItem('quickTestCounters', JSON.stringify(this.quickTestCounters));
-            console.log('💾 已保存快速测试缓存');
+            if (!silent && window.DEBUG_SETTINGS) {
+                console.log('💾 已保存快速测试缓存');
+            }
         } catch (error) {
             console.error('❌ 保存测试缓存失败:', error);
         }
@@ -1413,7 +1538,7 @@ class SettingsManager {
         });
         
         if (cleaned) {
-            this.saveTestCache();
+            this.saveTestCache(true); // 静默保存，减少日志输出
             console.log('🧹 已清理过期的测试缓存');
         }
     }
@@ -1449,7 +1574,7 @@ class SettingsManager {
             this.quickTestCounters[settingId] = (this.quickTestCounters[settingId] || 0) + 1;
         }
         
-        this.saveTestCache();
+        this.saveTestCache(true); // 静默保存，减少日志输出
     }
     
     // 缓存测试结果
@@ -1459,7 +1584,7 @@ class SettingsManager {
             timestamp: Date.now(),
             settingName: this.settings[settingId]?.name || settingId
         };
-        this.saveTestCache();
+        this.saveTestCache(true); // 静默保存，减少日志输出
     }
     
     // 检查测试音频文件是否存在
@@ -1527,7 +1652,7 @@ class SettingsManager {
     }
     
     // 执行快速测试
-    async performQuickTest(settingId) {
+    async performQuickTest(settingId, showMessage = true) {
         const setting = this.settings[settingId];
         if (!setting || !this.quickTestFunctions[settingId]) {
             console.warn(`⚠️ 设置 ${settingId} 没有快速测试函数`);
@@ -1562,7 +1687,7 @@ class SettingsManager {
                     // 如果依赖项有快速测试函数，先测试依赖项
                     if (this.quickTestFunctions[depId]) {
                         console.log(`🧪 测试依赖项: ${depSetting.name}`);
-                        const depResult = await this.performCachedTest(depId);
+                        const depResult = await this.performCachedTest(depId, false);
                         if (!depResult.success) {
                             return { 
                                 success: false, 
@@ -1579,15 +1704,27 @@ class SettingsManager {
             
             // 更新测试状态
             this.quickTestStates[settingId] = result.success ? 'success' : 'failed';
+            
+            // 如果测试失败，进行详细的错误分析（特别是录音设备）
+            if (!result.success && settingId === 'microphone') {
+                const errorType = this.analyzeErrorType(result.message);
+                console.log(`📊 录音设备测试失败: ${errorType} - "${result.message}"`);
+            }
+            
             this.updateQuickTestIndicator(
                 settingId, 
                 result.success ? 'success' : 'failed',
                 result.message
             );
             
-            // 如果测试失败，显示错误消息
-            if (!result.success) {
-                this.showMessage(`${setting.name}快速测试失败`, result.message, 'error');
+            // 如果是录音设备测试失败，更新设备状态显示
+            if (!result.success && settingId === 'microphone') {
+                this.updateMicrophoneStatusAfterFailedTest(result.message);
+            }
+            
+            // 如果测试失败，根据参数决定是否显示错误消息
+            if (!result.success && showMessage && window.showMessage) {
+                window.showMessage(`${setting.name}快速测试失败: ${result.message}`, 'error');
             }
             
             console.log(`🧪 ${setting.name} 快速测试${result.success ? '成功' : '失败'}: ${result.message}`);
@@ -1596,13 +1733,15 @@ class SettingsManager {
             console.error(`❌ ${setting.name} 快速测试出错:`, error);
             this.quickTestStates[settingId] = 'failed';
             this.updateQuickTestIndicator(settingId, 'failed', error.message);
-            this.showMessage(`${setting.name}快速测试错误`, error.message, 'error');
+            if (showMessage && window.showMessage) {
+                window.showMessage(`${setting.name}快速测试错误: ${error.message}`, 'error');
+            }
             return { success: false, message: error.message };
         }
     }
     
     // 执行带缓存的测试
-    async performCachedTest(settingId) {
+    async performCachedTest(settingId, showMessage = true) {
         const setting = this.settings[settingId];
         const threshold = this.quickTestThresholds[settingId] || 1;
         const counter = this.quickTestCounters[settingId] || 0;
@@ -1620,7 +1759,7 @@ class SettingsManager {
             
             // 重置计数器
             this.quickTestCounters[settingId] = 0;
-            this.saveTestCache();
+            this.saveTestCache(true); // 静默保存，减少日志输出
             
             return result;
         } else {
@@ -1657,11 +1796,18 @@ class SettingsManager {
     
     // 更新快速测试指示器
     updateQuickTestIndicator(settingId, status, message = '') {
+        console.log(`🎯 updateQuickTestIndicator被调用: ${settingId}, status: ${status}, message: ${message}`);
+        
         const indicator = document.getElementById(`${settingId}QuickTestIndicator`);
         const dot = document.getElementById(`${settingId}TestDot`);
         const tooltip = document.getElementById(`${settingId}StatusTooltip`);
         
-        if (!indicator || !dot || !tooltip) return;
+        console.log(`🎯 DOM元素查找结果: indicator=${!!indicator}, dot=${!!dot}, tooltip=${!!tooltip}`);
+        
+        if (!indicator || !dot || !tooltip) {
+            console.warn(`⚠️ 找不到test-status-dot相关元素: ${settingId}QuickTestIndicator, ${settingId}TestDot, ${settingId}StatusTooltip`);
+            return;
+        }
         
         // 清除所有状态类
         indicator.className = 'quick-test-indicator';
@@ -1676,22 +1822,27 @@ class SettingsManager {
                 dot.classList.add('testing');
                 tooltip.classList.add('testing');
                 tooltip.textContent = `正在测试 ${setting.name}...`;
+                console.log(`🔵 test-status-dot更新: ${settingId} -> 测试中 (紫色)`);
                 break;
             case 'success':
                 dot.classList.add('success');
                 tooltip.classList.add('success');
                 tooltip.textContent = `${setting.name} 配置正常${message ? ' - ' + message : ''}`;
+                console.log(`🟢 test-status-dot更新: ${settingId} -> 成功 (绿色)`);
                 break;
             case 'failed':
                 dot.classList.add('failed');
                 tooltip.classList.add('failed');
                 tooltip.textContent = `${setting.name} 测试失败${message ? ' - ' + message : ''}`;
+                console.log(`🔴 test-status-dot更新: ${settingId} -> 失败 (红色)`);
+                console.log(`🔴 最终dot的className: ${dot.className}`);
                 break;
             case 'unconfigured':
             default:
                 dot.classList.add('unconfigured');
                 tooltip.classList.add('unconfigured');
                 tooltip.textContent = `${setting.name} 未配置`;
+                console.log(`⚪ test-status-dot更新: ${settingId} -> 未配置 (灰色)`);
                 break;
         }
     }
@@ -1702,6 +1853,13 @@ class SettingsManager {
         const state = this.settingsState[settingId];
         
         if (!setting || setting.type === 'slider' || !this.quickTestFunctions[settingId]) {
+            return;
+        }
+        
+        // 如果有实际的测试状态，优先使用测试状态
+        const actualTestState = this.quickTestStates[settingId];
+        if (actualTestState && actualTestState !== 'testing') {
+            // 保持实际测试结果状态
             return;
         }
         
@@ -1717,36 +1875,6 @@ class SettingsManager {
         }
     }
     
-    // 显示消息
-    showMessage(title, message, type = 'info') {
-        // 创建消息框
-        const messageBox = document.createElement('div');
-        messageBox.className = `message-box message-${type}`;
-        messageBox.innerHTML = `
-            <div class="message-header">
-                <i class="bx ${type === 'error' ? 'bx-error' : type === 'success' ? 'bx-check' : 'bx-info-circle'}"></i>
-                <h4>${title}</h4>
-                <button class="message-close" onclick="this.parentElement.parentElement.remove()">
-                    <i class="bx bx-x"></i>
-                </button>
-            </div>
-            <div class="message-content">
-                <div>${message}</div>
-            </div>
-        `;
-        
-        // 添加到页面
-        document.body.appendChild(messageBox);
-        
-        // 自动消失
-        setTimeout(() => {
-            if (messageBox.parentNode) {
-                messageBox.remove();
-            }
-        }, 5000);
-        
-        console.log(`📢 显示消息: ${title} - ${message}`);
-    }
     
     // 显示测试状态的紫色流体特效
     showTestingEffect(settingId) {
@@ -1767,7 +1895,10 @@ class SettingsManager {
         
         card.appendChild(fluidBg);
         
-        console.log(`🌊 显示 ${settingId} 测试流体特效`);
+        // 减少日志输出
+        if (window.DEBUG_SETTINGS) {
+            console.log(`🌊 显示 ${settingId} 测试流体特效`);
+        }
     }
     
     // 隐藏测试状态的紫色流体特效
@@ -1784,7 +1915,164 @@ class SettingsManager {
             fluidBg.remove();
         }
         
-        console.log(`🌊 隐藏 ${settingId} 测试流体特效`);
+        // 减少日志输出
+        if (window.DEBUG_SETTINGS) {
+            console.log(`🌊 隐藏 ${settingId} 测试流体特效`);
+        }
+    }
+
+    // 检查是否是权限错误
+    isPermissionError(errorMessage) {
+        console.log(`🔍 权限错误检测开始，原始错误信息: "${errorMessage}"`);
+        
+        const lowerMessage = errorMessage.toLowerCase();
+        
+        // 详细检测各种权限错误模式（包括中英文）
+        const permissionPatterns = [
+            'permission denied',
+            'permissiondenied', 
+            'notallowederror',
+            'not allowed',
+            'access denied',
+            'denied',
+            'permission',
+            '权限',
+            '权限被拒绝',
+            '权限未开启',
+            '麦克风权限',
+            '拒绝访问'
+        ];
+        
+        let matchedPattern = null;
+        const isPermissionError = permissionPatterns.some(pattern => {
+            if (lowerMessage.includes(pattern)) {
+                matchedPattern = pattern;
+                return true;
+            }
+            return false;
+        });
+        
+        console.log(`🔍 权限错误检测: "${errorMessage}" -> ${isPermissionError}${matchedPattern ? ` (匹配: ${matchedPattern})` : ''}`);
+        
+        return isPermissionError;
+    }
+
+    // 分析错误类型，方便将来添加更多错误处理
+    analyzeErrorType(errorMessage) {
+        const lowerMessage = errorMessage.toLowerCase();
+        
+        // 权限相关错误
+        if (this.isPermissionError(errorMessage)) {
+            return 'permission_error';
+        }
+        
+        // 设备相关错误
+        if (lowerMessage.includes('device not found') || 
+            lowerMessage.includes('notfound') ||
+            lowerMessage.includes('no device') ||
+            lowerMessage.includes('device') && lowerMessage.includes('not') && lowerMessage.includes('available')) {
+            return 'device_not_found';
+        }
+        
+        // 浏览器支持相关错误
+        if (lowerMessage.includes('not supported') || 
+            lowerMessage.includes('notsupported') ||
+            lowerMessage.includes('unsupported') ||
+            lowerMessage.includes('getusermedia') && lowerMessage.includes('not')) {
+            return 'browser_not_supported';
+        }
+        
+        // 网络相关错误
+        if (lowerMessage.includes('network') || 
+            lowerMessage.includes('timeout') ||
+            lowerMessage.includes('connection') ||
+            lowerMessage.includes('fetch')) {
+            return 'network_error';
+        }
+        
+        // 设备被占用错误
+        if (lowerMessage.includes('in use') || 
+            lowerMessage.includes('busy') ||
+            lowerMessage.includes('occupied') ||
+            lowerMessage.includes('already') && lowerMessage.includes('use')) {
+            return 'device_in_use';
+        }
+        
+        // 其他未知错误
+        console.log(`⚠️ 未识别的错误类型，原始信息: "${errorMessage}"`);
+        return 'unknown_error';
+    }
+
+    // 更新麦克风设备测试失败后的状态显示
+    updateMicrophoneStatusAfterFailedTest(errorMessage) {
+        console.log(`🔄 更新麦克风设备状态显示为失败状态`);
+        
+        // 获取当前麦克风配置
+        const config = JSON.parse(localStorage.getItem('microphoneConfig') || '{}');
+        
+        // 更新配置时间为当前时间（快测结束时间）
+        config.timestamp = Date.now();
+        console.log(`⏰ 刷新配置时间: ${new Date(config.timestamp).toLocaleString()}`);
+        
+        // 保存更新后的配置
+        localStorage.setItem('microphoneConfig', JSON.stringify(config));
+        
+        // 生成新的字段显示，设备状态为"启用失败，请重新设置"
+        const fields = [
+            {
+                name: '已选择设备',
+                value: config.selectedDeviceName || 'Unknown Device',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '设备状态',
+                value: '启用失败，请重新设置',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '配置时间',
+                value: new Date(config.timestamp).toLocaleString(),
+                type: 'text',
+                copyable: false
+            }
+        ];
+        
+        // 更新设置字段显示
+        this.registerSettingFields('microphone', fields);
+        
+        // 强制刷新设置显示
+        this.refreshSettingDisplay('microphone');
+        
+        console.log(`✅ 麦克风设备状态已更新为"启用失败，请重新设置"`);
+    }
+
+    // 优化错误信息显示
+    optimizeErrorMessage(originalMessage, settingName) {
+        // 检测最后一个冒号，只输出最后的内容
+        const parts = originalMessage.split(':');
+        let coreError = parts[parts.length - 1].trim();
+        
+        // 自然语言化常见错误
+        if (this.isPermissionError(coreError)) {
+            return `麦克风权限未开启，需要重新进行${settingName}测试`;
+        }
+        
+        if (coreError.toLowerCase().includes('not found') || coreError.toLowerCase().includes('device not found')) {
+            return `找不到录音设备，请检查设备连接`;
+        }
+        
+        if (coreError.toLowerCase().includes('not supported') || coreError.toLowerCase().includes('notsupported')) {
+            return `当前浏览器不支持录音功能`;
+        }
+        
+        if (coreError.toLowerCase().includes('network') || coreError.toLowerCase().includes('连接')) {
+            return `网络连接问题，请检查网络设置`;
+        }
+        
+        // 如果没有匹配到特定模式，返回优化后的核心错误信息
+        return `${settingName}测试失败: ${coreError}`;
     }
 
     // 生成设置标题（通用工具方法）
