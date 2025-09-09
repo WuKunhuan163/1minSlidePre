@@ -136,12 +136,22 @@ class VideoRecorder {
      */
     captureLastFrameAndHideVideo() {
         try {
+            if (this.onLog) this.onLog('📸 开始捕获最后一帧并隐藏摄像头...');
+            
             // 查找摄像头预览视频元素
             const cameraPreview = document.getElementById('cameraPreview');
             const cameraPreviewSection = document.getElementById('cameraPreviewSection');
             const speakerPreviewVideo = document.getElementById('speakerPreviewVideo');
             
-            if (cameraPreview && cameraPreview.videoWidth > 0) {
+            console.log('🔍 查找视频元素:', {
+                cameraPreview: !!cameraPreview,
+                cameraPreviewSection: !!cameraPreviewSection,
+                speakerPreviewVideo: !!speakerPreviewVideo,
+                cameraVideoWidth: cameraPreview?.videoWidth,
+                cameraVideoHeight: cameraPreview?.videoHeight
+            });
+            
+            if (cameraPreview && cameraPreview.videoWidth > 0 && cameraPreview.videoHeight > 0) {
                 // 创建canvas捕获最后一帧
                 const canvas = document.createElement('canvas');
                 canvas.width = cameraPreview.videoWidth;
@@ -152,9 +162,18 @@ class VideoRecorder {
                 // 创建静态图像元素
                 const staticImage = document.createElement('img');
                 staticImage.src = canvas.toDataURL('image/png');
-                staticImage.style.cssText = cameraPreview.style.cssText;
-                staticImage.width = cameraPreview.width;
-                staticImage.height = cameraPreview.height;
+                
+                // 设置静态图像样式，确保与原视频元素一致且不溢出
+                staticImage.style.width = cameraPreview.style.width || '400px';
+                staticImage.style.height = cameraPreview.style.height || '300px';
+                staticImage.style.maxWidth = '100%';
+                staticImage.style.maxHeight = '100%';
+                staticImage.style.objectFit = 'cover';
+                staticImage.style.borderRadius = '8px';
+                staticImage.style.border = '2px solid #333';
+                staticImage.style.background = '#000';
+                staticImage.style.display = 'block';
+                staticImage.style.margin = '0 auto';
                 staticImage.id = 'cameraStaticFrame';
                 
                 // 隐藏视频元素，显示静态图像
@@ -163,11 +182,18 @@ class VideoRecorder {
                     cameraPreviewSection.appendChild(staticImage);
                 }
                 
-                if (this.onLog) this.onLog('📸 已捕获最后一帧并隐藏摄像头');
+                if (this.onLog) this.onLog('✅ 已捕获摄像头最后一帧并隐藏视频');
+            } else {
+                if (this.onLog) this.onLog('⚠️ 摄像头预览不可用或尺寸为0');
+                // 如果无法捕获帧，至少暂停视频
+                if (cameraPreview) {
+                    cameraPreview.pause();
+                    if (this.onLog) this.onLog('⏸️ 已暂停摄像头预览');
+                }
             }
             
             // 同样处理演讲者预览视频
-            if (speakerPreviewVideo && speakerPreviewVideo.videoWidth > 0) {
+            if (speakerPreviewVideo && speakerPreviewVideo.videoWidth > 0 && speakerPreviewVideo.videoHeight > 0) {
                 const canvas = document.createElement('canvas');
                 canvas.width = speakerPreviewVideo.videoWidth;
                 canvas.height = speakerPreviewVideo.videoHeight;
@@ -176,17 +202,30 @@ class VideoRecorder {
                 
                 const staticImage = document.createElement('img');
                 staticImage.src = canvas.toDataURL('image/png');
-                staticImage.style.cssText = speakerPreviewVideo.style.cssText;
+                
+                // 设置演讲者静态图像样式，确保不溢出
+                staticImage.style.position = speakerPreviewVideo.style.position || 'absolute';
+                staticImage.style.width = speakerPreviewVideo.style.width || '100%';
+                staticImage.style.height = speakerPreviewVideo.style.height || '100%';
+                staticImage.style.left = speakerPreviewVideo.style.left || '0px';
+                staticImage.style.top = speakerPreviewVideo.style.top || '0px';
+                staticImage.style.objectFit = 'cover';
+                staticImage.style.borderRadius = '4px';
+                staticImage.style.maxWidth = '100%';
+                staticImage.style.maxHeight = '100%';
                 staticImage.id = 'speakerStaticFrame';
                 
                 speakerPreviewVideo.style.display = 'none';
-                speakerPreviewVideo.parentNode.appendChild(staticImage);
+                if (speakerPreviewVideo.parentNode) {
+                    speakerPreviewVideo.parentNode.appendChild(staticImage);
+                }
                 
-                if (this.onLog) this.onLog('📸 已捕获演讲者预览最后一帧');
+                if (this.onLog) this.onLog('✅ 已捕获演讲者预览最后一帧');
             }
             
         } catch (error) {
-            console.warn('⚠️ 捕获最后一帧失败:', error);
+            console.error('❌ 捕获最后一帧失败:', error);
+            if (this.onLog) this.onLog(`❌ 捕获最后一帧失败: ${error.message}`);
         }
     }
 
@@ -195,28 +234,39 @@ class VideoRecorder {
      */
     restoreVideoDisplay() {
         try {
+            if (this.onLog) this.onLog('🔄 开始恢复视频显示...');
+            
             // 恢复摄像头预览
             const cameraPreview = document.getElementById('cameraPreview');
             const cameraStaticFrame = document.getElementById('cameraStaticFrame');
             
-            if (cameraPreview && cameraStaticFrame) {
+            if (cameraPreview) {
                 cameraPreview.style.display = '';
+                if (this.onLog) this.onLog('✅ 已恢复摄像头预览显示');
+            }
+            
+            if (cameraStaticFrame) {
                 cameraStaticFrame.remove();
-                if (this.onLog) this.onLog('📸 已恢复摄像头显示');
+                if (this.onLog) this.onLog('🗑️ 已移除摄像头静态图像');
             }
             
             // 恢复演讲者预览
             const speakerPreviewVideo = document.getElementById('speakerPreviewVideo');
             const speakerStaticFrame = document.getElementById('speakerStaticFrame');
             
-            if (speakerPreviewVideo && speakerStaticFrame) {
+            if (speakerPreviewVideo) {
                 speakerPreviewVideo.style.display = '';
+                if (this.onLog) this.onLog('✅ 已恢复演讲者预览显示');
+            }
+            
+            if (speakerStaticFrame) {
                 speakerStaticFrame.remove();
-                if (this.onLog) this.onLog('📸 已恢复演讲者预览显示');
+                if (this.onLog) this.onLog('🗑️ 已移除演讲者静态图像');
             }
             
         } catch (error) {
-            console.warn('⚠️ 恢复视频显示失败:', error);
+            console.error('❌ 恢复视频显示失败:', error);
+            if (this.onLog) this.onLog(`❌ 恢复视频显示失败: ${error.message}`);
         }
     }
 
