@@ -61,7 +61,7 @@ class CameraSetupManager {
                         id: 'backBtn',
                         text: '上一步',
                         type: 'back',
-                        onClick: () => this.stepManager.prevStep(),
+                        onClick: () => this.stepManager.goToStep(0),
                         show: true
                     },
                     {
@@ -69,7 +69,7 @@ class CameraSetupManager {
                         text: '下一步',
                         type: 'primary',
                         isPrimary: true,
-                        onClick: () => this.stepManager.nextStep(),
+                        onClick: () => this.stepManager.goToStep(2),
                         show: false
                     }
                 ],
@@ -134,7 +134,7 @@ class CameraSetupManager {
                         id: 'prevBtn',
                         text: '上一步',
                         type: 'back',
-                        onClick: () => this.stepManager.prevStep(),
+                        onClick: () => this.stepManager.goToStep(1),
                         show: true
                     },
                     {
