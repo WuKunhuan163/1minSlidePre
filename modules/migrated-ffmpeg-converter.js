@@ -5,7 +5,6 @@
 
 // 导入FFmpeg相关模块
 import { FFmpeg } from './ffmpeg-libs/ffmpeg/ffmpeg/dist/esm/index.js';
-import { fetchFile } from './ffmpeg-libs/ffmpeg/ffmpeg/dist/esm/utils.js';
 
 class MigratedOptimizedFFmpegConverter {
     constructor(useWorker = true) {

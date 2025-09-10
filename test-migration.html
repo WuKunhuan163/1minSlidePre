@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>转换器接口对比测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .section {
+            flex: 1;
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .full-width {
+            flex: none;
+            width: 100%;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        .warning {
+            color: orange;
+        }
+        video {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 10px 0;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #007bff;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <h1>转换器接口对比测试</h1>
+    
+    <div class="section full-width">
+        <h2>摄像头预览</h2>
+        <video id="cameraPreview" autoplay muted></video>
+        <div>
+            <button onclick="startCamera()">启动摄像头</button>
+            <button onclick="stopCamera()">停止摄像头</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="section">
+            <h2>参考项目转换器</h2>
+            <button onclick="testReferenceConverter()" id="refTestBtn">测试参考项目</button>
+            <button onclick="recordAndConvertReference()" id="refRecordBtn" disabled>录制并转换</button>
+            <div class="progress">
+                <div class="progress-bar" id="refProgress" style="width: 0%"></div>
+            </div>
+            <div id="refLog" class="log">等待测试...</div>
+            <video id="refVideo" controls style="display: none;"></video>
+        </div>
+        
+        <div class="section">
+            <h2>迁移后转换器</h2>
+            <button onclick="testMigratedConverter()" id="migTestBtn">测试迁移版本</button>
+            <button onclick="recordAndConvertMigrated()" id="migRecordBtn" disabled>录制并转换</button>
+            <div class="progress">
+                <div class="progress-bar" id="migProgress" style="width: 0%"></div>
+            </div>
+            <div id="migLog" class="log">等待测试...</div>
+            <video id="migVideo" controls style="display: none;"></video>
+        </div>
+    </div>
+    
+    <div class="section full-width">
+        <h2>对比结果</h2>
+        <div id="comparisonResult" class="log">点击上方按钮进行对比测试</div>
+    </div>
+
+    <script type="module">
+        let cameraStream = null;
+        let referenceConverter = null;
+        let migratedConverter = null;
+        let comparisonResults = [];
+        
+        // 日志函数
+        function log(containerId, message, type = 'info') {
+            const logDiv = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        // 更新进度条
+        function updateProgress(progressId, percent) {
+            document.getElementById(progressId).style.width = percent + '%';
+        }
+        
+        // 启动摄像头
+        window.startCamera = async function() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 }, 
+                    audio: true 
+                });
+                document.getElementById('cameraPreview').srcObject = cameraStream;
+                
+                document.getElementById('refRecordBtn').disabled = false;
+                document.getElementById('migRecordBtn').disabled = false;
+                
+                log('refLog', '✅ 摄像头启动成功', 'success');
+                log('migLog', '✅ 摄像头启动成功', 'success');
+            } catch (error) {
+                log('refLog', `❌ 摄像头启动失败: ${error.message}`, 'error');
+                log('migLog', `❌ 摄像头启动失败: ${error.message}`, 'error');
+            }
+        };
+        
+        // 停止摄像头
+        window.stopCamera = function() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                document.getElementById('cameraPreview').srcObject = null;
+                
+                document.getElementById('refRecordBtn').disabled = true;
+                document.getElementById('migRecordBtn').disabled = true;
+                
+                log('refLog', '📹 摄像头已停止');
+                log('migLog', '📹 摄像头已停止');
+            }
+        };
+        
+        // 测试参考项目转换器
+        window.testReferenceConverter = async function() {
+            const btn = document.getElementById('refTestBtn');
+            btn.disabled = true;
+            
+            try {
+                log('refLog', '开始测试参考项目转换器...');
+                updateProgress('refProgress', 10);
+                
+                // 动态导入参考项目的转换器
+                const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4/modules/ffmpeg-converter-optimized.js');
+                log('refLog', '✅ 成功导入参考项目转换器', 'success');
+                updateProgress('refProgress', 30);
+                
+                referenceConverter = new OptimizedFFmpegConverter(false); // 使用直接模式
+                
+                referenceConverter.setLogCallback((message) => {
+                    log('refLog', `[参考转换器] ${message}`);
+                });
+                
+                referenceConverter.setProgressCallback((percent) => {
+                    updateProgress('refProgress', 30 + percent * 0.7);
+                });
+                
+                await referenceConverter.init();
+                log('refLog', '✅ 参考项目转换器初始化成功', 'success');
+                updateProgress('refProgress', 100);
+                
+                comparisonResults.push({
+                    test: '转换器初始化',
+                    reference: '成功',
+                    migrated: '待测试'
+                });
+                
+            } catch (error) {
+                log('refLog', `❌ 参考项目测试失败: ${error.message}`, 'error');
+                comparisonResults.push({
+                    test: '转换器初始化',
+                    reference: `失败: ${error.message}`,
+                    migrated: '待测试'
+                });
+            } finally {
+                btn.disabled = false;
+                updateComparisonResults();
+            }
+        };
+        
+        // 测试迁移后转换器
+        window.testMigratedConverter = async function() {
+            const btn = document.getElementById('migTestBtn');
+            btn.disabled = true;
+            
+            try {
+                log('migLog', '开始测试迁移后转换器...');
+                updateProgress('migProgress', 10);
+                
+                // 动态导入迁移后的转换器
+                const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
+                log('migLog', '✅ 成功导入迁移后转换器', 'success');
+                updateProgress('migProgress', 30);
+                
+                migratedConverter = new MigratedConverter(false); // 使用直接模式
+                
+                migratedConverter.setLogCallback((message) => {
+                    log('migLog', `[迁移转换器] ${message}`);
+                });
+                
+                migratedConverter.setProgressCallback((percent) => {
+                    updateProgress('migProgress', 30 + percent * 0.7);
+                });
+                
+                await migratedConverter.init();
+                log('migLog', '✅ 迁移后转换器初始化成功', 'success');
+                updateProgress('migProgress', 100);
+                
+                // 更新对比结果
+                const existingResult = comparisonResults.find(r => r.test === '转换器初始化');
+                if (existingResult) {
+                    existingResult.migrated = '成功';
+                } else {
+                    comparisonResults.push({
+                        test: '转换器初始化',
+                        reference: '待测试',
+                        migrated: '成功'
+                    });
+                }
+                
+            } catch (error) {
+                log('migLog', `❌ 迁移后测试失败: ${error.message}`, 'error');
+                const existingResult = comparisonResults.find(r => r.test === '转换器初始化');
+                if (existingResult) {
+                    existingResult.migrated = `失败: ${error.message}`;
+                } else {
+                    comparisonResults.push({
+                        test: '转换器初始化',
+                        reference: '待测试',
+                        migrated: `失败: ${error.message}`
+                    });
+                }
+            } finally {
+                btn.disabled = false;
+                updateComparisonResults();
+            }
+        };
+        
+        // 录制并转换 - 参考项目
+        window.recordAndConvertReference = async function() {
+            if (!cameraStream || !referenceConverter) {
+                log('refLog', '❌ 请先启动摄像头并初始化转换器', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('refRecordBtn');
+            btn.disabled = true;
+            
+            try {
+                log('refLog', '📹 开始录制 3 秒...');
+                updateProgress('refProgress', 0);
+                
+                const mediaRecorder = new MediaRecorder(cameraStream, {
+                    mimeType: 'video/webm;codecs=vp9'
+                });
+                
+                const chunks = [];
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        chunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    try {
+                        updateProgress('refProgress', 20);
+                        const webmBlob = new Blob(chunks, { type: 'video/webm' });
+                        log('refLog', `📹 录制完成，文件大小: ${(webmBlob.size/1024/1024).toFixed(2)}MB`);
+                        
+                        log('refLog', '🔄 开始转换...');
+                        updateProgress('refProgress', 30);
+                        
+                        const startTime = Date.now();
+                        const mp4Blob = await referenceConverter.convertWebMToMP4(webmBlob);
+                        const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                        
+                        log('refLog', `✅ 转换完成！耗时 ${convertTime} 秒，输出大小: ${(mp4Blob.size/1024/1024).toFixed(2)}MB`, 'success');
+                        updateProgress('refProgress', 100);
+                        
+                        // 显示转换后的视频
+                        const refVideo = document.getElementById('refVideo');
+                        refVideo.src = URL.createObjectURL(mp4Blob);
+                        refVideo.style.display = 'block';
+                        
+                        comparisonResults.push({
+                            test: '录制转换测试',
+                            reference: `成功 (${convertTime}s, ${(mp4Blob.size/1024/1024).toFixed(2)}MB)`,
+                            migrated: '待测试'
+                        });
+                        
+                    } catch (error) {
+                        log('refLog', `❌ 转换失败: ${error.message}`, 'error');
+                        comparisonResults.push({
+                            test: '录制转换测试',
+                            reference: `失败: ${error.message}`,
+                            migrated: '待测试'
+                        });
+                    }
+                    updateComparisonResults();
+                };
+                
+                mediaRecorder.start();
+                
+                // 3秒后停止录制
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, 3000);
+                
+            } catch (error) {
+                log('refLog', `❌ 录制失败: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+        
+        // 录制并转换 - 迁移版本
+        window.recordAndConvertMigrated = async function() {
+            if (!cameraStream || !migratedConverter) {
+                log('migLog', '❌ 请先启动摄像头并初始化转换器', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('migRecordBtn');
+            btn.disabled = true;
+            
+            try {
+                log('migLog', '📹 开始录制 3 秒...');
+                updateProgress('migProgress', 0);
+                
+                const mediaRecorder = new MediaRecorder(cameraStream, {
+                    mimeType: 'video/webm;codecs=vp9'
+                });
+                
+                const chunks = [];
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        chunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    try {
+                        updateProgress('migProgress', 20);
+                        const webmBlob = new Blob(chunks, { type: 'video/webm' });
+                        log('migLog', `📹 录制完成，文件大小: ${(webmBlob.size/1024/1024).toFixed(2)}MB`);
+                        
+                        log('migLog', '🔄 开始转换...');
+                        updateProgress('migProgress', 30);
+                        
+                        const startTime = Date.now();
+                        const mp4Blob = await migratedConverter.convertWebMToMP4(webmBlob);
+                        const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                        
+                        log('migLog', `✅ 转换完成！耗时 ${convertTime} 秒，输出大小: ${(mp4Blob.size/1024/1024).toFixed(2)}MB`, 'success');
+                        updateProgress('migProgress', 100);
+                        
+                        // 显示转换后的视频
+                        const migVideo = document.getElementById('migVideo');
+                        migVideo.src = URL.createObjectURL(mp4Blob);
+                        migVideo.style.display = 'block';
+                        
+                        // 更新对比结果
+                        const existingResult = comparisonResults.find(r => r.test === '录制转换测试');
+                        if (existingResult) {
+                            existingResult.migrated = `成功 (${convertTime}s, ${(mp4Blob.size/1024/1024).toFixed(2)}MB)`;
+                        } else {
+                            comparisonResults.push({
+                                test: '录制转换测试',
+                                reference: '待测试',
+                                migrated: `成功 (${convertTime}s, ${(mp4Blob.size/1024/1024).toFixed(2)}MB)`
+                            });
+                        }
+                        
+                    } catch (error) {
+                        log('migLog', `❌ 转换失败: ${error.message}`, 'error');
+                        const existingResult = comparisonResults.find(r => r.test === '录制转换测试');
+                        if (existingResult) {
+                            existingResult.migrated = `失败: ${error.message}`;
+                        } else {
+                            comparisonResults.push({
+                                test: '录制转换测试',
+                                reference: '待测试',
+                                migrated: `失败: ${error.message}`
+                            });
+                        }
+                    }
+                    updateComparisonResults();
+                };
+                
+                mediaRecorder.start();
+                
+                // 3秒后停止录制
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, 3000);
+                
+            } catch (error) {
+                log('migLog', `❌ 录制失败: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+        
+        // 更新对比结果
+        function updateComparisonResults() {
+            const resultsDiv = document.getElementById('comparisonResult');
+            
+            let html = '<h3>接口对比结果</h3>';
+            html += '<table border="1" style="width: 100%; border-collapse: collapse;">';
+            html += '<tr><th>测试项目</th><th>参考项目</th><th>迁移版本</th><th>对比结果</th></tr>';
+            
+            comparisonResults.forEach(result => {
+                const refSuccess = result.reference.includes('成功');
+                const migSuccess = result.migrated.includes('成功');
+                
+                let comparison = '';
+                if (refSuccess && migSuccess) {
+                    comparison = '<span class="success">✅ 都成功</span>';
+                } else if (refSuccess && !migSuccess) {
+                    comparison = '<span class="error">❌ 迁移版本失败</span>';
+                } else if (!refSuccess && migSuccess) {
+                    comparison = '<span class="warning">⚠️ 参考项目失败</span>';
+                } else {
+                    comparison = '<span class="error">❌ 都失败</span>';
+                }
+                
+                html += `<tr>
+                    <td>${result.test}</td>
+                    <td>${result.reference}</td>
+                    <td>${result.migrated}</td>
+                    <td>${comparison}</td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            resultsDiv.innerHTML = html;
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('refLog', '页面加载完成，准备开始测试...');
+            log('migLog', '页面加载完成，准备开始测试...');
+        });
+    </script>
+</body>
+</html>
