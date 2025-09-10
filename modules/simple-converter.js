@@ -9,12 +9,18 @@ class SimpleConverter {
     constructor() {
         this.converter = null;
         this.isInitialized = false;
+        this.progressUI = null;  // 添加progressUI引用
         
         // 回调函数
         this.onLog = null;
         this.onProgress = null;
         this.onComplete = null;
         this.onError = null;
+    }
+    
+    // 设置progressUI引用
+    setProgressUI(progressUI) {
+        this.progressUI = progressUI;
     }
 
     // 初始化
@@ -38,6 +44,11 @@ class SimpleConverter {
                 }
             });
             
+            // 传递progressUI引用
+            if (this.progressUI) {
+                this.converter.setProgressUI(this.progressUI);
+            }
+            
             // 初始化转换器
             await this.converter.init();
             
@@ -57,13 +68,14 @@ class SimpleConverter {
         }
 
         try {
-            if (this.onLog) this.onLog('开始转换 WebM 到 MP4...');
+            // 直接使用progressUI记录日志
+            if (this.progressUI) this.progressUI.addLog('开始转换 WebM 到 MP4...');
             
             const startTime = Date.now();
             const fileSizeMB = (webmBlob.size / 1024 / 1024).toFixed(2);
             
             // 记录文件信息
-            if (this.onLog) this.onLog(`📊 [文件信息] 大小: ${fileSizeMB}MB`);
+            if (this.progressUI) this.progressUI.addLog(`📊 [文件信息] 大小: ${fileSizeMB}MB`);
             
             // 使用工作版本的转换器进行转换
             const mp4Blob = await this.converter.convertWebMToMP4(webmBlob, {

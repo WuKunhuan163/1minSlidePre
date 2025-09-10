@@ -1931,6 +1931,7 @@ class CameraSetupManager {
             this.videoController.setCallbacks({
                 onComplete: (result) => this.handleRecordingComplete(result),
                 onError: (error) => this.handleRecordingError(error),
+                progressUI: this.progressUI,  // 直接传递progressUI引用
                 onLog: (message) => {
                     // 检查FFmpeg转换进度
                     if (message.includes('time=') && message.includes('fps=')) {

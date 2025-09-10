@@ -320,6 +320,11 @@ class SimpleVideoController {
         if (callbacks.onProgress) this.onProgress = callbacks.onProgress;
         if (callbacks.onComplete) this.onComplete = callbacks.onComplete;
         if (callbacks.onError) this.onError = callbacks.onError;
+        if (callbacks.progressUI) {
+            this.progressUI = callbacks.progressUI;
+            // 将progressUI传递给转换器
+            this.converter.setProgressUI(callbacks.progressUI);
+        }
     }
 }
 

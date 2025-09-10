@@ -14,11 +14,17 @@ class OptimizedFFmpegConverter {
         this.isLoaded = false;
         this.onProgress = null;
         this.onLog = null;
+        this.progressUI = null;      // 添加progressUI引用
         this.conversionPromise = null;
         this.memoryPool = new Map(); // 内存池用于重用ArrayBuffer
         this.maxPoolSize = 5;        // 最大缓存数量
         this.isCancelled = false;    // 取消标志
         this.currentReject = null;   // 当前Promise的reject函数
+    }
+    
+    // 设置progressUI引用
+    setProgressUI(progressUI) {
+        this.progressUI = progressUI;
     }
 
     // 初始化转换器
@@ -180,10 +186,12 @@ class OptimizedFFmpegConverter {
         if (!options.preset && !options.crf) {
             const optimalSettings = this.getOptimalSettings(webmBlob.size);
             options = { ...optimalSettings, ...options, fastMode: false }; // 强制关闭快速复制
-            if (this.onLog) {
-                this.onLog(`🔧 [智能参数选择] ${optimalSettings.priority}模式`);
-                this.onLog(`📊 [转换参数] preset=${optimalSettings.preset}, crf=${optimalSettings.crf}, audioBitrate=${optimalSettings.audioBitrate}`);
-                this.onLog(`📁 [文件信息] 大小=${(webmBlob.size/1024/1024).toFixed(2)}MB`);
+            
+            // 直接使用progressUI记录参数信息
+            if (this.progressUI) {
+                this.progressUI.addLog(`🔧 [智能参数选择] ${optimalSettings.priority}模式`);
+                this.progressUI.addLog(`📊 [转换参数] preset=${optimalSettings.preset}, crf=${optimalSettings.crf}, audioBitrate=${optimalSettings.audioBitrate}`);
+                this.progressUI.addLog(`📁 [文件信息] 大小=${(webmBlob.size/1024/1024).toFixed(2)}MB`);
             }
         }
 
@@ -306,10 +314,14 @@ class OptimizedFFmpegConverter {
             ]);
 
             // 记录完整的FFmpeg命令
-            if (this.onLog) this.onLog(`🔧 [FFmpeg命令] ${command.join(' ')}`);
+            if (this.progressUI) {
+                this.progressUI.addLog(`🔧 [FFmpeg命令] ${command.join(' ')}`);
+            }
             
             await this.ffmpeg.exec(command);
-            if (this.onLog) this.onLog('H.264/AAC重编码完成');
+            if (this.progressUI) {
+                this.progressUI.addLog('H.264/AAC重编码完成');
+            }
 
             const data = await this.ffmpeg.readFile('output.mp4');
             const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
