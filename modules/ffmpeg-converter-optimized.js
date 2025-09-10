@@ -129,13 +129,13 @@ class OptimizedFFmpegConverter {
     getOptimalSettings(fileSize, duration = 5) {
         const fileSizeMB = fileSize / (1024 * 1024);
         
-        // 根据文件大小和时长智能选择参数 - 极速模式（优化版）
+        // 根据文件大小和时长智能选择参数 - 极速模式（激进优化）
         if (fileSizeMB < 1) {
-            // 小文件：极速模式
+            // 小文件：极速模式 - 参考对比项目设置
             return {
                 preset: 'ultrafast',
-                crf: 35,                // 优化：提高质量但保持高速
-                audioBitrate: '32k',    // 优化：提高音频质量
+                crf: 38,                // 极低质量，极高速度（对比项目设置）
+                audioBitrate: '24k',    // 极低音频比特率（对比项目设置）
                 fastMode: true,
                 priority: 'speed'
             };
@@ -143,7 +143,7 @@ class OptimizedFFmpegConverter {
             // 中等文件：高速模式
             return {
                 preset: 'ultrafast',
-                crf: 32,                // 优化：稍好质量
+                crf: 35,                // 参考对比项目设置
                 audioBitrate: '32k',
                 fastMode: true,
                 priority: 'speed'
@@ -152,7 +152,7 @@ class OptimizedFFmpegConverter {
             // 大文件：快速模式
             return {
                 preset: 'ultrafast',
-                crf: 30,                // 优化：平衡质量和速度
+                crf: 32,                // 仍然激进的设置
                 audioBitrate: '48k',
                 fastMode: true,
                 priority: 'speed'

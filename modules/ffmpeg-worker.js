@@ -105,6 +105,10 @@ async function convertVideo(data) {
 
     try {
         self.postMessage({ type: 'log', message: '开始转换 WebM 到 MP4...' });
+        
+        // 详细记录转换参数
+        self.postMessage({ type: 'log', message: `🔧 [转换参数] preset=${preset}, crf=${crf}, audioBitrate=${audioBitrate}, fastMode=${fastMode}` });
+        self.postMessage({ type: 'log', message: `📊 [文件信息] 输入大小=${webmBuffer.byteLength} bytes (${(webmBuffer.byteLength/1024/1024).toFixed(2)}MB)` });
 
         // 检查是否被取消
         if (isCancelled) {
@@ -122,18 +126,24 @@ async function convertVideo(data) {
         command = command.concat([
             '-c:v', 'libx264',
             '-preset', preset,           // 使用ultrafast
+            '-tune', 'zerolatency',      // 恢复：零延迟调优
             '-crf', crf.toString(),      // 质量设置
             '-pix_fmt', 'yuv420p',
             '-profile:v', 'baseline',
             '-level:v', '3.0',
-            // 优化：简化参数，移除复杂的x264设置
-            '-g', '60',                  // 优化：更大的GOP提升速度
+            // 恢复对比项目的高效x264参数
+            '-r', '30',                  // 强制输出帧率为30fps
+            '-vsync', 'cfr',             // 恒定帧率，避免重复帧
+            '-fps_mode', 'cfr',          // 确保恒定帧率模式
+            '-x264-params', 'ref=1:me=dia:subme=1:mixed-refs=0:trellis=0:weightp=0:weightb=0:8x8dct=0:fast-pskip=1',
+            '-g', '30',                  // GOP大小
             '-bf', '0',                  // 禁用B帧
+            '-sc_threshold', '40',       // 场景切换检测阈值
             // 音频设置
             '-c:a', 'aac',
             '-b:a', audioBitrate,
             '-ac', '1',                  // 单声道
-            '-ar', '22050',              // 优化：提高采样率平衡质量
+            '-ar', '16000',              // 16kHz采样率（对比项目设置）
             '-movflags', '+faststart',
             '-threads', '0',
             '-avoid_negative_ts', 'make_zero', // 修复时间戳问题
@@ -145,6 +155,9 @@ async function convertVideo(data) {
         if (isCancelled) {
             throw new Error('转换已被用户取消');
         }
+
+        // 记录完整的FFmpeg命令
+        self.postMessage({ type: 'log', message: `🔧 [FFmpeg命令] ${command.join(' ')}` });
 
         // 执行转换
         await ffmpeg.exec(command);

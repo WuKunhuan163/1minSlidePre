@@ -1953,7 +1953,7 @@ class CameraSetupManager {
                     
                     // 将日志添加到现有的进度UI
                     if (this.progressUI) {
-                        this.progressUI.addLog(message);
+                        // this.progressUI.addLog(message);
                     }
                 },
                 onProgress: (data) => {
