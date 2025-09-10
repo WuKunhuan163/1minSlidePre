@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迁移后转换器测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>迁移后转换器测试</h1>
+    
+    <div class="section">
+        <h2>转换器初始化测试</h2>
+        <button onclick="testConverterInit()">测试转换器初始化</button>
+        <button onclick="testConverterMethods()">测试转换器方法</button>
+        <button onclick="clearLog()">清除日志</button>
+        <div id="testLog" class="log">等待测试...</div>
+    </div>
+    
+    <div class="section">
+        <h2>测试结果</h2>
+        <div id="testResults" class="log">测试结果将显示在这里</div>
+    </div>
+
+    <script type="module">
+        let testResults = [];
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : '';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateResults() {
+            const resultsDiv = document.getElementById('testResults');
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+            
+            let html = `<div><strong>测试结果: ${passed}/${total} 通过</strong></div>`;
+            testResults.forEach(result => {
+                const status = result.passed ? '✅' : '❌';
+                const className = result.passed ? 'success' : 'error';
+                html += `<div class="${className}">${status} ${result.name}: ${result.message}</div>`;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function addResult(name, passed, message) {
+            testResults.push({ name, passed, message });
+            updateResults();
+        }
+        
+        window.clearLog = function() {
+            document.getElementById('testLog').innerHTML = '';
+            testResults = [];
+            updateResults();
+        };
+        
+        // 测试转换器初始化
+        window.testConverterInit = async function() {
+            log('开始测试转换器初始化...');
+            
+            try {
+                // 测试模块导入
+                log('测试模块导入...');
+                const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
+                log('✅ 模块导入成功', 'success');
+                addResult('模块导入', true, '成功导入MigratedOptimizedFFmpegConverter');
+                
+                // 测试实例化
+                log('测试实例化...');
+                const converter = new MigratedConverter(false); // 使用直接模式避免Worker复杂性
+                log('✅ 实例化成功', 'success');
+                addResult('实例化', true, '成功创建转换器实例');
+                
+                // 测试方法存在性
+                log('检查关键方法...');
+                const requiredMethods = ['init', 'convertWebMToMP4', 'setLogCallback', 'setProgressCallback', 'destroy'];
+                let methodsOk = true;
+                
+                for (const method of requiredMethods) {
+                    if (typeof converter[method] === 'function') {
+                        log(`✅ 方法 ${method} 存在`, 'success');
+                    } else {
+                        log(`❌ 方法 ${method} 不存在`, 'error');
+                        methodsOk = false;
+                    }
+                }
+                
+                addResult('方法检查', methodsOk, methodsOk ? '所有必需方法都存在' : '部分方法缺失');
+                
+                // 测试初始化
+                log('测试转换器初始化...');
+                converter.setLogCallback((message) => {
+                    log(`[转换器] ${message}`);
+                });
+                
+                await converter.init();
+                log('✅ 转换器初始化成功', 'success');
+                addResult('初始化', true, '转换器成功初始化');
+                
+                // 测试状态检查
+                if (converter.isReady()) {
+                    log('✅ 转换器状态正常', 'success');
+                    addResult('状态检查', true, '转换器处于就绪状态');
+                } else {
+                    log('❌ 转换器状态异常', 'error');
+                    addResult('状态检查', false, '转换器未处于就绪状态');
+                }
+                
+                // 清理
+                converter.destroy();
+                log('🧹 转换器已清理');
+                
+            } catch (error) {
+                log(`❌ 测试失败: ${error.message}`, 'error');
+                addResult('初始化测试', false, `失败: ${error.message}`);
+            }
+        };
+        
+        // 测试转换器方法
+        window.testConverterMethods = async function() {
+            log('开始测试转换器方法...');
+            
+            try {
+                const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
+                const converter = new MigratedConverter(false);
+                
+                converter.setLogCallback((message) => {
+                    log(`[转换器] ${message}`);
+                });
+                
+                converter.setProgressCallback((percent) => {
+                    log(`[进度] ${percent}%`);
+                });
+                
+                await converter.init();
+                
+                // 测试getInfo方法
+                log('测试getInfo方法...');
+                const info = converter.getInfo();
+                log(`转换器信息: ${JSON.stringify(info)}`);
+                addResult('getInfo方法', true, '成功获取转换器信息');
+                
+                // 测试getOptimalSettings方法
+                log('测试getOptimalSettings方法...');
+                const settings = converter.getOptimalSettings(1024 * 1024); // 1MB
+                log(`最优设置: ${JSON.stringify(settings)}`);
+                addResult('getOptimalSettings方法', true, '成功获取最优设置');
+                
+                // 创建模拟WebM blob进行转换测试（不执行实际转换）
+                log('创建模拟WebM数据...');
+                const mockWebmBlob = new Blob(['mock webm data'], { type: 'video/webm' });
+                log('✅ 模拟数据创建成功', 'success');
+                
+                // 注意：这里不执行实际转换，因为需要真实的WebM数据
+                log('⚠️ 跳过实际转换测试（需要真实WebM数据）');
+                addResult('模拟数据创建', true, '成功创建模拟WebM数据');
+                
+                converter.destroy();
+                log('✅ 方法测试完成', 'success');
+                
+            } catch (error) {
+                log(`❌ 方法测试失败: ${error.message}`, 'error');
+                addResult('方法测试', false, `失败: ${error.message}`);
+            }
+        };
+        
+        // 页面加载完成后自动运行基础测试
+        document.addEventListener('DOMContentLoaded', () => {
+            log('页面加载完成，准备开始测试...');
+            log('点击上方按钮开始测试转换器功能');
+        });
+    </script>
+</body>
+</html>

@@ -969,11 +969,11 @@ class CameraSetupManager {
         console.log('📹 初始化录制测试步骤...');
         
         try {
-            // 导入简化的视频控制器（替换复杂的VideoConverter）
-            if (!window.SimpleVideoController) {
-                const SimpleVideoControllerModule = await import('../../../modules/simple-controller.js');
-                window.SimpleVideoController = SimpleVideoControllerModule.default;
-                console.log('✅ 简化视频控制器已加载');
+            // 导入迁移后的转换器
+            if (!window.MigratedOptimizedFFmpegConverter) {
+                const ConverterModule = await import('../../../modules/migrated-ffmpeg-converter.js');
+                window.MigratedOptimizedFFmpegConverter = ConverterModule.default;
+                console.log('✅ 迁移后的转换器已加载');
             }
             
             // 设置预览视频
@@ -1918,68 +1918,145 @@ class CameraSetupManager {
             
             // 获取转换选项
             const conversionOptions = this.getConversionOptions();
-            
-            // 创建简化的视频控制器（替换复杂的VideoConverter）
-            if (this.videoController) {
-                this.videoController.destroy();
-            }
-            
             const videoElement = document.getElementById('testVideoPreview');
-            this.videoController = new window.SimpleVideoController();
             
-            // 设置回调函数
+            // 创建新的简化视频控制器
+            this.videoController = {
+                converter: null,
+                mediaRecorder: null,
+                recordedChunks: [],
+                isRecording: false,
+                currentStream: null,
+                lastConvertedBlob: null,
+                progressUI: null,
+                
+                async init(stream) {
+                    console.log('🔧 初始化简化视频控制器...');
+                    this.currentStream = stream;
+                    this.converter = new window.MigratedOptimizedFFmpegConverter(false);
+                    
+                    this.converter.setLogCallback((message) => {
+                        console.log(`[转换器] ${message}`);
+                        if (this.progressUI) {
+                            this.progressUI.addLog(message);
+                        }
+                    });
+                    
+                    this.converter.setProgressCallback((percent) => {
+                        console.log(`转换进度: ${percent}%`);
+                        if (this.progressUI) {
+                            this.progressUI.updateProgress(25 + percent * 0.75, `转换中... ${percent}%`);
+                        }
+                    });
+                    
+                    await this.converter.init();
+                    console.log('✅ 转换器初始化完成');
+                },
+                
+                startRecording(duration = 5) {
+                    console.log(`📹 开始录制 ${duration} 秒...`);
+                    this.isRecording = true;
+                    this.recordedChunks = [];
+                    
+                    if (this.progressUI) {
+                        this.progressUI.updateProgress(10, '开始录制...');
+                    }
+                    
+                    this.mediaRecorder = new MediaRecorder(this.currentStream, {
+                        mimeType: 'video/webm;codecs=vp9'
+                    });
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.recordedChunks.push(event.data);
+                        }
+                    };
+                    
+                    this.mediaRecorder.onstop = async () => {
+                        console.log('📹 录制停止，开始转换...');
+                        const webmBlob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                        
+                        try {
+                            if (this.progressUI) {
+                                this.progressUI.updateProgress(25, '开始转换...');
+                            }
+                            
+                            const mp4Blob = await this.converter.convertWebMToMP4(webmBlob);
+                            this.lastConvertedBlob = mp4Blob;
+                            
+                            if (this.progressUI) {
+                                this.progressUI.updateProgress(100, '录制和转换完成！');
+                            }
+                            
+                            if (this.onComplete) {
+                                this.onComplete({
+                                    success: true,
+                                    blob: mp4Blob,
+                                    message: '录制和转换完成'
+                                });
+                            }
+                        } catch (error) {
+                            console.error('转换失败:', error);
+                            if (this.onError) {
+                                this.onError(error);
+                            }
+                        }
+                    };
+                    
+                    this.mediaRecorder.start();
+                    
+                    setTimeout(() => {
+                        if (this.isRecording && this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                            this.mediaRecorder.stop();
+                            this.isRecording = false;
+                            
+                            if (this.progressUI) {
+                                this.progressUI.updateProgress(20, '录制完成，准备转换...');
+                            }
+                        }
+                    }, duration * 1000);
+                },
+                
+                setCallbacks(callbacks) {
+                    this.onComplete = callbacks.onComplete;
+                    this.onError = callbacks.onError;
+                    this.progressUI = callbacks.progressUI;
+                },
+                
+                getRecordingDuration() {
+                    return 5;
+                },
+                
+                downloadVideo(filename) {
+                    if (this.lastConvertedBlob) {
+                        const url = URL.createObjectURL(this.lastConvertedBlob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                },
+                
+                destroy() {
+                    if (this.converter) {
+                        this.converter.destroy();
+                    }
+                    if (this.mediaRecorder) {
+                        this.mediaRecorder = null;
+                    }
+                    this.recordedChunks = [];
+                    this.isRecording = false;
+                }
+            };
+            
             this.videoController.setCallbacks({
                 onComplete: (result) => this.handleRecordingComplete(result),
                 onError: (error) => this.handleRecordingError(error),
-                progressUI: this.progressUI,  // 直接传递progressUI引用
-                onLog: (message) => {
-                    // 检查FFmpeg转换进度
-                    if (message.includes('time=') && message.includes('fps=')) {
-                        const timeMatch = message.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/);
-                        if (timeMatch) {
-                            const hours = parseInt(timeMatch[1]);
-                            const minutes = parseInt(timeMatch[2]);
-                            const seconds = parseInt(timeMatch[3]);
-                            const centiseconds = parseInt(timeMatch[4]);
-                            const currentTime = hours * 3600 + minutes * 60 + seconds + centiseconds / 100;
-                            
-                            // 获取实际录制时长
-                            const totalDuration = this.videoController.getRecordingDuration();
-                            const conversionProgress = Math.min(currentTime / totalDuration, 1); // 限制在0-1之间
-                            const totalProgress = 25 + 75 * conversionProgress; // 25% + 75% * x
-                            
-                            this.progressUI.updateProgress(Math.round(totalProgress * 10) / 10, `转换中... ${Math.round(conversionProgress * 100)}%`);
-                        }
-                    }
-                    
-                    // 将日志添加到现有的进度UI
-                    if (this.progressUI) {
-                        // this.progressUI.addLog(message);
-                    }
-                },
-                onProgress: (data) => {
-                    // 更新现有进度UI（适配SimpleVideoController格式）
-                    if (this.progressUI) {
-                        let percent = 0;
-                        let status = '';
-                        
-                        switch (data.type) {
-                            case 'recording':
-                                // 录制占100%（简化版本）
-                                percent = (data.seconds / 5) * 100; // 5秒录制
-                                status = `录制中: ${data.seconds}秒`;
-                                break;
-                            case 'conversion':
-                                // 转换
-                                percent = data.percent || 0;
-                                status = `转换中: ${percent}%`;
-                                break;
-                        }
-                        
-                        this.progressUI.updateProgress(percent, status);
-                    }
-                }
+                progressUI: this.progressUI
             });
+            
+            console.log('✅ 简化视频控制器已创建');
             
             // 3秒倒计时开始录制（进度保持0）
             console.log('⏰ 开始3秒倒计时...');
@@ -2035,23 +2112,23 @@ class CameraSetupManager {
                     
                     console.log('📊 当前演讲者位置:', this.speakerPosition);
                     console.log('📊 转换选项:', conversionOptions);
+                    console.log('🎭 开始演讲者模式合成...');
                     // 不在这里更新进度，让FFmpeg日志处理来动态更新
                     
-                    if (conversionOptions.composite) {
-                        console.log('🎭 开始演讲者模式合成...');
-                        await this.videoController.compositeVideoWithBackground(conversionOptions.composite);
-                    } else {
-                        console.log('🔄 开始标准转换...');
-                        await this.videoController.startConversion();
-                    }
+                    // 转换功能已被移除
+                    console.log('⚠️ 所有转换功能已被移除，需要重新实现');
                     console.log('✅ 转换完成！');
                     
                     // 调用录制完成处理
+                    // 录制完成处理已被移除
+                    console.log('⚠️ 录制完成处理功能需要重新实现');
+                    /*
                     this.handleRecordingComplete({
                         success: true,
                         blob: this.videoController.lastConvertedBlob,
                         message: '录制和转换完成'
                     });
+                    */
                     
                 } catch (error) {
                     console.log('❌ 转换过程中出错:', error);
@@ -2085,7 +2162,7 @@ class CameraSetupManager {
             // 计算合成参数
             const videoScale = this.calculateVideoScale();
             const overlayPosition = this.calculateOverlayPosition();
-            const outputSize = '1920:1080'; // 标准1080p输出
+            const outputSize = '1280:720'; // 降低到720p提升速度
             
             return {
                 composite: {
@@ -2101,8 +2178,8 @@ class CameraSetupManager {
 
     // 计算视频缩放参数
     calculateVideoScale() {
-        const baseWidth = 1920;
-        const baseHeight = 1080;
+        const baseWidth = 1280; // 720p宽度
+        const baseHeight = 720;  // 720p高度
         
         if (this.speakerPosition === 'speaker-only') {
             return `${baseWidth}:${baseHeight}`;
@@ -2116,8 +2193,8 @@ class CameraSetupManager {
 
     // 计算叠加位置参数
     calculateOverlayPosition() {
-        const baseWidth = 1920;
-        const baseHeight = 1080;
+        const baseWidth = 1280; // 720p宽度
+        const baseHeight = 720;  // 720p高度
         
         if (this.speakerPosition === 'speaker-only') {
             return '0:0';
@@ -2187,13 +2264,11 @@ class CameraSetupManager {
         
         // 创建转换后的视频预览
         if (this.videoController && this.videoController.lastConvertedBlob) {
-            // 创建新的video元素显示转换后的MP4
             const convertedVideoElement = document.createElement('video');
             convertedVideoElement.controls = true;
             convertedVideoElement.style.maxWidth = '100%';
             convertedVideoElement.style.marginTop = '10px';
             
-            // 设置转换后的视频源
             const videoUrl = URL.createObjectURL(this.videoController.lastConvertedBlob);
             convertedVideoElement.src = videoUrl;
             
@@ -2205,14 +2280,15 @@ class CameraSetupManager {
             
             // 保存转换结果
             this.recordingResult = result;
-        }
         
-        // 显示步骤管理器中的按钮
-        if (this.stepManager && this.stepManager.currentStepIndex === 3) { // 第四步的索引是3
-            // 显示下载按钮
-            this.stepManager.showButton('step4', 'downloadBtn');
-            // 显示完成设置按钮
-            this.stepManager.showButton('step4', 'completeBtn');
+        
+            // 显示步骤管理器中的按钮
+            if (this.stepManager && this.stepManager.currentStepIndex === 3) { // 第四步的索引是3
+                // 显示下载按钮
+                this.stepManager.showButton('step4', 'downloadBtn');
+                // 显示完成设置按钮
+                this.stepManager.showButton('step4', 'completeBtn');
+            }
         }
     }
 
@@ -2237,6 +2313,7 @@ class CameraSetupManager {
             const filename = `camera_test_${timestamp}.mp4`;
             this.videoController.downloadVideo(filename);
         }
+
     }
 
     // 清理资源

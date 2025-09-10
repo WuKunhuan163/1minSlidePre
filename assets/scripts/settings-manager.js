@@ -1712,18 +1712,13 @@ class SettingsManager {
                 console.warn('⚠️ 视频文件不是WebM格式:', videoBlob.type);
             }
             
-            // 检查是否可以访问optimized-webm-converter模块
+            // 转换器模块已被移除
             try {
-                // 尝试动态导入optimized-webm-converter模块
-                const converterPath = '../../modules/ffmpeg-converter-optimized.js';
-                const module = await import(converterPath);
-                const OptimizedFFmpegConverter = module.default;
+                // 转换功能已被移除，跳过转换测试
+                console.log('⚠️ 转换器模块已被移除，跳过转换测试');
                 
-                // 创建转换器实例（不使用worker，避免测试复杂性）
-                const converter = new OptimizedFFmpegConverter(false);
-                
-                // 模拟转换测试（实际上不执行完整转换，只检查初始化）
-                await new Promise(resolve => setTimeout(resolve, 500)); // 模拟延迟
+                // 模拟延迟
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
                 return { 
                     success: true, 

@@ -98,17 +98,13 @@ async function convertVideo(data) {
     
     const {
         preset = 'ultrafast',
-        crf = 32,                // 优化：平衡质量和速度
-        audioBitrate = '32k',    // 优化后的音频比特率
+        crf = 35,                // 更激进的质量降低
+        audioBitrate = '32k',    // 极低音频比特率
         fastMode = true
     } = options;
 
     try {
         self.postMessage({ type: 'log', message: '开始转换 WebM 到 MP4...' });
-        
-        // 详细记录转换参数
-        self.postMessage({ type: 'log', message: `🔧 [转换参数] preset=${preset}, crf=${crf}, audioBitrate=${audioBitrate}, fastMode=${fastMode}` });
-        self.postMessage({ type: 'log', message: `📊 [文件信息] 输入大小=${webmBuffer.byteLength} bytes (${(webmBuffer.byteLength/1024/1024).toFixed(2)}MB)` });
 
         // 检查是否被取消
         if (isCancelled) {
@@ -125,25 +121,26 @@ async function convertVideo(data) {
         self.postMessage({ type: 'log', message: '使用重编码模式确保MP4兼容性...' });
         command = command.concat([
             '-c:v', 'libx264',
-            '-preset', preset,           // 使用ultrafast
-            '-tune', 'zerolatency',      // 恢复：零延迟调优
-            '-crf', crf.toString(),      // 质量设置
+            '-preset', preset,
+            '-tune', 'zerolatency',
+            '-crf', crf.toString(),
             '-pix_fmt', 'yuv420p',
             '-profile:v', 'baseline',
             '-level:v', '3.0',
-            // 恢复对比项目的高效x264参数
+            // 修复帧率和时间戳问题
             '-r', '30',                  // 强制输出帧率为30fps
             '-vsync', 'cfr',             // 恒定帧率，避免重复帧
             '-fps_mode', 'cfr',          // 确保恒定帧率模式
+            // 极速优化参数（简化）
             '-x264-params', 'ref=1:me=dia:subme=1:mixed-refs=0:trellis=0:weightp=0:weightb=0:8x8dct=0:fast-pskip=1',
-            '-g', '30',                  // GOP大小
+            '-g', '30',                  // 恢复合理的GOP大小
             '-bf', '0',                  // 禁用B帧
-            '-sc_threshold', '40',       // 场景切换检测阈值
+            '-sc_threshold', '40',       // 恢复场景切换检测但设置较高阈值
             // 音频设置
             '-c:a', 'aac',
             '-b:a', audioBitrate,
             '-ac', '1',                  // 单声道
-            '-ar', '16000',              // 16kHz采样率（对比项目设置）
+            '-ar', '16000',              // 16kHz采样率
             '-movflags', '+faststart',
             '-threads', '0',
             '-avoid_negative_ts', 'make_zero', // 修复时间戳问题
@@ -155,9 +152,6 @@ async function convertVideo(data) {
         if (isCancelled) {
             throw new Error('转换已被用户取消');
         }
-
-        // 记录完整的FFmpeg命令
-        self.postMessage({ type: 'log', message: `🔧 [FFmpeg命令] ${command.join(' ')}` });
 
         // 执行转换
         await ffmpeg.exec(command);
@@ -358,14 +352,12 @@ async function compositeVideo(data) {
             '-filter_complex', 
             `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
             '-map', '[v]',                    // 映射合成的视频流
-            '-map', '1:a?',                   // 可选映射原视频的音频流（如果存在）
+            '-map', '1:a',                    // 映射原视频的音频流
             '-c:v', 'libx264',                // H.264编码
-            '-preset', 'ultrafast',           // 超快预设
-            '-crf', '32',                     // 优化：平衡质量和速度
+            '-preset', 'fast',                // 快速预设
+            '-crf', '23',                     // 质量设置
             '-c:a', 'aac',                    // AAC音频
-            '-b:a', '64k',                    // 优化：降低音频比特率
-            '-ac', '1',                       // 优化：单声道
-            '-ar', '22050',                   // 优化：降低采样率
+            '-b:a', '128k',                   // 音频比特率
             '-pix_fmt', 'yuv420p',           // 像素格式
             '-avoid_negative_ts', 'make_zero', // 避免时间戳问题
             '-t', '30',                       // 限制最长30秒（防止卡死）
@@ -373,7 +365,6 @@ async function compositeVideo(data) {
         );
 
         self.postMessage({ type: 'log', message: `🔧 FFmpeg合成命令: ${command.join(' ')}` });
-        self.postMessage({ type: 'log', message: `📊 传入参数: pptBackground=${pptBackground}, videoScale=${videoScale}, overlayPosition=${overlayPosition}, outputSize=${outputSize}` });
         
         // 执行前检查输入文件
         try {
@@ -399,7 +390,6 @@ async function compositeVideo(data) {
             return;
         }
         
-        self.postMessage({ type: 'log', message: '🚀 开始执行FFmpeg命令...' });
         await ffmpeg.exec(command);
         
         // 执行后检查
