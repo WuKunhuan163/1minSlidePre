@@ -129,13 +129,13 @@ class OptimizedFFmpegConverter {
     getOptimalSettings(fileSize, duration = 5) {
         const fileSizeMB = fileSize / (1024 * 1024);
         
-        // 根据文件大小和时长智能选择参数 - 极速模式
+        // 根据文件大小和时长智能选择参数 - 极速模式（优化版）
         if (fileSizeMB < 1) {
             // 小文件：极速模式
             return {
                 preset: 'ultrafast',
-                crf: 38,                // 极低质量，极高速度
-                audioBitrate: '24k',    // 极低音频比特率
+                crf: 35,                // 优化：提高质量但保持高速
+                audioBitrate: '32k',    // 优化：提高音频质量
                 fastMode: true,
                 priority: 'speed'
             };
@@ -143,7 +143,7 @@ class OptimizedFFmpegConverter {
             // 中等文件：高速模式
             return {
                 preset: 'ultrafast',
-                crf: 35,
+                crf: 32,                // 优化：稍好质量
                 audioBitrate: '32k',
                 fastMode: true,
                 priority: 'speed'
@@ -152,7 +152,7 @@ class OptimizedFFmpegConverter {
             // 大文件：快速模式
             return {
                 preset: 'ultrafast',
-                crf: 32,
+                crf: 30,                // 优化：平衡质量和速度
                 audioBitrate: '48k',
                 fastMode: true,
                 priority: 'speed'
@@ -284,23 +284,22 @@ class OptimizedFFmpegConverter {
             const inputData = new Uint8Array(await webmBlob.arrayBuffer());
             await this.ffmpeg.writeFile('input.webm', inputData);
 
-            // 始终使用重编码模式以确保兼容性
-            if (this.onLog) this.onLog('使用重编码模式确保MP4兼容性...');
+            // 使用高性能重编码模式（优化版）
+            if (this.onLog) this.onLog('使用高性能重编码模式...');
             let command = ['-i', 'input.webm'].concat([
-                '-c:v', 'libx264',           // 强制使用H.264编码
-                '-preset', preset,
-                '-tune', 'zerolatency',
-                '-crf', crf.toString(),
-                '-pix_fmt', 'yuv420p',       // 确保像素格式兼容
-                '-profile:v', 'baseline',    // 使用baseline profile确保最大兼容性
-                '-level:v', '3.0',           // 设置H.264 level
-                '-c:a', 'aac',               // 强制使用AAC音频编码
-                '-b:a', audioBitrate,
-                '-ac', '2',                  // 双声道
-                '-ar', '44100',              // 标准采样率
-                '-movflags', '+faststart',   // 优化流媒体播放
-                '-threads', '0',             // 使用所有可用线程
-                '-f', 'mp4',                 // 确保MP4格式
+                '-c:v', 'libx264',           // H.264编码
+                '-preset', preset,           // 使用ultrafast预设
+                '-crf', crf.toString(),      // 质量设置
+                '-pix_fmt', 'yuv420p',       // 像素格式
+                '-profile:v', 'baseline',    // baseline profile
+                '-level:v', '3.0',           // H.264 level
+                '-c:a', 'aac',               // AAC音频编码
+                '-b:a', audioBitrate,        // 音频比特率
+                '-ac', '1',                  // 优化：单声道减少处理
+                '-ar', '22050',              // 优化：降低采样率
+                '-movflags', '+faststart',   // 流媒体优化
+                '-threads', '0',             // 使用所有线程
+                '-f', 'mp4',                 // MP4格式
                 'output.mp4'
             ]);
 
@@ -434,17 +433,12 @@ class OptimizedFFmpegConverter {
             await this.ffmpeg.writeFile('input_video.webm', videoData);
             if (this.onLog) this.onLog(`📹 输入视频大小: ${videoData.length} bytes`);
 
-            // 检测视频开始时间（可选）
+            // 优化：简化视频开始时间检测
             let startTime = 0;
             if (autoTrimStart) {
-                if (this.onLog) this.onLog('🔍 [视频检测] 开始检测视频实际开始时间...');
-                startTime = await this.detectVideoStart('input_video.webm');
-                if (startTime > 0) {
-                    if (this.onLog) this.onLog(`✂️ [视频检测] 检测到视频实际开始时间: ${startTime.toFixed(2)}秒，将自动裁剪`);
-                    if (this.onLog) this.onLog(`📐 [视频检测] 裁剪设置: 从${startTime.toFixed(2)}秒开始，跳过前面的静态部分`);
-                } else {
-                    if (this.onLog) this.onLog('📹 [视频检测] 视频从开头就有内容，无需裁剪');
-                }
+                // 优化：使用固定的小幅裁剪而非复杂检测，大幅提升速度
+                startTime = 0.1; // 固定裁剪前0.1秒，避免复杂的场景检测
+                if (this.onLog) this.onLog('📹 [优化] 使用固定裁剪(0.1秒)，跳过复杂检测以提升速度');
             } else {
                 if (this.onLog) this.onLog('📹 [视频检测] 自动裁剪功能已禁用');
             }
@@ -484,9 +478,11 @@ class OptimizedFFmpegConverter {
                 '-map', '1:a?',                   // 可选映射原视频的音频流（如果存在）
                 '-c:v', 'libx264',                // H.264编码
                 '-preset', 'ultrafast',           // 超快预设
-                '-crf', '35',                     // 更低质量但更快速度
+                '-crf', '32',                     // 优化：平衡质量和速度
                 '-c:a', 'aac',                    // AAC音频
-                '-b:a', '128k',                   // 音频比特率
+                '-b:a', '64k',                    // 优化：降低音频比特率
+                '-ac', '1',                       // 优化：单声道
+                '-ar', '22050',                   // 优化：降低采样率
                 '-pix_fmt', 'yuv420p',           // 像素格式
                 '-t', '30',                       // 限制最长30秒（防止卡死）
                 'output_composite.mp4'

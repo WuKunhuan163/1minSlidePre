@@ -1969,7 +1969,7 @@ class CameraSetupManager {
                                 status = `录制中: ${data.seconds}秒`;
                                 break;
                             case 'conversion':
-                                // 转换进度
+                                // 转换
                                 percent = data.percent || 0;
                                 status = `转换中: ${percent}%`;
                                 break;

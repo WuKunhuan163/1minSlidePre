@@ -98,8 +98,8 @@ async function convertVideo(data) {
     
     const {
         preset = 'ultrafast',
-        crf = 35,                // 更激进的质量降低
-        audioBitrate = '32k',    // 极低音频比特率
+        crf = 32,                // 优化：平衡质量和速度
+        audioBitrate = '32k',    // 优化后的音频比特率
         fastMode = true
     } = options;
 
@@ -121,26 +121,19 @@ async function convertVideo(data) {
         self.postMessage({ type: 'log', message: '使用重编码模式确保MP4兼容性...' });
         command = command.concat([
             '-c:v', 'libx264',
-            '-preset', preset,
-            '-tune', 'zerolatency',
-            '-crf', crf.toString(),
+            '-preset', preset,           // 使用ultrafast
+            '-crf', crf.toString(),      // 质量设置
             '-pix_fmt', 'yuv420p',
             '-profile:v', 'baseline',
             '-level:v', '3.0',
-            // 修复帧率和时间戳问题
-            '-r', '30',                  // 强制输出帧率为30fps
-            '-vsync', 'cfr',             // 恒定帧率，避免重复帧
-            '-fps_mode', 'cfr',          // 确保恒定帧率模式
-            // 极速优化参数（简化）
-            '-x264-params', 'ref=1:me=dia:subme=1:mixed-refs=0:trellis=0:weightp=0:weightb=0:8x8dct=0:fast-pskip=1',
-            '-g', '30',                  // 恢复合理的GOP大小
+            // 优化：简化参数，移除复杂的x264设置
+            '-g', '60',                  // 优化：更大的GOP提升速度
             '-bf', '0',                  // 禁用B帧
-            '-sc_threshold', '40',       // 恢复场景切换检测但设置较高阈值
             // 音频设置
             '-c:a', 'aac',
             '-b:a', audioBitrate,
             '-ac', '1',                  // 单声道
-            '-ar', '16000',              // 16kHz采样率
+            '-ar', '22050',              // 优化：提高采样率平衡质量
             '-movflags', '+faststart',
             '-threads', '0',
             '-avoid_negative_ts', 'make_zero', // 修复时间戳问题
@@ -355,9 +348,11 @@ async function compositeVideo(data) {
             '-map', '1:a?',                   // 可选映射原视频的音频流（如果存在）
             '-c:v', 'libx264',                // H.264编码
             '-preset', 'ultrafast',           // 超快预设
-            '-crf', '35',                     // 更低质量但更快速度
+            '-crf', '32',                     // 优化：平衡质量和速度
             '-c:a', 'aac',                    // AAC音频
-            '-b:a', '128k',                   // 音频比特率
+            '-b:a', '64k',                    // 优化：降低音频比特率
+            '-ac', '1',                       // 优化：单声道
+            '-ar', '22050',                   // 优化：降低采样率
             '-pix_fmt', 'yuv420p',           // 像素格式
             '-avoid_negative_ts', 'make_zero', // 避免时间戳问题
             '-t', '30',                       // 限制最长30秒（防止卡死）
