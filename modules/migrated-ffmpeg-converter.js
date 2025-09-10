@@ -319,6 +319,157 @@ class MigratedOptimizedFFmpegConverter {
         };
     }
     
+    // 合成视频与背景图片
+    async compositeVideoWithBackground(videoBlob, options) {
+        if (!this.isLoaded) {
+            throw new Error('转换器未初始化，请先调用 init()');
+        }
+
+        // 重置取消标志
+        this.isCancelled = false;
+        this.currentReject = null;
+
+        const { pptBackground, videoScale, overlayPosition, outputSize } = options;
+
+        try {
+            if (this.onLog) this.onLog('🎬 开始视频背景合成...');
+
+            if (this.useWorker && this.worker) {
+                return await this.compositeWithWorker(videoBlob, options);
+            } else {
+                return await this.compositeDirect(videoBlob, options);
+            }
+        } catch (error) {
+            if (this.onLog) this.onLog(`❌ 背景合成失败: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // Worker模式合成
+    async compositeWithWorker(videoBlob, options) {
+        return new Promise(async (resolve, reject) => {
+            const startTime = Date.now();
+            
+            this.worker.onmessage = (e) => {
+                const { type, message, buffer } = e.data;
+                
+                switch (type) {
+                    case 'log':
+                        if (this.onLog) this.onLog(`[FFmpeg Worker] ${message}`);
+                        break;
+                        
+                    case 'progress':
+                        if (this.onProgress) {
+                            this.onProgress(e.data.percent, e.data.time);
+                        }
+                        break;
+                        
+                    case 'composite_complete':
+                        const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                        const mp4Blob = new Blob([buffer], { type: 'video/mp4' });
+                        if (this.onLog) this.onLog(`✅ Worker合成完成！耗时 ${convertTime} 秒`);
+                        resolve(mp4Blob);
+                        break;
+                        
+                    case 'error':
+                        reject(new Error(message));
+                        break;
+                }
+            };
+            
+            // 发送合成命令
+            const videoBuffer = await videoBlob.arrayBuffer();
+            this.worker.postMessage({
+                type: 'composite',
+                data: { videoBuffer, options }
+            });
+        });
+    }
+
+    // 直接模式合成
+    async compositeDirect(videoBlob, options) {
+        const { pptBackground, videoScale, overlayPosition, outputSize, autoTrimStart = true } = options;
+
+        try {
+            if (this.onLog) this.onLog('📹 直接模式背景合成...');
+
+            // 写入视频文件
+            const videoData = new Uint8Array(await videoBlob.arrayBuffer());
+            await this.ffmpeg.writeFile('input_video.webm', videoData);
+            if (this.onLog) this.onLog(`📹 输入视频大小: ${videoData.length} bytes`);
+
+            // 检测视频开始时间（简化版本，跳过复杂检测）
+            let startTime = 0;
+            if (autoTrimStart) {
+                if (this.onLog) this.onLog('📹 [视频检测] 自动裁剪功能已禁用');
+            }
+
+            // 读取PPT背景图片
+            const response = await fetch(pptBackground);
+            const pptData = new Uint8Array(await response.arrayBuffer());
+            await this.ffmpeg.writeFile('background.jpg', pptData);
+            if (this.onLog) this.onLog(`📋 PPT背景图片大小: ${pptData.length} bytes`);
+
+            if (this.onLog) this.onLog(`🎯 合成参数: 视频缩放=${videoScale}, 叠加位置=${overlayPosition}, 输出尺寸=${outputSize}`);
+
+            // 确保输出尺寸是偶数（H.264要求）
+            const [outputWidth, outputHeight] = outputSize.split(':').map(Number);
+            const evenWidth = outputWidth % 2 === 0 ? outputWidth : outputWidth + 1;
+            const evenHeight = outputHeight % 2 === 0 ? outputHeight : outputHeight + 1;
+            const evenOutputSize = `${evenWidth}:${evenHeight}`;
+            
+            if (this.onLog) this.onLog(`📐 调整输出尺寸: ${outputSize} -> ${evenOutputSize} (确保偶数)`);
+
+            // 构建FFmpeg命令
+            const command = [
+                '-loop', '1',                     // 循环背景图片
+                '-i', 'background.jpg',           // 背景图片
+            ];
+            
+            // 如果需要裁剪开头，添加 -ss 参数
+            if (startTime > 0) {
+                command.push('-ss', startTime.toString());
+            }
+            
+            command.push(
+                '-i', 'input_video.webm',         // 输入视频
+                '-filter_complex', 
+                `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
+                '-map', '[v]',                    // 映射合成的视频流
+                '-map', '1:a',                    // 映射原视频的音频流
+                '-c:v', 'libx264',                // H.264编码
+                '-preset', 'fast',                // 快速预设
+                '-crf', '23',                     // 质量设置
+                '-c:a', 'aac',                    // AAC音频编码
+                '-b:a', '128k',                   // 音频比特率
+                '-pix_fmt', 'yuv420p',           // 像素格式
+                '-avoid_negative_ts', 'make_zero', // 避免时间戳问题
+                '-t', '30',                       // 限制最长30秒
+                'output_composite.mp4'
+            );
+
+            if (this.onLog) this.onLog(`🔧 FFmpeg合成命令: ${command.join(' ')}`);
+
+            await this.ffmpeg.exec(command);
+            if (this.onLog) this.onLog('✅ 背景合成命令执行完成');
+
+            const data = await this.ffmpeg.readFile('output_composite.mp4');
+            const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+
+            // 清理临时文件
+            await this.ffmpeg.deleteFile('input_video.webm');
+            await this.ffmpeg.deleteFile('background.jpg');
+            await this.ffmpeg.deleteFile('output_composite.mp4');
+
+            if (this.onLog) this.onLog('✅ 直接模式背景合成完成！');
+            return mp4Blob;
+
+        } catch (error) {
+            if (this.onLog) this.onLog(`❌ 合成失败: ${error.message}`);
+            throw error;
+        }
+    }
+
     // 取消转换
     cancelConversion() {
         this.isCancelled = true;

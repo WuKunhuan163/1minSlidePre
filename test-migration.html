@@ -99,6 +99,7 @@
         <div class="section">
             <h2>参考项目转换器</h2>
             <button onclick="recordAndConvertReference()" id="refRecordBtn">录制5秒并转换</button>
+            <button onclick="recordAndCompositeReference()" id="refCompositeBtn">录制5秒并合成PPT背景</button>
             <div class="progress">
                 <div class="progress-bar" id="refProgress" style="width: 0%"></div>
             </div>
@@ -109,6 +110,7 @@
         <div class="section">
             <h2>迁移后转换器</h2>
             <button onclick="recordAndConvertMigrated()" id="migRecordBtn">录制5秒并转换</button>
+            <button onclick="recordAndCompositeMigrated()" id="migCompositeBtn">录制5秒并合成PPT背景</button>
             <div class="progress">
                 <div class="progress-bar" id="migProgress" style="width: 0%"></div>
             </div>
@@ -372,6 +374,231 @@
                         } else {
                             comparisonResults.push({
                                 test: '录制转换测试',
+                                reference: '待测试',
+                                migrated: `失败: ${error.message}`
+                            });
+                        }
+                    }
+                    updateComparisonResults();
+                };
+                
+                mediaRecorder.start();
+                
+                // 5秒后停止录制
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, 5000);
+                
+            } catch (error) {
+                log('migLog', `❌ 录制失败: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+        
+        // 录制并合成PPT背景 - 参考项目
+        window.recordAndCompositeReference = async function() {
+            const btn = document.getElementById('refCompositeBtn');
+            btn.disabled = true;
+            
+            try {
+                // 自动初始化摄像头
+                log('refLog', '🔧 初始化摄像头...');
+                updateProgress('refProgress', 5);
+                await initCamera();
+                log('refLog', '✅ 摄像头初始化成功', 'success');
+                
+                // 自动初始化转换器
+                if (!referenceConverter) {
+                    log('refLog', '🔧 初始化参考项目转换器...');
+                    updateProgress('refProgress', 10);
+                    
+                    const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4/modules/ffmpeg-converter-optimized.js');
+                    referenceConverter = new OptimizedFFmpegConverter(false);
+                    
+                    referenceConverter.setLogCallback((message) => {
+                        log('refLog', `[参考转换器] ${message}`);
+                    });
+                    
+                    referenceConverter.setProgressCallback((percent) => {
+                        updateProgress('refProgress', 30 + percent * 0.6);
+                    });
+                    
+                    await referenceConverter.init();
+                    log('refLog', '✅ 转换器初始化成功', 'success');
+                }
+                
+                log('refLog', '📹 开始录制 5 秒...');
+                updateProgress('refProgress', 20);
+                
+                const mediaRecorder = new MediaRecorder(cameraStream, {
+                    mimeType: 'video/webm;codecs=vp9'
+                });
+                
+                const chunks = [];
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        chunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    try {
+                        updateProgress('refProgress', 30);
+                        const webmBlob = new Blob(chunks, { type: 'video/webm' });
+                        log('refLog', `📹 录制完成，文件大小: ${(webmBlob.size/1024/1024).toFixed(2)}MB`);
+                        
+                        log('refLog', '🎬 开始PPT背景合成...');
+                        updateProgress('refProgress', 40);
+                        
+                        const startTime = Date.now();
+                        
+                        // 合成参数
+                        const compositeOptions = {
+                            pptBackground: './test-background.jpg',  // PPT背景图片
+                            videoScale: '320:240',                  // 视频缩放尺寸
+                            overlayPosition: '10:10',               // 叠加位置（左上角）
+                            outputSize: '640:480'                   // 输出尺寸
+                        };
+                        
+                        const mp4Blob = await referenceConverter.compositeVideoWithBackground(webmBlob, compositeOptions);
+                        const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                        
+                        log('refLog', `✅ PPT背景合成完成！耗时 ${convertTime} 秒，输出大小: ${(mp4Blob.size/1024/1024).toFixed(2)}MB`, 'success');
+                        updateProgress('refProgress', 100);
+                        
+                        // 显示合成后的视频
+                        const refVideo = document.getElementById('refVideo');
+                        refVideo.src = URL.createObjectURL(mp4Blob);
+                        refVideo.style.display = 'block';
+                        
+                        comparisonResults.push({
+                            test: 'PPT背景合成测试',
+                            reference: `成功 (${convertTime}s, ${(mp4Blob.size/1024/1024).toFixed(2)}MB)`,
+                            migrated: '待测试'
+                        });
+                        
+                    } catch (error) {
+                        log('refLog', `❌ 合成失败: ${error.message}`, 'error');
+                        comparisonResults.push({
+                            test: 'PPT背景合成测试',
+                            reference: `失败: ${error.message}`,
+                            migrated: '待测试'
+                        });
+                    }
+                    updateComparisonResults();
+                };
+                
+                mediaRecorder.start();
+                
+                // 5秒后停止录制
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, 5000);
+                
+            } catch (error) {
+                log('refLog', `❌ 录制失败: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+        
+        // 录制并合成PPT背景 - 迁移版本
+        window.recordAndCompositeMigrated = async function() {
+            const btn = document.getElementById('migCompositeBtn');
+            btn.disabled = true;
+            
+            try {
+                // 自动初始化摄像头
+                log('migLog', '🔧 初始化摄像头...');
+                updateProgress('migProgress', 5);
+                await initCamera();
+                log('migLog', '✅ 摄像头初始化成功', 'success');
+                
+                // 自动初始化转换器
+                if (!migratedConverter) {
+                    log('migLog', '🔧 初始化迁移后转换器...');
+                    updateProgress('migProgress', 10);
+                    
+                    const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
+                    migratedConverter = new MigratedConverter(false);
+                    
+                    migratedConverter.setLogCallback((message) => {
+                        log('migLog', `[迁移转换器] ${message}`);
+                    });
+                    
+                    migratedConverter.setProgressCallback((percent) => {
+                        updateProgress('migProgress', 30 + percent * 0.6);
+                    });
+                    
+                    await migratedConverter.init();
+                    log('migLog', '✅ 转换器初始化成功', 'success');
+                }
+                
+                log('migLog', '📹 开始录制 5 秒...');
+                updateProgress('migProgress', 20);
+                
+                const mediaRecorder = new MediaRecorder(cameraStream, {
+                    mimeType: 'video/webm;codecs=vp9'
+                });
+                
+                const chunks = [];
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        chunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    try {
+                        updateProgress('migProgress', 30);
+                        const webmBlob = new Blob(chunks, { type: 'video/webm' });
+                        log('migLog', `📹 录制完成，文件大小: ${(webmBlob.size/1024/1024).toFixed(2)}MB`);
+                        
+                        log('migLog', '🎬 开始PPT背景合成...');
+                        updateProgress('migProgress', 40);
+                        
+                        const startTime = Date.now();
+                        
+                        // 合成参数
+                        const compositeOptions = {
+                            pptBackground: './test-background.jpg',  // PPT背景图片
+                            videoScale: '320:240',                  // 视频缩放尺寸
+                            overlayPosition: '10:10',               // 叠加位置（左上角）
+                            outputSize: '640:480'                   // 输出尺寸
+                        };
+                        
+                        const mp4Blob = await migratedConverter.compositeVideoWithBackground(webmBlob, compositeOptions);
+                        const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                        
+                        log('migLog', `✅ PPT背景合成完成！耗时 ${convertTime} 秒，输出大小: ${(mp4Blob.size/1024/1024).toFixed(2)}MB`, 'success');
+                        updateProgress('migProgress', 100);
+                        
+                        // 显示合成后的视频
+                        const migVideo = document.getElementById('migVideo');
+                        migVideo.src = URL.createObjectURL(mp4Blob);
+                        migVideo.style.display = 'block';
+                        
+                        // 更新对比结果
+                        const existingResult = comparisonResults.find(r => r.test === 'PPT背景合成测试');
+                        if (existingResult) {
+                            existingResult.migrated = `成功 (${convertTime}s, ${(mp4Blob.size/1024/1024).toFixed(2)}MB)`;
+                        } else {
+                            comparisonResults.push({
+                                test: 'PPT背景合成测试',
+                                reference: '待测试',
+                                migrated: `成功 (${convertTime}s, ${(mp4Blob.size/1024/1024).toFixed(2)}MB)`
+                            });
+                        }
+                        
+                    } catch (error) {
+                        log('migLog', `❌ 合成失败: ${error.message}`, 'error');
+                        const existingResult = comparisonResults.find(r => r.test === 'PPT背景合成测试');
+                        if (existingResult) {
+                            existingResult.migrated = `失败: ${error.message}`;
+                        } else {
+                            comparisonResults.push({
+                                test: 'PPT背景合成测试',
                                 reference: '待测试',
                                 migrated: `失败: ${error.message}`
                             });
