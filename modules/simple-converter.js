@@ -60,6 +60,10 @@ class SimpleConverter {
             if (this.onLog) this.onLog('开始转换 WebM 到 MP4...');
             
             const startTime = Date.now();
+            const fileSizeMB = (webmBlob.size / 1024 / 1024).toFixed(2);
+            
+            // 记录文件信息
+            if (this.onLog) this.onLog(`📊 [文件信息] 大小: ${fileSizeMB}MB`);
             
             // 使用工作版本的转换器进行转换
             const mp4Blob = await this.converter.convertWebMToMP4(webmBlob, {

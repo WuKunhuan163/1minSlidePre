@@ -181,7 +181,9 @@ class OptimizedFFmpegConverter {
             const optimalSettings = this.getOptimalSettings(webmBlob.size);
             options = { ...optimalSettings, ...options, fastMode: false }; // 强制关闭快速复制
             if (this.onLog) {
-                this.onLog(`智能选择参数: ${optimalSettings.priority}模式 (preset=${optimalSettings.preset}, crf=${optimalSettings.crf}) - 强制重编码以确保兼容性`);
+                this.onLog(`🔧 [智能参数选择] ${optimalSettings.priority}模式`);
+                this.onLog(`📊 [转换参数] preset=${optimalSettings.preset}, crf=${optimalSettings.crf}, audioBitrate=${optimalSettings.audioBitrate}`);
+                this.onLog(`📁 [文件信息] 大小=${(webmBlob.size/1024/1024).toFixed(2)}MB`);
             }
         }
 
@@ -303,6 +305,9 @@ class OptimizedFFmpegConverter {
                 'output.mp4'
             ]);
 
+            // 记录完整的FFmpeg命令
+            if (this.onLog) this.onLog(`🔧 [FFmpeg命令] ${command.join(' ')}`);
+            
             await this.ffmpeg.exec(command);
             if (this.onLog) this.onLog('H.264/AAC重编码完成');
 
