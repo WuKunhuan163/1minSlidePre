@@ -98,23 +98,21 @@
     <div class="container">
         <div class="section">
             <h2>参考项目转换器</h2>
-            <button onclick="testReferenceConverter()" id="refTestBtn">测试参考项目</button>
-            <button onclick="recordAndConvertReference()" id="refRecordBtn" disabled>录制并转换</button>
+            <button onclick="recordAndConvertReference()" id="refRecordBtn">录制5秒并转换</button>
             <div class="progress">
                 <div class="progress-bar" id="refProgress" style="width: 0%"></div>
             </div>
-            <div id="refLog" class="log">等待测试...</div>
+            <div id="refLog" class="log">点击按钮开始测试...</div>
             <video id="refVideo" controls style="display: none;"></video>
         </div>
         
         <div class="section">
             <h2>迁移后转换器</h2>
-            <button onclick="testMigratedConverter()" id="migTestBtn">测试迁移版本</button>
-            <button onclick="recordAndConvertMigrated()" id="migRecordBtn" disabled>录制并转换</button>
+            <button onclick="recordAndConvertMigrated()" id="migRecordBtn">录制5秒并转换</button>
             <div class="progress">
                 <div class="progress-bar" id="migProgress" style="width: 0%"></div>
             </div>
-            <div id="migLog" class="log">等待测试...</div>
+            <div id="migLog" class="log">点击按钮开始测试...</div>
             <video id="migVideo" controls style="display: none;"></video>
         </div>
     </div>
@@ -145,22 +143,30 @@
         }
         
         // 启动摄像头
-        window.startCamera = async function() {
+        async function initCamera() {
+            if (cameraStream) return cameraStream;
+            
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { width: 640, height: 480 }, 
                     audio: true 
                 });
                 document.getElementById('cameraPreview').srcObject = cameraStream;
-                
-                document.getElementById('refRecordBtn').disabled = false;
-                document.getElementById('migRecordBtn').disabled = false;
-                
+                return cameraStream;
+            } catch (error) {
+                throw new Error(`摄像头启动失败: ${error.message}`);
+            }
+        }
+        
+        // 启动摄像头（手动调用）
+        window.startCamera = async function() {
+            try {
+                await initCamera();
                 log('refLog', '✅ 摄像头启动成功', 'success');
                 log('migLog', '✅ 摄像头启动成功', 'success');
             } catch (error) {
-                log('refLog', `❌ 摄像头启动失败: ${error.message}`, 'error');
-                log('migLog', `❌ 摄像头启动失败: ${error.message}`, 'error');
+                log('refLog', `❌ ${error.message}`, 'error');
+                log('migLog', `❌ ${error.message}`, 'error');
             }
         };
         
@@ -179,124 +185,42 @@
             }
         };
         
-        // 测试参考项目转换器
-        window.testReferenceConverter = async function() {
-            const btn = document.getElementById('refTestBtn');
-            btn.disabled = true;
-            
-            try {
-                log('refLog', '开始测试参考项目转换器...');
-                updateProgress('refProgress', 10);
-                
-                // 动态导入参考项目的转换器
-                const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4/modules/ffmpeg-converter-optimized.js');
-                log('refLog', '✅ 成功导入参考项目转换器', 'success');
-                updateProgress('refProgress', 30);
-                
-                referenceConverter = new OptimizedFFmpegConverter(false); // 使用直接模式
-                
-                referenceConverter.setLogCallback((message) => {
-                    log('refLog', `[参考转换器] ${message}`);
-                });
-                
-                referenceConverter.setProgressCallback((percent) => {
-                    updateProgress('refProgress', 30 + percent * 0.7);
-                });
-                
-                await referenceConverter.init();
-                log('refLog', '✅ 参考项目转换器初始化成功', 'success');
-                updateProgress('refProgress', 100);
-                
-                comparisonResults.push({
-                    test: '转换器初始化',
-                    reference: '成功',
-                    migrated: '待测试'
-                });
-                
-            } catch (error) {
-                log('refLog', `❌ 参考项目测试失败: ${error.message}`, 'error');
-                comparisonResults.push({
-                    test: '转换器初始化',
-                    reference: `失败: ${error.message}`,
-                    migrated: '待测试'
-                });
-            } finally {
-                btn.disabled = false;
-                updateComparisonResults();
-            }
-        };
-        
-        // 测试迁移后转换器
-        window.testMigratedConverter = async function() {
-            const btn = document.getElementById('migTestBtn');
-            btn.disabled = true;
-            
-            try {
-                log('migLog', '开始测试迁移后转换器...');
-                updateProgress('migProgress', 10);
-                
-                // 动态导入迁移后的转换器
-                const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
-                log('migLog', '✅ 成功导入迁移后转换器', 'success');
-                updateProgress('migProgress', 30);
-                
-                migratedConverter = new MigratedConverter(false); // 使用直接模式
-                
-                migratedConverter.setLogCallback((message) => {
-                    log('migLog', `[迁移转换器] ${message}`);
-                });
-                
-                migratedConverter.setProgressCallback((percent) => {
-                    updateProgress('migProgress', 30 + percent * 0.7);
-                });
-                
-                await migratedConverter.init();
-                log('migLog', '✅ 迁移后转换器初始化成功', 'success');
-                updateProgress('migProgress', 100);
-                
-                // 更新对比结果
-                const existingResult = comparisonResults.find(r => r.test === '转换器初始化');
-                if (existingResult) {
-                    existingResult.migrated = '成功';
-                } else {
-                    comparisonResults.push({
-                        test: '转换器初始化',
-                        reference: '待测试',
-                        migrated: '成功'
-                    });
-                }
-                
-            } catch (error) {
-                log('migLog', `❌ 迁移后测试失败: ${error.message}`, 'error');
-                const existingResult = comparisonResults.find(r => r.test === '转换器初始化');
-                if (existingResult) {
-                    existingResult.migrated = `失败: ${error.message}`;
-                } else {
-                    comparisonResults.push({
-                        test: '转换器初始化',
-                        reference: '待测试',
-                        migrated: `失败: ${error.message}`
-                    });
-                }
-            } finally {
-                btn.disabled = false;
-                updateComparisonResults();
-            }
-        };
         
         // 录制并转换 - 参考项目
         window.recordAndConvertReference = async function() {
-            if (!cameraStream || !referenceConverter) {
-                log('refLog', '❌ 请先启动摄像头并初始化转换器', 'error');
-                return;
-            }
             
             const btn = document.getElementById('refRecordBtn');
             btn.disabled = true;
             
             try {
-                log('refLog', '📹 开始录制 3 秒...');
-                updateProgress('refProgress', 0);
+                // 自动初始化摄像头
+                log('refLog', '🔧 初始化摄像头...');
+                updateProgress('refProgress', 5);
+                await initCamera();
+                log('refLog', '✅ 摄像头初始化成功', 'success');
+                
+                // 自动初始化转换器
+                if (!referenceConverter) {
+                    log('refLog', '🔧 初始化参考项目转换器...');
+                    updateProgress('refProgress', 10);
+                    
+                    const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4/modules/ffmpeg-converter-optimized.js');
+                    referenceConverter = new OptimizedFFmpegConverter(false);
+                    
+                    referenceConverter.setLogCallback((message) => {
+                        log('refLog', `[参考转换器] ${message}`);
+                    });
+                    
+                    referenceConverter.setProgressCallback((percent) => {
+                        updateProgress('refProgress', 30 + percent * 0.6);
+                    });
+                    
+                    await referenceConverter.init();
+                    log('refLog', '✅ 转换器初始化成功', 'success');
+                }
+                
+                log('refLog', '📹 开始录制 5 秒...');
+                updateProgress('refProgress', 20);
                 
                 const mediaRecorder = new MediaRecorder(cameraStream, {
                     mimeType: 'video/webm;codecs=vp9'
@@ -349,10 +273,10 @@
                 
                 mediaRecorder.start();
                 
-                // 3秒后停止录制
+                // 5秒后停止录制
                 setTimeout(() => {
                     mediaRecorder.stop();
-                }, 3000);
+                }, 5000);
                 
             } catch (error) {
                 log('refLog', `❌ 录制失败: ${error.message}`, 'error');
@@ -363,17 +287,38 @@
         
         // 录制并转换 - 迁移版本
         window.recordAndConvertMigrated = async function() {
-            if (!cameraStream || !migratedConverter) {
-                log('migLog', '❌ 请先启动摄像头并初始化转换器', 'error');
-                return;
-            }
-            
             const btn = document.getElementById('migRecordBtn');
             btn.disabled = true;
             
             try {
-                log('migLog', '📹 开始录制 3 秒...');
-                updateProgress('migProgress', 0);
+                // 自动初始化摄像头
+                log('migLog', '🔧 初始化摄像头...');
+                updateProgress('migProgress', 5);
+                await initCamera();
+                log('migLog', '✅ 摄像头初始化成功', 'success');
+                
+                // 自动初始化转换器
+                if (!migratedConverter) {
+                    log('migLog', '🔧 初始化迁移后转换器...');
+                    updateProgress('migProgress', 10);
+                    
+                    const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
+                    migratedConverter = new MigratedConverter(false);
+                    
+                    migratedConverter.setLogCallback((message) => {
+                        log('migLog', `[迁移转换器] ${message}`);
+                    });
+                    
+                    migratedConverter.setProgressCallback((percent) => {
+                        updateProgress('migProgress', 30 + percent * 0.6);
+                    });
+                    
+                    await migratedConverter.init();
+                    log('migLog', '✅ 转换器初始化成功', 'success');
+                }
+                
+                log('migLog', '📹 开始录制 5 秒...');
+                updateProgress('migProgress', 20);
                 
                 const mediaRecorder = new MediaRecorder(cameraStream, {
                     mimeType: 'video/webm;codecs=vp9'
@@ -437,10 +382,10 @@
                 
                 mediaRecorder.start();
                 
-                // 3秒后停止录制
+                // 5秒后停止录制
                 setTimeout(() => {
                     mediaRecorder.stop();
-                }, 3000);
+                }, 5000);
                 
             } catch (error) {
                 log('migLog', `❌ 录制失败: ${error.message}`, 'error');
