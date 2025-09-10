@@ -206,7 +206,7 @@
                     log('refLog', '🔧 初始化参考项目转换器...');
                     updateProgress('refProgress', 10);
                     
-                    const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4/modules/ffmpeg-converter-optimized.js');
+                    const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4_reference_backup/modules/ffmpeg-converter-optimized.js');
                     referenceConverter = new OptimizedFFmpegConverter(false);
                     
                     referenceConverter.setLogCallback((message) => {
@@ -413,7 +413,7 @@
                     log('refLog', '🔧 初始化参考项目转换器...');
                     updateProgress('refProgress', 10);
                     
-                    const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4/modules/ffmpeg-converter-optimized.js');
+                    const { default: OptimizedFFmpegConverter } = await import('./webm_to_mp4_reference_backup/modules/ffmpeg-converter-optimized.js');
                     referenceConverter = new OptimizedFFmpegConverter(false);
                     
                     referenceConverter.setLogCallback((message) => {
