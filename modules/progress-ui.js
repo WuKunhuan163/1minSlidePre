@@ -219,27 +219,81 @@ class ProgressUI {
 
         // 日志区域（可选）
         if (this.options.showLogs) {
+            // 日志区域包装器
+            const logWrapper = document.createElement('div');
+            logWrapper.style.cssText = `
+                width: 100%;
+                position: relative;
+            `;
+
             const logContainer = document.createElement('div');
             logContainer.style.cssText = `
                 width: 100%;
                 max-height: 120px;
+                min-height: 120px;
                 overflow-y: auto;
                 overflow-x: hidden;
                 background: rgba(0, 0, 0, 0.3);
                 border-radius: 6px;
-                padding: 8px;
-                font-size: 11px;
+                padding: 8px 32px 8px 8px;
+                font-size: 8px;
                 color: rgba(255, 255, 255, 0.7);
                 font-family: 'Monaco', 'Menlo', monospace;
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 word-wrap: break-word;
                 word-break: break-all;
+                position: relative;
+                line-height: 1.4;
+                text-align: left;
             `;
+
+            // 复制按钮
+            const copyButton = document.createElement('button');
+            copyButton.innerHTML = '<i class="bx bx-copy"></i>';
+            copyButton.title = '复制日志';
+            copyButton.style.cssText = `
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 4px;
+                color: rgba(255, 255, 255, 0.7);
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 12px;
+                transition: all 0.2s ease;
+                z-index: 10;
+            `;
+
+            // 复制按钮hover效果
+            copyButton.addEventListener('mouseenter', () => {
+                copyButton.style.background = 'rgba(255, 255, 255, 0.2)';
+                copyButton.style.color = 'rgba(255, 255, 255, 0.9)';
+            });
+
+            copyButton.addEventListener('mouseleave', () => {
+                copyButton.style.background = 'rgba(255, 255, 255, 0.1)';
+                copyButton.style.color = 'rgba(255, 255, 255, 0.7)';
+            });
+
+            // 复制功能
+            copyButton.addEventListener('click', () => {
+                this.copyLogs();
+            });
 
             const logContent = document.createElement('div');
             this.logElement = logContent;
+            this.copyButton = copyButton;
+            
             logContainer.appendChild(logContent);
-            contentLayer.appendChild(logContainer);
+            logWrapper.appendChild(logContainer);
+            logWrapper.appendChild(copyButton);
+            contentLayer.appendChild(logWrapper);
         }
 
         this.container.appendChild(contentLayer);
@@ -412,11 +466,69 @@ class ProgressUI {
     }
 
     /**
+     * 日志处理层 - 过滤和处理日志消息
+     * @param {string} message - 原始日志消息
+     * @returns {string|null} - 处理后的消息，返回null表示拒绝显示
+     */
+    processLogMessage(message) {
+        // 获取调用栈信息
+        const stack = new Error().stack;
+        const callerLine = stack.split('\n')[3]; // 第3行通常是真正的调用者
+        const callerInfo = callerLine ? callerLine.trim() : 'unknown';
+        
+        console.log('processLogMessage', message, 'called from:', callerInfo);
+        
+        // 处理录制时长统计信息
+        if (message.includes('📊 录制时长统计:')) {
+            // 提取时长信息：📊 录制时长统计: 5.01秒 (预期5.00秒) | 开始时间: 上午9:21:25 | 结束时间: 上午9:21:30
+            const durationMatch = message.match(/📊 录制时长统计:\s*([0-9.]+)秒/);
+            if (durationMatch) {
+                const duration = durationMatch[1];
+                return `录制时长: ${duration}秒`;
+            }
+        }
+        
+        // 显示所有其他日志
+        return message;
+        
+        // 未来的过滤逻辑示例（目前注释掉）：
+        /*
+        // 过滤掉调试信息
+        if (message.includes('[DEBUG]') || message.includes('🔍')) {
+            return null;
+        }
+        
+        // 简化进度信息
+        if (message.includes('转换进度:')) {
+            const match = message.match(/(\d+)%/);
+            if (match) {
+                return `转换进度: ${match[1]}%`;
+            }
+        }
+        
+        // 保留重要的错误和完成信息
+        if (message.includes('❌') || message.includes('✅') || message.includes('完成')) {
+            return message;
+        }
+        
+        // 默认拒绝其他日志
+        return null;
+        */
+    }
+
+    /**
      * 添加日志
      * @param {string} message - 日志消息
      */
     addLog(message) {
         if (!this.logElement || !this.options.showLogs) return;
+        
+        // 通过处理层过滤消息
+        const processedMessage = this.processLogMessage(message);
+        if (processedMessage === null) {
+            // 消息被拒绝，不显示
+            return;
+        }
         
         const logLine = document.createElement('div');
         logLine.style.cssText = `
@@ -426,19 +538,20 @@ class ProgressUI {
             word-wrap: break-word;
             word-break: break-all;
             white-space: pre-wrap;
+            text-align: left;
         `;
         
         // 添加时间戳
         const timestamp = new Date().toLocaleTimeString();
-        logLine.textContent = `[${timestamp}] ${message}`;
+        logLine.textContent = `[${timestamp}] ${processedMessage}`;
         
         this.logElement.appendChild(logLine);
         
         // 自动滚动到底部
         this.logElement.parentElement.scrollTop = this.logElement.parentElement.scrollHeight;
         
-        // 限制日志行数
-        while (this.logElement.children.length > 10) {
+        // 限制日志行数（增加到15行以适应更高的容器）
+        while (this.logElement.children.length > 15) {
             this.logElement.removeChild(this.logElement.firstChild);
         }
         
@@ -509,6 +622,77 @@ class ProgressUI {
     }
 
     /**
+     * 复制日志到剪贴板
+     */
+    copyLogs() {
+        if (!this.logElement) return;
+        
+        // 提取所有日志文本
+        const logTexts = Array.from(this.logElement.children).map(child => child.textContent);
+        const allLogs = logTexts.join('\n');
+        
+        if (allLogs.trim() === '') {
+            this.showCopyFeedback('没有日志可复制', false);
+            return;
+        }
+        
+        // 尝试使用现代API复制
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(allLogs).then(() => {
+                this.showCopyFeedback('日志已复制到剪贴板', true);
+            }).catch(() => {
+                this.fallbackCopyTextToClipboard(allLogs);
+            });
+        } else {
+            // 回退到传统方法
+            this.fallbackCopyTextToClipboard(allLogs);
+        }
+    }
+
+    /**
+     * 传统复制方法（回退方案）
+     */
+    fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            this.showCopyFeedback(successful ? '日志已复制到剪贴板' : '复制失败', successful);
+        } catch (err) {
+            this.showCopyFeedback('复制失败', false);
+        }
+        
+        document.body.removeChild(textArea);
+    }
+
+    /**
+     * 显示复制反馈
+     */
+    showCopyFeedback(message, success) {
+        if (this.copyButton) {
+            const originalHTML = this.copyButton.innerHTML;
+            const originalTitle = this.copyButton.title;
+            
+            this.copyButton.innerHTML = success ? '<i class="bx bx-check"></i>' : '<i class="bx bx-x"></i>';
+            this.copyButton.title = message;
+            this.copyButton.style.color = success ? '#10B981' : '#EF4444';
+            
+            setTimeout(() => {
+                this.copyButton.innerHTML = originalHTML;
+                this.copyButton.title = originalTitle;
+                this.copyButton.style.color = 'rgba(255, 255, 255, 0.7)';
+            }, 2000);
+        }
+    }
+
+    /**
      * 重置状态
      */
     reset() {
@@ -522,6 +706,13 @@ class ProgressUI {
         
         if (this.logElement) {
             this.logElement.innerHTML = '';
+        }
+        
+        // 重置复制按钮状态
+        if (this.copyButton) {
+            this.copyButton.innerHTML = '<i class="bx bx-copy"></i>';
+            this.copyButton.title = '复制日志';
+            this.copyButton.style.color = 'rgba(255, 255, 255, 0.7)';
         }
     }
 

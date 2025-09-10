@@ -1151,7 +1151,7 @@ class SettingsManager {
         const state = this.settingsState[settingId];
         
         if (!setting || !state || !state.config) {
-            console.warn(`⚠️ 无法为 ${settingId} 生成字段：缺少设置或状态信息`);
+            // console.warn(`⚠️ 无法为 ${settingId} 生成字段：缺少设置或状态信息`);
             return;
         }
         
@@ -1715,7 +1715,7 @@ class SettingsManager {
             // 检查是否可以访问optimized-webm-converter模块
             try {
                 // 尝试动态导入optimized-webm-converter模块
-                const converterPath = 'optimized-webm-converter/modules/ffmpeg-converter-optimized.js';
+                const converterPath = '../../modules/ffmpeg-converter-optimized.js';
                 const module = await import(converterPath);
                 const OptimizedFFmpegConverter = module.default;
                 

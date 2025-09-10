@@ -969,10 +969,11 @@ class CameraSetupManager {
         console.log('📹 初始化录制测试步骤...');
         
         try {
-            // 导入必要的模块
-            if (!window.VideoConverter) {
-                const VideoConverterModule = await import('../../../modules/video-converter.js');
-                window.VideoConverter = VideoConverterModule.default;
+            // 导入简化的视频控制器（替换复杂的VideoConverter）
+            if (!window.SimpleVideoController) {
+                const SimpleVideoControllerModule = await import('../../../modules/simple-controller.js');
+                window.SimpleVideoController = SimpleVideoControllerModule.default;
+                console.log('✅ 简化视频控制器已加载');
             }
             
             // 设置预览视频
@@ -1897,11 +1898,15 @@ class CameraSetupManager {
     async startRecordingTest() {
         console.log('开始录制测试...');
         
+        // 立即显示进度，禁用录制按钮
+        this.progressUI.updateProgress(1, '准备录制...');
+        
         const progressContainer = document.getElementById('progressContainer');
         const resultContainer = document.getElementById('resultContainer');
         
         if (!this.currentStream) {
             alert('请先确保摄像头预览正常工作');
+            this.progressUI.updateProgress(0, '点击开始录制');
             return;
         }
         
@@ -1914,48 +1919,59 @@ class CameraSetupManager {
             // 获取转换选项
             const conversionOptions = this.getConversionOptions();
             
-            // 创建视频转换器
-            if (this.videoConverter) {
-                this.videoConverter.destroy();
+            // 创建简化的视频控制器（替换复杂的VideoConverter）
+            if (this.videoController) {
+                this.videoController.destroy();
             }
             
-            this.videoConverter = new window.VideoConverter({
-                recordingDuration: 5000, // 5秒录制
-                useWorker: true,
-                showProgress: false, // 不创建新的进度UI
+            const videoElement = document.getElementById('testVideoPreview');
+            this.videoController = new window.SimpleVideoController();
+            
+            // 设置回调函数
+            this.videoController.setCallbacks({
                 onComplete: (result) => this.handleRecordingComplete(result),
                 onError: (error) => this.handleRecordingError(error),
                 onLog: (message) => {
-                    // 只记录重要日志到控制台，详细日志只存储在UI中
-                    if (message.includes('❌') || message.includes('✅') || message.includes('开始') || message.includes('完成')) {
-                        console.log(`[录制] ${message}`);
+                    // 检查FFmpeg转换进度
+                    if (message.includes('time=') && message.includes('fps=')) {
+                        const timeMatch = message.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/);
+                        if (timeMatch) {
+                            const hours = parseInt(timeMatch[1]);
+                            const minutes = parseInt(timeMatch[2]);
+                            const seconds = parseInt(timeMatch[3]);
+                            const centiseconds = parseInt(timeMatch[4]);
+                            const currentTime = hours * 3600 + minutes * 60 + seconds + centiseconds / 100;
+                            
+                            // 获取实际录制时长
+                            const totalDuration = this.videoController.getRecordingDuration();
+                            const conversionProgress = Math.min(currentTime / totalDuration, 1); // 限制在0-1之间
+                            const totalProgress = 25 + 75 * conversionProgress; // 25% + 75% * x
+                            
+                            this.progressUI.updateProgress(Math.round(totalProgress * 10) / 10, `转换中... ${Math.round(conversionProgress * 100)}%`);
+                        }
                     }
+                    
                     // 将日志添加到现有的进度UI
                     if (this.progressUI) {
                         this.progressUI.addLog(message);
                     }
                 },
                 onProgress: (data) => {
-                    // 更新现有进度UI
+                    // 更新现有进度UI（适配SimpleVideoController格式）
                     if (this.progressUI) {
                         let percent = 0;
                         let status = '';
                         
                         switch (data.type) {
-                            case 'countdown':
-                                // 倒计时时圆环进度不推进，保持在0%
-                                percent = 0;
-                                status = data.remaining > 0 ? `请看摄像头，${data.remaining}秒后开始录制` : '开始录制！';
-                                break;
                             case 'recording':
-                                // 录制5秒，推进25%
-                                percent = (data.progress * 0.25);
-                                status = `录制中: ${(data.remaining / 1000).toFixed(1)}秒剩余`;
+                                // 录制占100%（简化版本）
+                                percent = (data.seconds / 5) * 100; // 5秒录制
+                                status = `录制中: ${data.seconds}秒`;
                                 break;
                             case 'conversion':
-                                // 转换占剩下的75%
-                                percent = 25 + (data.progress * 0.75);
-                                status = `转换中: ${data.progress}%`;
+                                // 转换进度
+                                percent = data.percent || 0;
+                                status = `转换中: ${percent}%`;
                                 break;
                         }
                         
@@ -1964,18 +1980,87 @@ class CameraSetupManager {
                 }
             });
             
-            // 设置转换选项
-            if (conversionOptions.composite) {
-                this.videoConverter.setCompositeOptions(conversionOptions.composite);
-            } else {
-                this.videoConverter.setConversionOptions(conversionOptions.conversion);
+            // 3秒倒计时开始录制（进度保持0）
+            console.log('⏰ 开始3秒倒计时...');
+            
+            // 倒计时开始时关闭摄像头
+            console.log('📹 倒计时开始，关闭摄像头预览...');
+            this.stopPreview();
+            
+            for (let i = 3; i >= 1; i--) {
+                this.progressUI.updateProgress(0, `${i}秒后开始录制，请看向摄像头...`);
+                console.log(`倒计时: ${i}秒`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
             
-            // 开始录制和转换
-            await this.videoConverter.startRecordingAndConversion(this.currentStream);
+            // 倒计时结束时重新开启摄像头
+            console.log('📹 倒计时结束，重新开启摄像头...');
+            await this.startPreview();
+            
+            // 初始化简化控制器（使用重新开启的摄像头流）
+            console.log('🔧 开始初始化视频控制器...');
+            await this.videoController.init(this.currentStream);
+            console.log('✅ 视频控制器初始化完成');
+            
+            console.log('🎬 倒计时结束，开始录制...');
+            
+            // 开始录制（5秒自动停止并转换）
+            console.log('📹 调用 startRecording(5)...');
+            this.videoController.startRecording(5);
+            console.log('📹 startRecording(5) 调用完成');
+            
+            // 录制期间进度推进（5秒内从0%推进到25%）
+            let recordingProgress = 0;
+            const recordingInterval = setInterval(() => {
+                recordingProgress += 0.5; // 每0.1秒推进0.5%，5秒推进25%
+                if (recordingProgress <= 25) {
+                    const currentSeconds = Math.floor(recordingProgress / 5); // 当前录制秒数
+                    const remainingSeconds = 5 - currentSeconds; // 剩余秒数
+                    const displayProgress = Math.round(recordingProgress * 10) / 10; // 保留1位小数
+                    this.progressUI.updateProgress(displayProgress, `正在录制... 剩余${remainingSeconds}秒`);
+                } else {
+                    clearInterval(recordingInterval);
+                }
+            }, 100); // 每0.1秒更新一次
+            
+            // 6秒后开始转换（给录制完成留1秒缓冲）
+            setTimeout(async () => {
+                try {
+                    console.log('⏰ 6秒等待结束，录制已完成');
+                    
+                    // 录制完成后立即关闭摄像头
+                    console.log('📹 录制完成，关闭摄像头预览...');
+                    this.stopPreview();
+                    
+                    console.log('📊 当前演讲者位置:', this.speakerPosition);
+                    console.log('📊 转换选项:', conversionOptions);
+                    // 不在这里更新进度，让FFmpeg日志处理来动态更新
+                    
+                    if (conversionOptions.composite) {
+                        console.log('🎭 开始演讲者模式合成...');
+                        await this.videoController.compositeVideoWithBackground(conversionOptions.composite);
+                    } else {
+                        console.log('🔄 开始标准转换...');
+                        await this.videoController.startConversion();
+                    }
+                    console.log('✅ 转换完成！');
+                    
+                    // 调用录制完成处理
+                    this.handleRecordingComplete({
+                        success: true,
+                        blob: this.videoController.lastConvertedBlob,
+                        message: '录制和转换完成'
+                    });
+                    
+                } catch (error) {
+                    console.log('❌ 转换过程中出错:', error);
+                    this.handleRecordingError(error);
+                }
+            }, 6000);
             
         } catch (error) {
             this.handleRecordingError(error);
+            // 重置按钮状态（错误已在handleRecordingError中处理）
         }
     }
 
@@ -1993,7 +2078,7 @@ class CameraSetupManager {
             };
         } else {
             // 需要背景合成
-            // 构建绝对URL路径 - 修复Worker中的路径解析问题
+            // 使用PathResolver来正确解析路径为绝对URL
             const backgroundImage = new URL('./assets/images/cover.jpg', window.location.href).href;
             
             // 计算合成参数
@@ -2099,14 +2184,23 @@ class CameraSetupManager {
         // 显示结果
         resultContainer.style.display = 'block';
         
-        // 创建视频预览
-        if (this.videoConverter) {
-            const videoElement = this.videoConverter.createVideoPreview(result.convertedBlob);
-            videoElement.style.maxWidth = '100%';
-            videoElement.style.marginTop = '10px';
+        // 创建转换后的视频预览
+        if (this.videoController && this.videoController.lastConvertedBlob) {
+            // 创建新的video元素显示转换后的MP4
+            const convertedVideoElement = document.createElement('video');
+            convertedVideoElement.controls = true;
+            convertedVideoElement.style.maxWidth = '100%';
+            convertedVideoElement.style.marginTop = '10px';
+            
+            // 设置转换后的视频源
+            const videoUrl = URL.createObjectURL(this.videoController.lastConvertedBlob);
+            convertedVideoElement.src = videoUrl;
             
             videoPreviewContainer.innerHTML = '';
-            videoPreviewContainer.appendChild(videoElement);
+            videoPreviewContainer.appendChild(convertedVideoElement);
+            
+            // 保存URL用于清理
+            this.lastVideoUrl = videoUrl;
             
             // 保存转换结果
             this.recordingResult = result;
@@ -2125,23 +2219,39 @@ class CameraSetupManager {
     handleRecordingError(error) {
         console.error('❌ 录制失败:', error);
         
+        // 添加错误日志到UI
+        if (this.progressUI) {
+            this.progressUI.addLog(`❌ 录制失败: ${error.message}`);
+            this.progressUI.updateProgress(0, '录制失败');
+        }
+        
+        // 显示错误详情
         alert(`录制失败: ${error.message}`);
     }
 
     // 下载录制的视频
     downloadRecordedVideo() {
-        if (this.videoConverter && this.recordingResult) {
+        if (this.videoController && this.recordingResult) {
             const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
             const filename = `camera_test_${timestamp}.mp4`;
-            this.videoConverter.downloadVideo(filename);
+            this.videoController.downloadVideo(filename);
         }
     }
 
     // 清理资源
     cleanup() {
-        // console.log('📹 清理摄像头设置资源...');
+        console.log('📹 清理摄像头设置资源...');
+        
+        // 停止预览
         this.stopPreview();
         this.stopPreviewRefresh(); // 停止预览刷新
+        
+        // 清理录制测试相关的视频转换器
+        if (this.videoController) {
+            console.log('🔧 清理视频控制器...');
+            this.videoController.destroy();
+            this.videoController = null;
+        }
         
         // 清理隐藏的预览视频元素
         const hiddenVideo = document.getElementById('hiddenCameraPreview');
@@ -2150,11 +2260,40 @@ class CameraSetupManager {
             hiddenVideo.remove();
         }
         
+        // 清理演讲者预览视频元素
+        const speakerPreviewVideo = document.getElementById('speakerPreviewVideo');
+        if (speakerPreviewVideo) {
+            if (speakerPreviewVideo.srcObject) {
+                const tracks = speakerPreviewVideo.srcObject.getTracks();
+                tracks.forEach(track => {
+                    console.log(`🔇 停止演讲者预览轨道: ${track.kind} (${track.label})`);
+                    track.stop();
+                });
+                speakerPreviewVideo.srcObject = null;
+            }
+        }
+        
+        // 清理静态图像元素
+        const cameraStaticFrame = document.getElementById('cameraStaticFrame');
+        const speakerStaticFrame = document.getElementById('speakerStaticFrame');
+        if (cameraStaticFrame) {
+            cameraStaticFrame.remove();
+            console.log('🗑️ 已清理摄像头静态图像');
+        }
+        if (speakerStaticFrame) {
+            speakerStaticFrame.remove();
+            console.log('🗑️ 已清理演讲者静态图像');
+        }
+        
+        // 重置状态变量
         this.permissionGranted = false;
         this.devicesDetected = false;
         this.availableDevices = [];
         this.selectedDeviceId = null;
         this.selectedDeviceName = null;
+        this.isPreviewActive = false;
+        
+        console.log('✅ 摄像头设置资源清理完成');
     }
 }
 

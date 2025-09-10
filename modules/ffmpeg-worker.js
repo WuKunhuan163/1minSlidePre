@@ -5,13 +5,11 @@
  */
 
 import PathResolver from './path-resolver.js';
-import FFmpegProgressCalculator from './ffmpeg-progress-calculator.js';
 
 let ffmpeg = null;
 let isLoaded = false;
 let currentTask = null; // 当前执行的任务
 let isCancelled = false; // 取消标志
-let progressCalculator = null; // 进度计算器
 
 // 导入FFmpeg
 async function initFFmpeg() {
@@ -30,31 +28,21 @@ async function initFFmpeg() {
         const { FFmpeg } = module;
         ffmpeg = new FFmpeg();
         
-        // 设置事件监听 - 使用进度计算器处理日志
+        // 设置事件监听
         ffmpeg.on('log', ({ message }) => {
-            // 如果日志包含时间信息，使用进度计算器处理
-            if (message.includes('time=') && message.includes('fps=') && progressCalculator) {
-                const result = progressCalculator.calculateProgress(-1, message);
-                if (result.isValid) {
-                    self.postMessage({
-                        type: 'progress',
-                        percent: result.percent,
-                        time: result.time,
-                        message: result.reason
-                    });
-                }
-            }
-            
-            // 只发送重要的日志信息，过滤掉详细的调试信息
-            if (message.includes('error') || message.includes('warning') ||
-                message.includes('completed') || message.includes('starting') ||
-                message.includes('Input #') || message.includes('Output #') ||
-                message.includes('Stream mapping') || message.includes('Press [q]')) {
+            // 如果日志包含时间信息，也发送进度更新
+            if (message.includes('time=') && message.includes('fps=')) {
                 self.postMessage({
-                    type: 'log',
-                    message: `[FFmpeg Worker] ${message}`
+                    type: 'progress',
+                    percent: -1, // 表示来自日志
+                    time: message // 传递完整的日志消息
                 });
             }
+            
+            self.postMessage({
+                type: 'log',
+                message: `[FFmpeg Worker] ${message}`
+            });
         });
 
         ffmpeg.on('progress', ({ progress, time }) => {
@@ -105,17 +93,6 @@ async function convertVideo(data) {
     if (!isLoaded) {
         throw new Error('FFmpeg Worker 未初始化');
     }
-    
-    // 初始化进度计算器
-    progressCalculator = new FFmpegProgressCalculator({
-        enableDebugLog: true,
-        logCallback: (message) => {
-            self.postMessage({
-                type: 'log',
-                message: `[进度计算器] ${message}`
-            });
-        }
-    });
     
     const { webmBuffer, options = {} } = data;
     
@@ -301,17 +278,6 @@ async function compositeVideo(data) {
     const { videoBuffer, options } = data;
     const { pptBackground, videoScale, overlayPosition, outputSize, autoTrimStart = true } = options;
     
-    // 初始化进度计算器
-    progressCalculator = new FFmpegProgressCalculator({
-        enableDebugLog: true,
-        logCallback: (message) => {
-            self.postMessage({
-                type: 'log',
-                message: `[合成进度计算器] ${message}`
-            });
-        }
-    });
-    
     try {
         self.postMessage({ type: 'log', message: '🎬 Worker开始背景合成...' });
 
@@ -320,25 +286,18 @@ async function compositeVideo(data) {
         await ffmpeg.writeFile('input_video.webm', videoData);
         self.postMessage({ type: 'log', message: `📹 输入视频大小: ${videoData.length} bytes` });
 
-        // 获取PPT背景图片 - 添加路径调试信息
-        self.postMessage({ type: 'log', message: `📋 加载PPT背景图片: ${pptBackground}` });
-        console.log(`[Worker] 尝试加载PPT图片: ${pptBackground}`);
-        console.log(`[Worker] Worker位置: ${self.location.href}`);
-        console.log(`[Worker] Worker基础URL: ${new URL('../', self.location.href).href}`);
-        
-        // 尝试使用PathResolver解析路径
-        let resolvedPath = pptBackground;
-        if (!pptBackground.startsWith('http') && !pptBackground.startsWith('data:')) {
-            resolvedPath = new URL(pptBackground, new URL('../', self.location.href).href).href;
-            console.log(`[Worker] 解析后的路径: ${resolvedPath}`);
-            self.postMessage({ type: 'log', message: `🔧 路径解析: ${pptBackground} -> ${resolvedPath}` });
+        // 检测视频开始时间（可选）
+        let startTime = 0;
+        if (autoTrimStart) {
+            // 简化实现：暂时不进行复杂的检测
+            self.postMessage({ type: 'log', message: '📹 自动裁剪功能已启用，但暂时不执行复杂检测' });
+            startTime = 0; // 保持为0，避免复杂的Worker间通信
         }
-        
-        const response = await fetch(resolvedPath);
-        console.log(`[Worker] PPT图片响应状态: ${response.status} ${response.statusText}`);
-        
+
+        // 获取PPT背景图片
+        self.postMessage({ type: 'log', message: '📋 加载PPT背景图片...' });
+        const response = await fetch(pptBackground);
         if (!response.ok) {
-            self.postMessage({ type: 'log', message: `❌ PPT图片加载失败: ${response.status} ${response.statusText}` });
             throw new Error(`无法加载PPT图片: ${response.status} ${response.statusText}`);
         }
         
@@ -362,6 +321,12 @@ async function compositeVideo(data) {
         }
 
         self.postMessage({ type: 'log', message: `🎯 合成参数: 视频缩放=${videoScale}, 叠加位置=${overlayPosition}, 输出尺寸=${outputSize}` });
+        
+        // 解析参数进行验证
+        const [scaleW, scaleH] = videoScale.split(':').map(Number);
+        const [overlayX, overlayY] = overlayPosition.split(':').map(Number);
+        const [outW, outH] = outputSize.split(':').map(Number);
+        self.postMessage({ type: 'log', message: `🔍 解析参数: 视频=${scaleW}x${scaleH}, 位置=(${overlayX},${overlayY}), 输出=${outW}x${outH}` });
 
         // 确保输出尺寸是偶数（H.264要求）
         const [outputWidth, outputHeight] = outputSize.split(':').map(Number);
@@ -371,29 +336,36 @@ async function compositeVideo(data) {
         
         self.postMessage({ type: 'log', message: `📐 调整输出尺寸: ${outputSize} -> ${evenOutputSize} (确保偶数)` });
 
-        // 构建FFmpeg命令 - 简化版本，减少复杂性
+        // 构建FFmpeg命令 - 修复静态背景与动态视频叠加问题
         const command = [
             '-loop', '1',                     // 循环背景图片
             '-i', 'background.jpg',           // 背景图片
+        ];
+        
+        // 如果需要裁剪开头，添加 -ss 参数
+        if (startTime > 0) {
+            command.push('-ss', startTime.toString());
+        }
+        
+        command.push(
             '-i', 'input_video.webm',         // 输入视频
             '-filter_complex', 
-            `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[vid];[bg][vid]overlay=${overlayPosition}[out]`,
-            '-map', '[out]',                  // 映射合成的视频流
-            '-map', '1:a?',                   // 映射原视频的音频流（可选）
+            `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
+            '-map', '[v]',                    // 映射合成的视频流
+            '-map', '1:a?',                   // 可选映射原视频的音频流（如果存在）
             '-c:v', 'libx264',                // H.264编码
-            '-preset', 'ultrafast',           // 使用最快预设
-            '-crf', '28',                     // 降低质量以提高速度
+            '-preset', 'ultrafast',           // 超快预设
+            '-crf', '35',                     // 更低质量但更快速度
             '-c:a', 'aac',                    // AAC音频
             '-b:a', '128k',                   // 音频比特率
             '-pix_fmt', 'yuv420p',           // 像素格式
-            '-shortest',                      // 使用最短输入的长度
             '-avoid_negative_ts', 'make_zero', // 避免时间戳问题
-            '-t', '10',                       // 限制最长10秒（更短，减少错误）
-            '-y',                             // 覆盖输出文件
+            '-t', '30',                       // 限制最长30秒（防止卡死）
             'output_composite.mp4'
-        ];
+        );
 
         self.postMessage({ type: 'log', message: `🔧 FFmpeg合成命令: ${command.join(' ')}` });
+        self.postMessage({ type: 'log', message: `📊 传入参数: pptBackground=${pptBackground}, videoScale=${videoScale}, overlayPosition=${overlayPosition}, outputSize=${outputSize}` });
         
         // 执行前检查输入文件
         try {
@@ -419,14 +391,8 @@ async function compositeVideo(data) {
             return;
         }
         
-        try {
-            await ffmpeg.exec(command);
-            self.postMessage({ type: 'log', message: '✅ FFmpeg合成命令执行成功' });
-        } catch (execError) {
-            const execErrorMsg = execError.message || execError.toString() || '未知执行错误';
-            self.postMessage({ type: 'log', message: `❌ FFmpeg执行失败: ${execErrorMsg}` });
-            throw new Error(`FFmpeg合成执行失败: ${execErrorMsg}`);
-        }
+        self.postMessage({ type: 'log', message: '🚀 开始执行FFmpeg命令...' });
+        await ffmpeg.exec(command);
         
         // 执行后检查
         self.postMessage({ type: 'log', message: '✅ FFmpeg命令执行完成，检查输出文件...' });
@@ -440,18 +406,8 @@ async function compositeVideo(data) {
             }
             self.postMessage({ type: 'log', message: `📤 输出文件大小: ${outputData.length} bytes` });
         } catch (fileError) {
-            const errorMsg = fileError.message || fileError.toString() || '未知错误';
-            self.postMessage({ type: 'log', message: `❌ 无法读取输出文件: ${errorMsg}` });
-            
-            // 尝试列出所有文件以调试
-            try {
-                const files = await ffmpeg.listDir('/');
-                self.postMessage({ type: 'log', message: `📁 FFmpeg文件系统内容: ${files.join(', ')}` });
-            } catch (listError) {
-                self.postMessage({ type: 'log', message: `❌ 无法列出文件: ${listError.message}` });
-            }
-            
-            throw new Error(`合成失败：无法读取输出文件 - ${errorMsg}`);
+            self.postMessage({ type: 'log', message: `❌ 无法读取输出文件: ${fileError.message}` });
+            throw new Error(`合成失败：无法读取输出文件 - ${fileError.message}`);
         }
 
         // 验证文件大小

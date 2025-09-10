@@ -91,14 +91,9 @@ class OptimizedFFmpegConverter {
             const { FFmpeg } = module;
             this.ffmpeg = new FFmpeg();
 
-            // 设置事件监听 - 只记录重要日志
+            // 设置事件监听
             this.ffmpeg.on('log', ({ message }) => {
-                // 过滤掉过于详细的日志，只保留重要信息
-                if (message.includes('time=') || message.includes('fps=') || 
-                    message.includes('error') || message.includes('warning') ||
-                    message.includes('completed') || message.includes('starting')) {
-                    if (this.onLog) this.onLog(`[FFmpeg] ${message}`);
-                }
+                if (this.onLog) this.onLog(`[FFmpeg] ${message}`);
             });
 
             this.ffmpeg.on('progress', ({ progress, time }) => {
@@ -439,27 +434,23 @@ class OptimizedFFmpegConverter {
             await this.ffmpeg.writeFile('input_video.webm', videoData);
             if (this.onLog) this.onLog(`📹 输入视频大小: ${videoData.length} bytes`);
 
-            // 读取PPT背景图片 - 添加路径调试信息
-            if (this.onLog) this.onLog(`📋 原始PPT路径: ${pptBackground}`);
-            console.log(`[Direct] 尝试加载PPT图片: ${pptBackground}`);
-            console.log(`[Direct] 当前位置: ${window.location.href}`);
-            
-            // 尝试解析相对路径
-            let resolvedPath = pptBackground;
-            if (!pptBackground.startsWith('http') && !pptBackground.startsWith('data:')) {
-                resolvedPath = new URL(pptBackground, window.location.href).href;
-                console.log(`[Direct] 解析后的路径: ${resolvedPath}`);
-                if (this.onLog) this.onLog(`🔧 路径解析: ${pptBackground} -> ${resolvedPath}`);
+            // 检测视频开始时间（可选）
+            let startTime = 0;
+            if (autoTrimStart) {
+                if (this.onLog) this.onLog('🔍 [视频检测] 开始检测视频实际开始时间...');
+                startTime = await this.detectVideoStart('input_video.webm');
+                if (startTime > 0) {
+                    if (this.onLog) this.onLog(`✂️ [视频检测] 检测到视频实际开始时间: ${startTime.toFixed(2)}秒，将自动裁剪`);
+                    if (this.onLog) this.onLog(`📐 [视频检测] 裁剪设置: 从${startTime.toFixed(2)}秒开始，跳过前面的静态部分`);
+                } else {
+                    if (this.onLog) this.onLog('📹 [视频检测] 视频从开头就有内容，无需裁剪');
+                }
+            } else {
+                if (this.onLog) this.onLog('📹 [视频检测] 自动裁剪功能已禁用');
             }
-            
-            const response = await fetch(resolvedPath);
-            console.log(`[Direct] PPT图片响应状态: ${response.status} ${response.statusText}`);
-            
-            if (!response.ok) {
-                if (this.onLog) this.onLog(`❌ PPT图片加载失败: ${response.status} ${response.statusText}`);
-                throw new Error(`无法加载PPT图片: ${response.status} ${response.statusText}`);
-            }
-            
+
+            // 读取PPT背景图片
+            const response = await fetch(pptBackground);
             const pptData = new Uint8Array(await response.arrayBuffer());
             await this.ffmpeg.writeFile('background.jpg', pptData);
             if (this.onLog) this.onLog(`📋 PPT背景图片大小: ${pptData.length} bytes`);
@@ -474,27 +465,32 @@ class OptimizedFFmpegConverter {
             
             if (this.onLog) this.onLog(`📐 调整输出尺寸: ${outputSize} -> ${evenOutputSize} (确保偶数)`);
 
-            // 构建FFmpeg命令 - 简化版本，减少复杂性
+            // 构建FFmpeg命令 - 修复静态背景与动态视频叠加问题
             const command = [
                 '-loop', '1',                     // 循环背景图片
                 '-i', 'background.jpg',           // 背景图片
+            ];
+            
+            // 如果需要裁剪开头，添加 -ss 参数
+            if (startTime > 0) {
+                command.push('-ss', startTime.toString());
+            }
+            
+            command.push(
                 '-i', 'input_video.webm',         // 输入视频
                 '-filter_complex', 
-                `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[vid];[bg][vid]overlay=${overlayPosition}[out]`,
-                '-map', '[out]',                  // 映射合成的视频流
-                '-map', '1:a?',                   // 映射原视频的音频流（可选）
+                `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
+                '-map', '[v]',                    // 映射合成的视频流
+                '-map', '1:a?',                   // 可选映射原视频的音频流（如果存在）
                 '-c:v', 'libx264',                // H.264编码
-                '-preset', 'ultrafast',           // 使用最快预设
-                '-crf', '28',                     // 降低质量以提高速度
+                '-preset', 'ultrafast',           // 超快预设
+                '-crf', '35',                     // 更低质量但更快速度
                 '-c:a', 'aac',                    // AAC音频
                 '-b:a', '128k',                   // 音频比特率
                 '-pix_fmt', 'yuv420p',           // 像素格式
-                '-shortest',                      // 使用最短输入的长度
-                '-avoid_negative_ts', 'make_zero', // 避免时间戳问题
-                '-t', '10',                       // 限制最长10秒（更短，减少错误）
-                '-y',                             // 覆盖输出文件
+                '-t', '30',                       // 限制最长30秒（防止卡死）
                 'output_composite.mp4'
-            ];
+            );
 
             if (this.onLog) this.onLog(`🔧 FFmpeg合成命令: ${command.join(' ')}`);
             
@@ -535,6 +531,85 @@ class OptimizedFFmpegConverter {
         } catch (error) {
             if (this.onLog) this.onLog(`❌ 背景合成失败: ${error.message}`);
             throw error;
+        }
+    }
+
+    // 检测视频实际开始时间（跳过静态开头部分）
+    async detectVideoStart(inputFile) {
+        try {
+            if (this.onLog) this.onLog('🔍 [场景检测] 开始分析视频场景变化...');
+            
+            // 使用场景检测找到第一个显著变化的时间点
+            const command = [
+                '-i', inputFile,
+                '-vf', 'select=gt(scene\\,0.1)',  // 场景变化阈值0.1
+                '-vsync', 'vfr',
+                '-f', 'null',
+                '-'
+            ];
+
+            if (this.onLog) this.onLog(`🔍 [场景检测] FFmpeg命令: ${command.join(' ')}`);
+
+            // 捕获FFmpeg输出
+            let logOutput = '';
+            const originalOnLog = this.ffmpeg.on;
+            
+            // 临时捕获日志
+            if (this.ffmpeg.on) {
+                this.ffmpeg.on('log', ({ message }) => {
+                    logOutput += message + '\n';
+                    // 实时显示FFmpeg分析日志
+                    if (this.onLog && message.includes('pts_time')) {
+                        this.onLog(`🔍 [场景检测] FFmpeg输出: ${message.trim()}`);
+                    }
+                });
+            }
+
+            if (this.onLog) this.onLog('🔍 [场景检测] 执行场景检测命令...');
+            await this.ffmpeg.exec(command);
+            
+            if (this.onLog) this.onLog(`🔍 [场景检测] 命令执行完成，分析输出日志 (${logOutput.length}字符)`);
+
+            // 解析输出中的时间戳
+            const lines = logOutput.split('\n');
+            let foundScenes = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.includes('pts_time')) {
+                    const timeMatch = line.match(/pts_time:(\d+\.?\d*)/);
+                    if (timeMatch) {
+                        const sceneTime = parseFloat(timeMatch[1]);
+                        foundScenes.push(sceneTime);
+                        if (this.onLog) this.onLog(`🎯 [场景检测] 发现场景变化 #${foundScenes.length}: ${sceneTime.toFixed(2)}秒`);
+                    }
+                }
+            }
+            
+            if (this.onLog) this.onLog(`🔍 [场景检测] 总共发现 ${foundScenes.length} 个场景变化`);
+            
+            if (foundScenes.length > 0) {
+                const firstSceneTime = foundScenes[0];
+                if (this.onLog) this.onLog(`🎯 [场景检测] 第一个场景变化: ${firstSceneTime.toFixed(2)}秒`);
+                
+                // 如果变化在合理范围内（0.3-10秒），认为是有效的开始时间
+                if (firstSceneTime >= 0.3 && firstSceneTime <= 10.0) {
+                    const startTime = Math.max(0, firstSceneTime - 0.1); // 提前0.1秒开始
+                    if (this.onLog) this.onLog(`✂️ [场景检测] 设置开始时间: ${startTime.toFixed(2)}秒 (原场景时间-0.1秒)`);
+                    return startTime;
+                } else {
+                    if (this.onLog) this.onLog(`⚠️ [场景检测] 第一个场景变化时间不合理: ${firstSceneTime.toFixed(2)}秒 (应在0.3-10秒范围内)`);
+                }
+            } else {
+                if (this.onLog) this.onLog('📹 [场景检测] 未检测到任何场景变化');
+            }
+
+            if (this.onLog) this.onLog('📹 [场景检测] 结论：从原始位置开始，无需裁剪');
+            return 0;
+
+        } catch (error) {
+            if (this.onLog) this.onLog(`⚠️ [场景检测] 检测失败: ${error.message}，从原始位置开始`);
+            return 0;
         }
     }
 

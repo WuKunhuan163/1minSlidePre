@@ -4,7 +4,7 @@ const https = require('https');
 const fs = require('fs');
 
 const app = express();
-const PORT = 8001;
+const PORT = process.argv[2] || 8001;
 
 // 设置静态文件服务
 app.use(express.static('.', {
@@ -50,16 +50,16 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     };
     
     https.createServer(options, app).listen(PORT, () => {
-        // console.log(`🔒 HTTPS服务器运行在 https://localhost:${PORT}`);
-        // console.log('✅ 支持媒体设备访问 (getUserMedia)');
+        console.log(`🔒 HTTPS服务器运行在 https://localhost:${PORT}`);
+        console.log('✅ 支持媒体设备访问 (getUserMedia)');
     });
 } else {
     // 使用HTTP (仅用于开发)
     app.listen(PORT, () => {
-        // console.log(`🌐 HTTP服务器运行在 http://localhost:${PORT}`);
-        // console.log('⚠️  注意: 某些浏览器在HTTP下可能不支持getUserMedia');
-        // console.log('💡 建议: 使用Chrome并允许不安全的本地主机访问');
-        // console.log('   或者生成SSL证书以启用HTTPS');
+        console.log(`🌐 HTTP服务器运行在 http://localhost:${PORT}`);
+        console.log('⚠️  注意: 某些浏览器在HTTP下可能不支持getUserMedia');
+        console.log('💡 建议: 使用Chrome并允许不安全的本地主机访问');
+        console.log('   或者生成SSL证书以启用HTTPS');
     });
 }
 
