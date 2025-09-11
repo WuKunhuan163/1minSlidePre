@@ -218,6 +218,7 @@ class MigratedOptimizedFFmpegConverter {
                         const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
                         const mp4Blob = new Blob([buffer], { type: 'video/mp4' });
                         if (this.onLog) this.onLog(`✅ Worker转换完成！耗时 ${convertTime} 秒`);
+                        if (this.onLog) this.onLog('🎊⚡ 迁移接口转换完成！使用了新的MigratedOptimizedFFmpegConverter！');
                         resolve(mp4Blob);
                         break;
                         
@@ -384,6 +385,7 @@ class MigratedOptimizedFFmpegConverter {
                         const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
                         const mp4Blob = new Blob([buffer], { type: 'video/mp4' });
                         if (this.onLog) this.onLog(`✅ Worker合成完成！耗时 ${convertTime} 秒`);
+                        if (this.onLog) this.onLog('🎊🎉 迁移接口合成完成！使用了新的MigratedOptimizedFFmpegConverter！');
                         resolve(mp4Blob);
                         break;
                         
@@ -478,6 +480,7 @@ class MigratedOptimizedFFmpegConverter {
             await this.ffmpeg.deleteFile('output_composite.mp4');
 
             if (this.onLog) this.onLog('✅ 直接模式背景合成完成！');
+            if (this.onLog) this.onLog('🎊🎉 迁移接口合成完成！使用了新的MigratedOptimizedFFmpegConverter！');
             return mp4Blob;
 
         } catch (error) {
