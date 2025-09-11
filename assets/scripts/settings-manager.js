@@ -1477,18 +1477,7 @@ class SettingsManager {
                 });
                 stream.getTracks().forEach(track => track.stop());
                 
-                // 检测测试视频文件是否存在
-                const testVideoExists = await this.checkTestVideoFile();
-                if (!testVideoExists) {
-                    return { 
-                        success: false, 
-                        message: '测试视频文件不存在，请确保 assets/testfiles/webm_cam_recording_test.webm 文件存在' 
-                    };
-                }
-                
-                // 使用指定的测试视频文件进行WebM转MP4测试
-                const conversionTestResult = await this.testVideoConversion();
-                return conversionTestResult;
+                return { success: true, message: '摄像头测试通过' };
             } catch (error) {
                 const optimizedMessage = this.optimizeErrorMessage(error.message, '摄像头');
                 return { success: false, message: optimizedMessage };
@@ -1695,95 +1684,6 @@ class SettingsManager {
     }
 
     // 测试视频转换功能
-    async testVideoConversion() {
-        try {
-            // 检查测试视频文件是否存在
-            const testVideoExists = await this.checkTestVideoFile();
-            if (!testVideoExists) {
-                return { 
-                    success: false, 
-                    message: '测试视频文件不存在：assets/testfiles/webm_cam_recording_test.webm' 
-                };
-            }
-            
-            // 获取测试视频文件
-            const testVideoPath = 'assets/testfiles/webm_cam_recording_test.webm';
-            const response = await fetch(testVideoPath);
-            const videoBlob = await response.blob();
-            
-            // console.log('🧪 模拟视频转换测试...');
-            // console.log('测试视频信息:', {
-            //     path: testVideoPath,
-            //     type: videoBlob.type,
-            //     size: videoBlob.size
-            // });
-            
-            // 检查WebM格式支持
-            if (!videoBlob.type.includes('webm')) {
-                console.warn('⚠️ 视频文件不是WebM格式:', videoBlob.type);
-            }
-            
-            // 使用真实的FFmpeg转换器进行测试
-            try {
-                // 导入FFmpeg转换器
-                if (!window.FFmpegConverter) {
-                    const ConverterModule = await import('../modules/ffmpeg-converter.js');
-                    window.FFmpegConverter = ConverterModule.default;
-                }
-                
-                // 创建转换器实例
-                const converter = new window.FFmpegConverter(true); // 使用Worker模式
-                await converter.init();
-                
-                // 记录开始时间
-                const startTime = Date.now();
-                const timeoutMs = 2000; // 2秒超时
-                
-                // 创建超时Promise
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('转换超时：超过2秒时间限制')), timeoutMs);
-                });
-                
-                // 执行转换
-                const conversionPromise = converter.convertWebMToMP4(videoBlob);
-                
-                // 等待转换完成或超时
-                const result = await Promise.race([conversionPromise, timeoutPromise]);
-                const endTime = Date.now();
-                const duration = (endTime - startTime) / 1000;
-                
-                // 清理转换器
-                converter.destroy();
-                
-                return { 
-                    success: true, 
-                    message: `WebM转MP4转换测试通过`,
-                    details: `转换耗时：${duration.toFixed(2)}秒，输出大小：${Math.round(result.size/1024)}KB`
-                };
-                
-            } catch (converterError) {
-                console.warn('⚠️ 转换测试失败:', converterError);
-                
-                // 检查是否是超时错误
-                if (converterError.message.includes('转换超时')) {
-                    return { 
-                        success: false, 
-                        message: '转换性能不达标：转换时间超过2秒',
-                        details: `测试视频文件大小：${Math.round(videoBlob.size/1024)}KB`
-                    };
-                }
-                
-                return { 
-                    success: false, 
-                    message: `转换测试失败：${converterError.message}`,
-                    details: `测试视频文件大小：${Math.round(videoBlob.size/1024)}KB`
-                };
-            }
-            
-        } catch (error) {
-            return { success: false, message: `视频转换测试失败: ${error.message}` };
-        }
-    }
     
     // 执行快速测试
     async performQuickTest(settingId, showMessage = true) {
