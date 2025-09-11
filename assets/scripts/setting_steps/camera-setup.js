@@ -966,15 +966,67 @@ class CameraSetupManager {
         }
     }
 
+    // 重置录制状态，允许重新录制
+    resetRecordingState() {
+        console.log('🔄 重置录制状态...');
+        
+        // 重置转换相关状态
+        this.conversionStartTime = null;
+        this.recordingResult = null;
+        
+        // 清理之前的视频控制器
+        if (this.videoController) {
+            try {
+                this.videoController.destroy();
+            } catch (error) {
+                console.warn('⚠️ 清理视频控制器时出错:', error);
+            }
+            this.videoController = null;
+        }
+        
+        // 清理之前的视频URL
+        if (this.lastVideoUrl) {
+            try {
+                URL.revokeObjectURL(this.lastVideoUrl);
+            } catch (error) {
+                console.warn('⚠️ 清理视频URL时出错:', error);
+            }
+            this.lastVideoUrl = null;
+        }
+        
+        // 重置UI状态
+        const resultContainer = document.getElementById('resultContainer');
+        const videoPreviewContainer = document.getElementById('videoPreviewContainer');
+        
+        if (resultContainer) {
+            resultContainer.style.display = 'none';
+        }
+        
+        if (videoPreviewContainer) {
+            videoPreviewContainer.innerHTML = '';
+        }
+        
+        // 隐藏步骤按钮
+        if (this.stepManager && this.stepManager.currentStepIndex === 3) {
+            this.stepManager.hideButton('step4', 'downloadBtn');
+            this.stepManager.hideButton('step4', 'completeBtn');
+        }
+        
+        console.log('✅ 录制状态重置完成');
+    }
+
     // 初始化录制测试步骤
     async initializeRecordingTest() {
         console.log('📹 初始化录制测试步骤...');
         
+        // 清空之前的状态，允许重新录制
+        this.resetRecordingState();
+        
         try {
             // 导入迁移后的转换器
-            if (!window.MigratedOptimizedFFmpegConverter) {
-                const ConverterModule = await import('../../../modules/migrated-ffmpeg-converter.js');
-                window.MigratedOptimizedFFmpegConverter = ConverterModule.default;
+            if (!window.FFmpegConverter) {
+                const ConverterModule = await import('../../../modules/ffmpeg-converter.js');
+                window.FFmpegConverter = ConverterModule.default;
                 console.log('✅ 迁移后的转换器已加载');
             }
             
@@ -1918,10 +1970,6 @@ class CameraSetupManager {
                 resultContainer.style.display = 'none';
             }
             
-            // 获取转换选项
-            const conversionOptions = this.getConversionOptions();
-            const videoElement = document.getElementById('testVideoPreview');
-            
             // 创建新的简化视频控制器
             this.videoController = {
                 converter: null,
@@ -1935,11 +1983,10 @@ class CameraSetupManager {
                 async init(stream) {
                     console.log('🔧 初始化简化视频控制器...');
                     this.currentStream = stream;
-                    console.log('🎯🚀 创建迁移的新转换器：MigratedOptimizedFFmpegConverter (Worker模式)');
-                    this.converter = new window.MigratedOptimizedFFmpegConverter(true);
-                    
+                    console.log('🎯🚀 创建迁移的新转换器：FFmpegConverter (Worker模式)');
+                    this.converter = new window.FFmpegConverter(true);
                     this.converter.setLogCallback((message) => {
-                        console.log(`[转换器] ${message}`);
+                        console.log(message);
                         if (this.progressUI) {
                             this.progressUI.addLog(message);
                         }
@@ -1948,9 +1995,14 @@ class CameraSetupManager {
                     this.converter.setProgressCallback((percent, timeData) => {
                         // 获取预期录制时间
                         const expectedDuration = this.getRecordingDuration(); // 应该是5秒
-                        
+                        this.progressUI.addLog(timeData);
                         let realProgress = 0;
                         let displayMessage = '转换中...';
+                        
+                        // 记录转换开始时间（第一次收到进度时）
+                        if (!this.conversionStartTime) {
+                            this.conversionStartTime = Date.now();
+                        }
                         
                         if (percent === -1 && timeData && typeof timeData === 'string') {
                             // 这是来自FFmpeg日志的时间信息
@@ -1998,14 +2050,19 @@ class CameraSetupManager {
                         
                         // 应用进度公式：渲染进度 = 25% + 75% * 计算结果
                         const finalProgress = 25 + (realProgress * 0.75);
-                        
                         if (this.progressUI) {
                             this.progressUI.updateProgress(finalProgress, displayMessage);
+                        }
+                        if (finalProgress === 100) {
+                            // 计算合成耗时
+                            const conversionTime = this.conversionStartTime ? 
+                                ((Date.now() - this.conversionStartTime) / 1000).toFixed(1) : 
+                                '未知';
+                            this.progressUI.updateProgress(100, `合成完成 (${conversionTime}秒)`);
                         }
                     });
                     
                     await this.converter.init();
-                    console.log('✅🎉 迁移的新转换器初始化完成！现在使用新接口了！');
                 },
                 
                 startRecording(duration = 5) {
@@ -2047,10 +2104,6 @@ class CameraSetupManager {
                         if (this.isRecording && this.mediaRecorder && this.mediaRecorder.state === 'recording') {
                             this.mediaRecorder.stop();
                             this.isRecording = false;
-                            
-                            if (this.progressUI) {
-                                this.progressUI.updateProgress(15, '录制完成，准备转换...');
-                            }
                         }
                     }, duration * 1000);
                 },
@@ -2148,11 +2201,7 @@ class CameraSetupManager {
                     clearInterval(recordingInterval);
                 }
             }, 100); // 每0.1秒更新一次
-            
-            // 6秒后完成录制流程（录制完成后关闭摄像头）
             setTimeout(() => {
-                console.log('⏰ 6秒录制时间结束');
-                
                 // 录制完成后立即关闭摄像头
                 console.log('📹 录制完成，关闭摄像头预览...');
                 this.stopPreview();
@@ -2295,15 +2344,14 @@ class CameraSetupManager {
                 
                 if (conversionOptions.composite) {
                     console.log('🎬🎯 使用迁移的新接口：合成模式！');
-                    console.log('🚀✨ 调用 MigratedOptimizedFFmpegConverter.compositeVideoWithBackground()');
+                    console.log('🚀✨ 调用 FFmpegConverter.compositeVideoWithBackground()');
                     mp4Blob = await this.videoController.converter.compositeVideoWithBackground(
                         webmBlob,
                         conversionOptions.composite
                     );
-                    console.log('🎊🎉 迁移接口合成完成！');
                 } else if (conversionOptions.conversion) {
                     console.log('🚀⚡ 使用迁移的新接口：纯转换模式（高速）！');
-                    console.log('🔧✨ 调用 MigratedOptimizedFFmpegConverter.convertWebMToMP4()');
+                    console.log('🔧✨ 调用 FFmpegConverter.convertWebMToMP4()');
                     mp4Blob = await this.videoController.converter.convertWebMToMP4(
                         webmBlob,
                         conversionOptions.conversion
@@ -2311,7 +2359,7 @@ class CameraSetupManager {
                     console.log('🎊⚡ 迁移接口转换完成！');
                 } else {
                     console.log('🔄📦 使用迁移的新接口：默认转换模式！');
-                    console.log('🛠️✨ 调用 MigratedOptimizedFFmpegConverter.convertWebMToMP4()');
+                    console.log('🛠️✨ 调用 FFmpegConverter.convertWebMToMP4()');
                     mp4Blob = await this.videoController.converter.convertWebMToMP4(webmBlob);
                     console.log('🎊🔄 迁移接口默认转换完成！');
                 }
