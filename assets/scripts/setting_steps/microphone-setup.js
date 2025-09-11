@@ -108,7 +108,8 @@ class MicrophoneSetupManager {
                         id: 'completeBtn',
                         text: '完成设置',
                         type: 'success',
-                        onClick: () => this.completeSetup(),
+                        isPrimary: true,
+                        onClick: () => this.handleStepComplete(),
                         show: false
                     }
                 ],
@@ -504,6 +505,13 @@ class MicrophoneSetupManager {
             console.log('🔄 检测到正在录音，自动停止录音');
             this.stopRecording();
         }
+    }
+    
+    // 处理步骤完成（会触发checkAutoJump显示成功状态）
+    handleStepComplete() {
+        console.log('🎉 用户点击完成设置按钮');
+        // 这个函数会被stepManager的handleButtonClick调用
+        // 由于isPrimary=true，会自动触发checkAutoJump显示成功状态
     }
     
     // 初始化录音测试

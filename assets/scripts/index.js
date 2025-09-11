@@ -385,6 +385,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Render thumbnails - 全局函数
     window.renderThumbnails = (container) => {
         const thumbnailsContainer = container.querySelector('.thumbnails-container-scroll');
+        if (!thumbnailsContainer) {
+            console.warn('⚠️ thumbnailsContainer not found in renderThumbnails');
+            return;
+        }
+        
         const addButton = thumbnailsContainer.querySelector('.add-slide');
         
         // Clear existing thumbnails except add button
@@ -1603,17 +1608,51 @@ window.getVideoStream = getVideoStream;
                 await startSound.play();
             }
             await new Promise(resolve => setTimeout(resolve, 300));
+            // 倒计时动画配置参数
+            const countdownConfig = {
+                displayDuration: 800,    // 每个数字显示的总时长（毫秒）
+                fadeOutTime: 600,       // 淡出动画时长（毫秒）
+                offsetTime: 200         // 数字间隔时间（毫秒）
+            };
+            
             const countdown = ['3', '2', '1', '开始'];
-            for (let text of countdown) {
+            for (let i = 0; i < countdown.length; i++) {
+                const text = countdown[i];
                 if (!countdownOverlay) break;
+                
+                // 突然显示数字（无动画）
                 countdownOverlay.textContent = text;
-                countdownOverlay.classList.add('show');
-                await new Promise(resolve => setTimeout(resolve, 800));
-                if (text != "开始") {countdownOverlay.classList.remove('show');}
-                await new Promise(resolve => setTimeout(resolve, 200));
-                if (text == "开始") {
-                    countdownOverlay.style.transition = "reset";
-                    countdownOverlay.classList.remove('show');
+                countdownOverlay.style.transition = 'none'; // 禁用过渡动画
+                countdownOverlay.style.opacity = '1';
+                countdownOverlay.style.visibility = 'visible';
+                
+                console.log(`🎬 倒计时显示: ${text} (突然显示)`);
+                
+                // 等待显示时间减去淡出时间
+                const waitTime = countdownConfig.displayDuration - countdownConfig.fadeOutTime;
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                
+                // 开始淡出动画（除了最后一个"开始"）
+                if (text !== "开始") {
+                    countdownOverlay.style.transition = `opacity ${countdownConfig.fadeOutTime}ms ease-out`;
+                    countdownOverlay.style.opacity = '0';
+                    
+                    console.log(`🎬 倒计时淡出: ${text} (${countdownConfig.fadeOutTime}ms)`);
+                    
+                    // 等待淡出完成 + 间隔时间
+                    await new Promise(resolve => setTimeout(resolve, countdownConfig.fadeOutTime + countdownConfig.offsetTime));
+                } else {
+                    // "开始"文字的特殊处理
+                    countdownOverlay.style.transition = `opacity ${countdownConfig.fadeOutTime}ms ease-out`;
+                    countdownOverlay.style.opacity = '0';
+                    
+                    console.log(`🎬 倒计时结束: ${text} (${countdownConfig.fadeOutTime}ms)`);
+                    
+                    // 等待淡出完成
+                    await new Promise(resolve => setTimeout(resolve, countdownConfig.fadeOutTime));
+                    
+                    // 完全隐藏
+                    countdownOverlay.style.visibility = 'hidden';
                 }
             }
 
