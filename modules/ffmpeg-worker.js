@@ -4,7 +4,7 @@
  * 不使用SharedArrayBuffer，确保GitHub Pages兼容性
  */
 
-import PathResolver from './path-resolver.js';
+import { PathResolver } from './path-resolver.js';
 
 let ffmpeg = null;
 let isLoaded = false;
@@ -352,7 +352,7 @@ async function compositeVideo(data) {
             '-filter_complex', 
             `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
             '-map', '[v]',                    // 映射合成的视频流
-            '-map', '1:a',                    // 映射原视频的音频流
+            '-map', '1:a?',                   // 映射原视频的音频流（可选）
             '-c:v', 'libx264',                // H.264编码
             '-preset', 'fast',                // 快速预设
             '-crf', '23',                     // 质量设置

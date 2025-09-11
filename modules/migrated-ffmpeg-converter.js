@@ -3,8 +3,9 @@
  * 支持WebM到MP4转换的核心功能
  */
 
-// 导入FFmpeg相关模块
+// 导入FFmpeg相关模块和路径解析器
 import { FFmpeg } from './ffmpeg-libs/ffmpeg/ffmpeg/dist/esm/index.js';
+import { PathResolver } from './path-resolver.js';
 
 class MigratedOptimizedFFmpegConverter {
     constructor(useWorker = true) {
@@ -29,7 +30,7 @@ class MigratedOptimizedFFmpegConverter {
     
     // 核心接口方法（从参考项目迁移）
     async init() {
-        if (this.onLog) this.onLog('🔧 初始化转换器...');
+        if (this.onLog) this.onLog('🎯🚀 MigratedOptimizedFFmpegConverter 初始化中...');
         if (this.isLoaded) return;
         
         if (this.useWorker && typeof Worker !== 'undefined') {
@@ -80,24 +81,37 @@ class MigratedOptimizedFFmpegConverter {
     // 初始化直接模式
     async initDirect() {
         try {
-            if (this.onLog) this.onLog('正在初始化 FFmpeg 直接模式...');
+            if (this.onLog) this.onLog('正在初始化 FFmpeg (直接模式)...');
             
+            // GitHub Pages兼容版本 - 动态构建模块路径
+            const logCallback = this.onLog ? this.onLog.bind(this) : null;
+            
+            const module = await PathResolver.loadFFmpegWithRetry('window', logCallback);
+            const { FFmpeg } = module;
             this.ffmpeg = new FFmpeg();
-            
-            // 设置日志回调
+
+            // 设置事件监听
             this.ffmpeg.on('log', ({ message }) => {
                 if (this.onLog) this.onLog(`[FFmpeg] ${message}`);
             });
-            
-            // 设置进度回调
+
             this.ffmpeg.on('progress', ({ progress, time }) => {
+                const percent = Math.round(progress * 100);
                 if (this.onProgress) {
-                    this.onProgress(Math.round(progress * 100), time);
+                    const timeInSeconds = time > 1000000 ? (time / 1000000).toFixed(2) : time.toFixed(2);
+                    this.onProgress(percent, timeInSeconds);
                 }
             });
+
+            // 加载FFmpeg核心 - 使用最简化路径
+            const { config: loadConfig, valid } = await PathResolver.validateLoadConfig('window', logCallback);
             
-            // 加载FFmpeg
-            await this.ffmpeg.load();
+            if (!valid) {
+                throw new Error('FFmpeg 路径配置无效');
+            }
+            
+            if (this.onLog) this.onLog('🔧 开始加载 FFmpeg 核心文件...');
+            await this.ffmpeg.load(loadConfig);
             
             this.isLoaded = true;
             if (this.onLog) this.onLog('✅ FFmpeg 直接模式初始化完成！');
@@ -141,6 +155,7 @@ class MigratedOptimizedFFmpegConverter {
     
     // 主要转换接口（从参考项目迁移）
     async convertWebMToMP4(webmBlob, options = {}) {
+        if (this.onLog) this.onLog('🎯⚡ 调用迁移接口：MigratedOptimizedFFmpegConverter.convertWebMToMP4()');
         if (!this.isLoaded) {
             throw new Error('转换器未初始化，请先调用 init()');
         }
@@ -321,6 +336,7 @@ class MigratedOptimizedFFmpegConverter {
     
     // 合成视频与背景图片
     async compositeVideoWithBackground(videoBlob, options) {
+        if (this.onLog) this.onLog('🎯🎬 调用迁移接口：MigratedOptimizedFFmpegConverter.compositeVideoWithBackground()');
         if (!this.isLoaded) {
             throw new Error('转换器未初始化，请先调用 init()');
         }
@@ -436,7 +452,7 @@ class MigratedOptimizedFFmpegConverter {
                 '-filter_complex', 
                 `[0:v]scale=${evenOutputSize}[bg];[1:v]scale=${videoScale}[small];[bg][small]overlay=${overlayPosition}:shortest=1[v]`,
                 '-map', '[v]',                    // 映射合成的视频流
-                '-map', '1:a',                    // 映射原视频的音频流
+                '-map', '1:a?',                   // 映射原视频的音频流（可选）
                 '-c:v', 'libx264',                // H.264编码
                 '-preset', 'fast',                // 快速预设
                 '-crf', '23',                     // 质量设置

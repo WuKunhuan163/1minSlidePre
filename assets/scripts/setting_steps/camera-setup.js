@@ -1933,7 +1933,8 @@ class CameraSetupManager {
                 async init(stream) {
                     console.log('🔧 初始化简化视频控制器...');
                     this.currentStream = stream;
-                    this.converter = new window.MigratedOptimizedFFmpegConverter(false);
+                    console.log('🎯🚀 创建迁移的新转换器：MigratedOptimizedFFmpegConverter (Worker模式)');
+                    this.converter = new window.MigratedOptimizedFFmpegConverter(true);
                     
                     this.converter.setLogCallback((message) => {
                         console.log(`[转换器] ${message}`);
@@ -1950,7 +1951,7 @@ class CameraSetupManager {
                     });
                     
                     await this.converter.init();
-                    console.log('✅ 转换器初始化完成');
+                    console.log('✅🎉 迁移的新转换器初始化完成！现在使用新接口了！');
                 },
                 
                 startRecording(duration = 5) {
@@ -1973,33 +1974,16 @@ class CameraSetupManager {
                     };
                     
                     this.mediaRecorder.onstop = async () => {
-                        console.log('📹 录制停止，开始转换...');
+                        console.log('📹 录制停止，传递WebM数据给外层处理...');
                         const webmBlob = new Blob(this.recordedChunks, { type: 'video/webm' });
                         
-                        try {
-                            if (this.progressUI) {
-                                this.progressUI.updateProgress(25, '开始转换...');
-                            }
-                            
-                            const mp4Blob = await this.converter.convertWebMToMP4(webmBlob);
-                            this.lastConvertedBlob = mp4Blob;
-                            
-                            if (this.progressUI) {
-                                this.progressUI.updateProgress(100, '录制和转换完成！');
-                            }
-                            
-                            if (this.onComplete) {
-                                this.onComplete({
-                                    success: true,
-                                    blob: mp4Blob,
-                                    message: '录制和转换完成'
-                                });
-                            }
-                        } catch (error) {
-                            console.error('转换失败:', error);
-                            if (this.onError) {
-                                this.onError(error);
-                            }
+                        // 将WebM数据传递给外层，让外层根据设置决定如何处理
+                        if (this.onComplete) {
+                            this.onComplete({
+                                success: true,
+                                webmBlob: webmBlob,  // 传递原始WebM数据
+                                message: '录制完成，等待转换处理'
+                            });
                         }
                     };
                     
@@ -2101,39 +2085,16 @@ class CameraSetupManager {
                 }
             }, 100); // 每0.1秒更新一次
             
-            // 6秒后开始转换（给录制完成留1秒缓冲）
-            setTimeout(async () => {
-                try {
-                    console.log('⏰ 6秒等待结束，录制已完成');
-                    
-                    // 录制完成后立即关闭摄像头
-                    console.log('📹 录制完成，关闭摄像头预览...');
-                    this.stopPreview();
-                    
-                    console.log('📊 当前演讲者位置:', this.speakerPosition);
-                    console.log('📊 转换选项:', conversionOptions);
-                    console.log('🎭 开始演讲者模式合成...');
-                    // 不在这里更新进度，让FFmpeg日志处理来动态更新
-                    
-                    // 转换功能已被移除
-                    console.log('⚠️ 所有转换功能已被移除，需要重新实现');
-                    console.log('✅ 转换完成！');
-                    
-                    // 调用录制完成处理
-                    // 录制完成处理已被移除
-                    console.log('⚠️ 录制完成处理功能需要重新实现');
-                    /*
-                    this.handleRecordingComplete({
-                        success: true,
-                        blob: this.videoController.lastConvertedBlob,
-                        message: '录制和转换完成'
-                    });
-                    */
-                    
-                } catch (error) {
-                    console.log('❌ 转换过程中出错:', error);
-                    this.handleRecordingError(error);
-                }
+            // 6秒后完成录制流程（录制完成后关闭摄像头）
+            setTimeout(() => {
+                console.log('⏰ 6秒录制时间结束');
+                
+                // 录制完成后立即关闭摄像头
+                console.log('📹 录制完成，关闭摄像头预览...');
+                this.stopPreview();
+                
+                console.log('📊 当前演讲者位置:', this.speakerPosition);
+                console.log('✅ 录制流程完成，转换处理已由videoController.onstop触发');
             }, 6000);
             
         } catch (error) {
@@ -2253,8 +2214,67 @@ class CameraSetupManager {
     }
 
     // 处理录制完成
-    handleRecordingComplete(result) {
-        console.log('✅ 录制和转换完成:', result);
+    async handleRecordingComplete(result) {
+        console.log('✅ 录制完成，开始处理转换:', result);
+        
+        // 如果传入的是webmBlob，需要进行转换处理
+        if (result.webmBlob) {
+            const webmBlob = result.webmBlob;
+            console.log('📦 收到WebM数据，大小:', webmBlob.size);
+            
+            try {
+                // 获取转换选项
+                const conversionOptions = this.getConversionOptions();
+                console.log('🔧 转换选项:', conversionOptions);
+                
+                let mp4Blob;
+                
+                if (conversionOptions.composite) {
+                    console.log('🎬🎯 使用迁移的新接口：合成模式！');
+                    console.log('🚀✨ 调用 MigratedOptimizedFFmpegConverter.compositeVideoWithBackground()');
+                    mp4Blob = await this.videoController.converter.compositeVideoWithBackground(
+                        webmBlob,
+                        conversionOptions.composite
+                    );
+                    console.log('🎊🎉 迁移接口合成完成！');
+                } else if (conversionOptions.conversion) {
+                    console.log('🚀⚡ 使用迁移的新接口：纯转换模式（高速）！');
+                    console.log('🔧✨ 调用 MigratedOptimizedFFmpegConverter.convertWebMToMP4()');
+                    mp4Blob = await this.videoController.converter.convertWebMToMP4(
+                        webmBlob,
+                        conversionOptions.conversion
+                    );
+                    console.log('🎊⚡ 迁移接口转换完成！');
+                } else {
+                    console.log('🔄📦 使用迁移的新接口：默认转换模式！');
+                    console.log('🛠️✨ 调用 MigratedOptimizedFFmpegConverter.convertWebMToMP4()');
+                    mp4Blob = await this.videoController.converter.convertWebMToMP4(webmBlob);
+                    console.log('🎊🔄 迁移接口默认转换完成！');
+                }
+                
+                console.log('✅ 转换完成！');
+                this.videoController.lastConvertedBlob = mp4Blob;
+                
+                // 继续显示结果的逻辑
+                this.displayConversionResult({
+                    success: true,
+                    blob: mp4Blob,
+                    message: '录制和转换完成'
+                });
+                
+            } catch (error) {
+                console.error('❌ 转换过程中出错:', error);
+                this.handleRecordingError(error);
+            }
+        } else {
+            // 如果已经是转换后的结果，直接显示
+            this.displayConversionResult(result);
+        }
+    }
+    
+    // 显示转换结果
+    displayConversionResult(result) {
+        console.log('✅ 显示转换结果:', result);
         
         const resultContainer = document.getElementById('resultContainer');
         const videoPreviewContainer = document.getElementById('videoPreviewContainer');
