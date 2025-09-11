@@ -94,6 +94,7 @@ class AISetupManager {
                     }
                 ],
                 autoJumpCondition: () => this.canAutoJumpFromStep2(),
+                preJumpCheck: () => this.preJumpCheckStep2(),
                 onEnter: () => this.loadSavedApiKey(),
                 validation: () => this.validateStep2Requirements()
             },
@@ -687,6 +688,25 @@ class AISetupManager {
     exportConfig() {
         // 实现配置导出逻辑
         // console.log('导出AI配置');
+    }
+    
+    // ==================== 预跳转检查函数（字段F - 检查基本条件是否满足） ====================
+    
+    // 步骤2预跳转检查 - 检查API Key是否已填写且格式基本正确
+    preJumpCheckStep2() {
+        const formData = this.stepManager.getStepFormData('step2');
+        const apiKey = formData.aiApiKey?.trim();
+        
+        console.log('🔍 AI步骤2预跳转检查 - API Key:', apiKey ? '已填写' : '未填写');
+        
+        // 基本格式检查：API Key已填写且长度合理
+        if (!apiKey || apiKey.length < 20) {
+            console.log('❌ AI步骤2预跳转检查失败：API Key未填写或长度不足');
+            return false;
+        }
+        
+        console.log('✅ AI步骤2预跳转检查通过');
+        return true;
     }
     
     // ==================== 验证函数（用于manager调用验证步骤状态） ====================

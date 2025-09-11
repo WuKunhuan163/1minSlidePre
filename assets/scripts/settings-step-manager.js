@@ -124,6 +124,7 @@ class SettingsStepManager {
      *     }
      *   ],
      *   autoJumpCondition: () => {},    // 自动跳转条件函数
+     *   preJumpCheck: () => {},         // 预跳转检查函数（字段F）- 检查是否满足跳转的基本条件
      *   onEnter: () => {},              // 进入步骤时的回调
      *   onExit: () => {},               // 离开步骤时的回调
      *   validation: () => {}            // 步骤验证函数
@@ -466,7 +467,24 @@ class SettingsStepManager {
                     }
                 }
                 
-                // 再检查autoJumpCondition函数（自动跳步条件）
+                // 检查preJumpCheck函数（预跳转检查，字段F）
+                if (step.preJumpCheck && typeof step.preJumpCheck === 'function') {
+                    try {
+                        const preJumpResult = await step.preJumpCheck();
+                        console.log(`🔍 步骤 ${i + 1} preJumpCheck函数结果: ${preJumpResult}`);
+                        if (!preJumpResult) {
+                            console.log(`❌ 步骤 ${i + 1} preJumpCheck函数检查失败，停在此步骤`);
+                            return;
+                        }
+                    } catch (error) {
+                        console.log(`❌ 步骤 ${i + 1} preJumpCheck函数执行失败:`, error.message);
+                        this.goToStep(i, { clearTargetStatus: true });
+                        this.showStepStatus(step.id, `步骤 ${i + 1} 预跳转检查失败: ${error.message}`, 'error');
+                        return;
+                    }
+                }
+                
+                // 最后检查autoJumpCondition函数（验证函数G）
                 if (step.autoJumpCondition && typeof step.autoJumpCondition === 'function') {
                     try {
                         const canAutoJump = await step.autoJumpCondition();
@@ -913,7 +931,18 @@ class SettingsStepManager {
                 }
             }
             
-            // 再检查autoJumpCondition函数（自动跳步条件）
+            // 检查preJumpCheck函数（预跳转检查，字段F）
+            if (step.preJumpCheck && typeof step.preJumpCheck === 'function') {
+                console.log(`🔍 执行${stepId}的preJumpCheck函数`);
+                const preJumpResult = await step.preJumpCheck();
+                console.log(`🔍 ${stepId} preJumpCheck函数结果: ${preJumpResult}`);
+                if (!preJumpResult) {
+                    this.showStepStatus(stepId, '预跳转检查不通过，请检查必填字段', 'warning');
+                    return;
+                }
+            }
+            
+            // 再检查autoJumpCondition函数（验证函数G）
             if (step.autoJumpCondition && typeof step.autoJumpCondition === 'function') {
                 console.log(`🔍 执行${stepId}的autoJumpCondition函数`);
                 const autoJumpResult = await step.autoJumpCondition();

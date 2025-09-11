@@ -90,6 +90,7 @@ class AudioSetupManager {
                     }
                 ],
                 autoJumpCondition: () => this.canAutoJumpFromStep2(),
+                preJumpCheck: () => this.preJumpCheckStep2(),
                 onEnter: () => this.loadSavedAppKey(),
                 validation: () => this.validateStep2Requirements()
             },
@@ -177,6 +178,7 @@ class AudioSetupManager {
                     }
                 ],
                 autoJumpCondition: () => this.canAutoJumpFromStep4(),
+                preJumpCheck: () => this.preJumpCheckStep4(),
                 onEnter: () => this.loadSavedAccessKeys(),
                 validation: () => this.validateStep4Requirements()
             },
@@ -314,6 +316,50 @@ class AudioSetupManager {
         return true; // 简化验证，直接返回true
     }
 
+    // ==================== 预跳转检查函数（字段F - 检查基本条件是否满足） ====================
+    
+    // 步骤2预跳转检查 - 检查AppKey是否已填写且格式基本正确
+    preJumpCheckStep2() {
+        const formData = this.stepManager.getStepFormData('step2');
+        const appKey = formData.audioAppKey?.trim();
+        
+        console.log('🔍 步骤2预跳转检查 - AppKey:', appKey ? '已填写' : '未填写');
+        
+        // 基本格式检查：AppKey已填写且长度合理
+        if (!appKey || appKey.length < 10) {
+            console.log('❌ 步骤2预跳转检查失败：AppKey未填写或长度不足');
+            return false;
+        }
+        
+        console.log('✅ 步骤2预跳转检查通过');
+        return true;
+    }
+    
+    // 步骤4预跳转检查 - 检查AccessKey字段是否已填写且格式基本正确
+    preJumpCheckStep4() {
+        const formData = this.stepManager.getStepFormData('step4');
+        const accessKeyId = formData.audioAccessKeyId?.trim();
+        const accessKeySecret = formData.audioAccessKeySecret?.trim();
+        
+        console.log('🔍 步骤4预跳转检查:');
+        console.log('  - AccessKeyId:', accessKeyId ? '已填写' : '未填写');
+        console.log('  - AccessKeySecret:', accessKeySecret ? '已填写' : '未填写');
+        
+        // 基本格式检查：两个字段都已填写且长度合理
+        if (!accessKeyId || accessKeyId.length < 16) {
+            console.log('❌ 步骤4预跳转检查失败：AccessKeyId未填写或长度不足');
+            return false;
+        }
+        
+        if (!accessKeySecret || accessKeySecret.length < 20) {
+            console.log('❌ 步骤4预跳转检查失败：AccessKeySecret未填写或长度不足');
+            return false;
+        }
+        
+        console.log('✅ 步骤4预跳转检查通过');
+        return true;
+    }
+    
     // ==================== 验证函数（用于manager调用验证步骤状态） ====================
     
     // 验证步骤2要求是否满足

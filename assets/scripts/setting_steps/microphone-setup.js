@@ -113,6 +113,7 @@ class MicrophoneSetupManager {
                     }
                 ],
                 autoJumpCondition: () => this.canAutoJumpFromStep2(),
+                preJumpCheck: () => this.preJumpCheckStep2(),
                 onEnter: () => this.initializeRecordingTest(),
                 onBeforeAutoJump: () => this.disableRecordingButtonForJump(),
                 validation: () => this.validateStep2Requirements()
@@ -2105,6 +2106,26 @@ class MicrophoneSetupManager {
     // 导出配置
     exportConfig() {
         // console.log('导出麦克风配置');
+    }
+    
+    // ==================== 预跳转检查函数（字段F - 检查基本条件是否满足） ====================
+    
+    // 步骤2预跳转检查 - 检查设备是否已选择
+    preJumpCheckStep2() {
+        console.log('🔍 麦克风步骤2预跳转检查');
+        
+        // 基本条件检查：设备已选择
+        const hasSelectedDevice = this.selectedDeviceId && this.selectedDeviceName;
+        console.log('🔍 麦克风步骤2预跳转检查:');
+        console.log('  - 设备已选择:', hasSelectedDevice);
+        
+        if (!hasSelectedDevice) {
+            console.log('❌ 麦克风步骤2预跳转检查失败：未选择设备');
+            return false;
+        }
+        
+        console.log('✅ 麦克风步骤2预跳转检查通过');
+        return true;
     }
     
     // ==================== 验证函数（用于manager调用验证步骤状态） ====================

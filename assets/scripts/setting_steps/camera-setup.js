@@ -76,6 +76,7 @@ class CameraSetupManager {
                     }
                 ],
                 autoJumpCondition: () => this.canAutoJumpFromStep2(),
+                preJumpCheck: () => this.preJumpCheckStep2(),
                 onEnter: () => this.initializeDeviceSelection(),
                 onBeforeAutoJump: () => this.disableValidationButtonForJump(),
                 validation: () => this.validateStep2Requirements()
@@ -1513,6 +1514,26 @@ class CameraSetupManager {
     // 在自动跳转前禁用验证按钮
     disableValidationButtonForJump() {
         this.stepManager.disableButton('step2', 'nextBtn');
+    }
+    
+    // ==================== 预跳转检查函数（字段F - 检查基本条件是否满足） ====================
+    
+    // 步骤2预跳转检查 - 检查设备是否已选择
+    preJumpCheckStep2() {
+        console.log('🔍 摄像头步骤2预跳转检查');
+        
+        // 基本条件检查：设备已选择
+        const hasDevice = this.selectedDeviceId && this.selectedDeviceName;
+        console.log('🔍 摄像头步骤2预跳转检查:');
+        console.log('  - 设备已选择:', hasDevice);
+        
+        if (!hasDevice) {
+            console.log('❌ 摄像头步骤2预跳转检查失败：未选择设备');
+            return false;
+        }
+        
+        console.log('✅ 摄像头步骤2预跳转检查通过');
+        return true;
     }
     
     // ==================== 验证函数（用于manager调用验证步骤状态） ====================
