@@ -1373,6 +1373,10 @@ class CameraSetupManager {
         try {
             localStorage.setItem('cameraConfig', JSON.stringify(config));
             console.log('✅ 摄像头基本配置已保存:', config);
+            
+            // 注册配置显示字段
+            this.registerConfigFields(config);
+            
             return true;
         } catch (error) {
             console.error('❌ 保存摄像头基本配置失败:', error);
@@ -1419,6 +1423,9 @@ class CameraSetupManager {
             const parsedSaved = saved ? JSON.parse(saved) : null;
             console.log('📹 验证保存结果:', parsedSaved);
             console.log('📹 摄像头enabled状态:', parsedSaved?.enabled);
+            
+            // 注册配置显示字段
+            this.registerConfigFields(config);
             
             return true;
         } catch (error) {
@@ -2043,7 +2050,12 @@ class CameraSetupManager {
                     this.converter.setProgressCallback((percent, timeData) => {
                         // 获取预期录制时间
                         const expectedDuration = this.getRecordingDuration(); // 应该是5秒
-                        this.progressUI.addLog(timeData);
+                        
+                        // 只对字符串类型的timeData进行日志记录，避免记录纯数字
+                        if (timeData && typeof timeData === 'string') {
+                            this.progressUI.addLog(timeData);
+                        }
+                        
                         let realProgress = 0;
                         let displayMessage = '转换中...';
                         
@@ -2052,7 +2064,8 @@ class CameraSetupManager {
                             this.conversionStartTime = Date.now();
                         }
                         
-                        if (percent === -1 && timeData && typeof timeData === 'string') {
+                        // 只处理基于时间的进度计算，忽略所有百分比进度值
+                        if (timeData && typeof timeData === 'string') {
                             // 这是来自FFmpeg日志的时间信息
                             const timeMatch = timeData.match(/time=([0-9:\.]+)/);
                             const speedMatch = timeData.match(/speed=([0-9\.]+)x/);
@@ -2085,14 +2098,9 @@ class CameraSetupManager {
                                 // 无法解析时间，跳过这次更新（避免显示无用信息）
                                 return;
                             }
-                        } else if (percent > 0 && percent <= 100) {
-                            // 这是正常的百分比进度（只显示0-100%范围内的进度）
-                            realProgress = Math.max(0, Math.min(100, percent));
-                            displayMessage = `转换中... ${percent}%`;
-                            console.log(`转换进度: ${percent}%`);
                         } else {
-                            // 跳过无效进度的显示（0%、负数或超过100%的异常值）
-                            // 不输出任何日志，静默跳过异常值
+                            // 忽略所有非时间字符串的进度数据（包括百分比数字）
+                            // console.log(`忽略进度数据: percent=${percent}, timeData=${timeData}`);
                             return;
                         }
                         
@@ -2583,6 +2591,42 @@ class CameraSetupManager {
         this.isPreviewActive = false;
         
         console.log('✅ 摄像头设置资源清理完成');
+    }
+    
+    // 注册配置显示字段
+    registerConfigFields(config) {
+        console.log('📹 开始注册摄像头配置显示字段:', config);
+        
+        const fields = [
+            {
+                name: '已选择设备',
+                value: config.selectedDeviceName,
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '设备状态',
+                value: config.enabled ? '已启用' : '已禁用',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '配置时间',
+                value: new Date(config.timestamp).toLocaleString(),
+                type: 'text',
+                copyable: false
+            }
+        ];
+        
+        console.log('📹 准备注册的字段:', fields);
+        
+        // 通知设置管理器更新显示字段
+        if (window.updateSettingFields) {
+            console.log('📹 调用window.updateSettingFields');
+            window.updateSettingFields('camera', fields);
+        } else {
+            console.error('❌ window.updateSettingFields 不可用');
+        }
     }
 }
 

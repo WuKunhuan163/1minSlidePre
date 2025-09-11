@@ -17,9 +17,6 @@ class MicrophoneSetupManager {
         this.availableDevices = [];
         this.selectedDeviceId = null;
         this.selectedDeviceName = null;
-        this.availableOutputDevices = [];
-        this.selectedOutputDeviceId = null;
-        this.selectedOutputDeviceName = null;
         this.isRecording = false;
         this.mediaRecorder = null;
         this.audioChunks = [];
@@ -172,12 +169,6 @@ class MicrophoneSetupManager {
                 </select>
             </div>
             
-            <div class="form-group" id="outputDeviceSelectionGroup">
-                <label for="outputDeviceSelect">选择输出设备：</label>
-                <select id="outputDeviceSelect" class="device-select">
-                    <option value="">选择设备...</option>
-                </select>
-            </div>
             
             <div class="audio-test-section" id="audioTestSection">
                 <!-- 使用以前的录音接口容器 -->
@@ -543,16 +534,10 @@ class MicrophoneSetupManager {
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
             this.availableDevices = devices.filter(device => device.kind === 'audioinput');
-            this.availableOutputDevices = devices.filter(device => device.kind === 'audiooutput');
             
             console.log('📱 检测到输入设备:', this.availableDevices.length, '个');
             this.availableDevices.forEach((device, index) => {
                 console.log(`  ${index + 1}. ${device.label || `麦克风 ${index + 1}`} (${device.deviceId})`);
-            });
-            
-            console.log('🔊 检测到输出设备:', this.availableOutputDevices.length, '个');
-            this.availableOutputDevices.forEach((device, index) => {
-                console.log(`  ${index + 1}. ${device.label || `扬声器 ${index + 1}`} (${device.deviceId})`);
             });
             
         } catch (error) {
@@ -563,12 +548,10 @@ class MicrophoneSetupManager {
     // 填充设备选择下拉框
     populateDeviceSelect() {
         const deviceSelect = document.getElementById('deviceSelect');
-        const outputDeviceSelect = document.getElementById('outputDeviceSelect');
-        if (!deviceSelect || !outputDeviceSelect) return;
+        if (!deviceSelect) return;
         
         // 清空现有选项
         deviceSelect.innerHTML = '<option value="">选择设备...</option>';
-        outputDeviceSelect.innerHTML = '<option value="">选择设备...</option>';
         
         // 添加检测到的输入设备
         this.availableDevices.forEach((device, index) => {
@@ -576,14 +559,6 @@ class MicrophoneSetupManager {
             option.value = device.deviceId;
             option.textContent = device.label || `麦克风 ${index + 1}`;
             deviceSelect.appendChild(option);
-        });
-        
-        // 添加检测到的输出设备
-        this.availableOutputDevices.forEach((device, index) => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.textContent = device.label || `扬声器 ${index + 1}`;
-            outputDeviceSelect.appendChild(option);
         });
         
         // 优先选择Default输入设备，如果没有则选择第一个设备
@@ -607,27 +582,6 @@ class MicrophoneSetupManager {
             }
         }
         
-        // 优先选择Default输出设备，如果没有则选择第一个设备
-        if (this.availableOutputDevices.length > 0) {
-            // 查找Default设备
-            const defaultOutputDevice = this.availableOutputDevices.find(device => {
-                const deviceName = device.label || '';
-                return deviceName.toLowerCase().includes('default');
-            });
-            
-            if (defaultOutputDevice) {
-                outputDeviceSelect.value = defaultOutputDevice.deviceId;
-                this.selectedOutputDeviceId = defaultOutputDevice.deviceId;
-                this.selectedOutputDeviceName = defaultOutputDevice.label || 'Default';
-                console.log('✅ 默认选择Default输出设备:', defaultOutputDevice.label);
-            } else {
-                outputDeviceSelect.value = this.availableOutputDevices[0].deviceId;
-                this.selectedOutputDeviceId = this.availableOutputDevices[0].deviceId;
-                this.selectedOutputDeviceName = this.availableOutputDevices[0].label || '未知设备';
-                console.log('✅ 默认选择第一个输出设备:', this.availableOutputDevices[0].label);
-            }
-        }
-        
         // 监听输入设备选择变化
         deviceSelect.addEventListener('change', (e) => {
             this.selectedDeviceId = e.target.value;
@@ -640,17 +594,6 @@ class MicrophoneSetupManager {
             
             // 清空录音结果和隐藏完成按钮
             this.clearRecordingResults();
-        });
-        
-        // 监听输出设备选择变化
-        outputDeviceSelect.addEventListener('change', (e) => {
-            this.selectedOutputDeviceId = e.target.value;
-            
-            // 获取设备名称
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            this.selectedOutputDeviceName = selectedOption ? selectedOption.text : '未知设备';
-            
-            console.log('🔄 输出设备选择已改变:', this.selectedOutputDeviceId, '-', this.selectedOutputDeviceName);
         });
         
         // 自动加载之前保存的设备配置
@@ -1878,8 +1821,6 @@ class MicrophoneSetupManager {
             enabled: true,
             selectedDeviceId: this.selectedDeviceId,
             selectedDeviceName: this.selectedDeviceName,
-            selectedOutputDeviceId: this.selectedOutputDeviceId,
-            selectedOutputDeviceName: this.selectedOutputDeviceName,
             recordingTestCompleted: this.recordingTestCompleted,
             timestamp: Date.now()
         };
@@ -1921,8 +1862,6 @@ class MicrophoneSetupManager {
             enabled: true,
             selectedDeviceId: this.selectedDeviceId,
             selectedDeviceName: this.selectedDeviceName,
-            selectedOutputDeviceId: this.selectedOutputDeviceId,
-            selectedOutputDeviceName: this.selectedOutputDeviceName,
             recordingTestCompleted: this.recordingTestCompleted,
             timestamp: Date.now()
         };
@@ -1999,20 +1938,6 @@ class MicrophoneSetupManager {
                         this.selectedDeviceId = config.selectedDeviceId;
                         this.selectedDeviceName = config.selectedDeviceName;
                         this.recordingTestCompleted = config.recordingTestCompleted || false;
-                        
-                        // 也恢复输出设备配置
-                        if (config.selectedOutputDeviceId) {
-                            const outputDeviceSelect = document.getElementById('outputDeviceSelect');
-                            if (outputDeviceSelect) {
-                                const outputOption = outputDeviceSelect.querySelector(`option[value="${config.selectedOutputDeviceId}"]`);
-                                if (outputOption) {
-                                    outputDeviceSelect.value = config.selectedOutputDeviceId;
-                                    this.selectedOutputDeviceId = config.selectedOutputDeviceId;
-                                    this.selectedOutputDeviceName = config.selectedOutputDeviceName;
-                                    console.log('✅ 已恢复输出设备选择:', config.selectedOutputDeviceName);
-                                }
-                            }
-                        }
                         
                         // console.log('（5）已自动设置设备选择:');
                         // console.log('  - 下拉框值:', deviceSelect.value);

@@ -85,6 +85,143 @@ let videoBlob = null;
 let transcriptText = '';
 let transcriptStatus = 'none'; // none, processing, success, failed, retry_failed
 
+// 演讲状态管理器
+class PresentationStatusManager {
+    constructor() {
+        this.microphoneStatus = 'unconfigured';
+        this.cameraStatus = 'unconfigured';
+        this.microphoneElement = null;
+        this.cameraElement = null;
+        this.microphoneDot = null;
+        this.cameraDot = null;
+    }
+
+    // 初始化状态指示器元素
+    initializeElements() {
+        this.microphoneElement = document.getElementById('microphoneStatusText');
+        this.cameraElement = document.getElementById('cameraStatusText');
+        this.microphoneDot = document.getElementById('microphoneStatusDot');
+        this.cameraDot = document.getElementById('cameraStatusDot');
+        
+        console.log('🎯 状态指示器元素初始化:', {
+            microphone: !!this.microphoneElement,
+            camera: !!this.cameraElement,
+            micDot: !!this.microphoneDot,
+            camDot: !!this.cameraDot
+        });
+    }
+
+    // 更新麦克风状态
+    updateMicrophoneStatus(status, text) {
+        console.log(`🎤 更新麦克风状态: ${status} - ${text}`);
+        this.microphoneStatus = status;
+        
+        if (this.microphoneElement && this.microphoneDot) {
+            this.microphoneElement.textContent = text;
+            this.microphoneDot.className = `status-dot ${status}`;
+        }
+    }
+
+    // 更新摄像头状态
+    updateCameraStatus(status, text) {
+        console.log(`📹 更新摄像头状态: ${status} - ${text}`);
+        this.cameraStatus = status;
+        
+        if (this.cameraElement && this.cameraDot) {
+            this.cameraElement.textContent = text;
+            this.cameraDot.className = `status-dot ${status}`;
+        }
+    }
+
+    // 检查设置状态
+    async checkDeviceSettings() {
+        console.log('🔍 开始检查设备设置状态...');
+        
+        // 检查麦克风设置
+        const micConfig = localStorage.getItem('microphoneConfig');
+        const micConfigParsed = micConfig ? JSON.parse(micConfig) : null;
+        const isMicTested = simpleConfig ? simpleConfig.isSettingTested('microphone') : false;
+        
+        console.log('🎤 麦克风配置检查:', {
+            hasConfig: !!micConfigParsed,
+            enabled: micConfigParsed?.enabled,
+            tested: isMicTested
+        });
+
+        if (!micConfigParsed || !micConfigParsed.enabled || !isMicTested) {
+            this.updateMicrophoneStatus('unconfigured', '未录音');
+        } else {
+            // 有配置，进行快速测试
+            this.updateMicrophoneStatus('testing', '录音测试中');
+            const micResult = await this.testMicrophone(micConfigParsed);
+            if (micResult.success) {
+                this.updateMicrophoneStatus('success', '录音');
+            } else {
+                this.updateMicrophoneStatus('failed', '录音失败');
+            }
+        }
+
+        // 检查摄像头设置
+        const camConfig = localStorage.getItem('cameraConfig');
+        const camConfigParsed = camConfig ? JSON.parse(camConfig) : null;
+        const isCamTested = simpleConfig ? simpleConfig.isSettingTested('camera') : false;
+        
+        console.log('📹 摄像头配置检查:', {
+            hasConfig: !!camConfigParsed,
+            enabled: camConfigParsed?.enabled,
+            tested: isCamTested
+        });
+
+        if (!camConfigParsed || !camConfigParsed.enabled || !isCamTested) {
+            this.updateCameraStatus('unconfigured', '未录像');
+        } else {
+            // 有配置，进行快速测试
+            this.updateCameraStatus('testing', '录像测试中');
+            const camResult = await this.testCamera(camConfigParsed);
+            if (camResult.success) {
+                this.updateCameraStatus('success', '录像');
+            } else {
+                this.updateCameraStatus('failed', '录像失败');
+            }
+        }
+    }
+
+    // 测试麦克风
+    async testMicrophone(config) {
+        try {
+            console.log('🧪 开始测试麦克风...');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: { deviceId: { exact: config.selectedDeviceId } }
+            });
+            stream.getTracks().forEach(track => track.stop());
+            console.log('✅ 麦克风测试成功');
+            return { success: true, message: '麦克风测试通过' };
+        } catch (error) {
+            console.error('❌ 麦克风测试失败:', error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    // 测试摄像头
+    async testCamera(config) {
+        try {
+            console.log('🧪 开始测试摄像头...');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: config.selectedDeviceId } }
+            });
+            stream.getTracks().forEach(track => track.stop());
+            console.log('✅ 摄像头测试成功');
+            return { success: true, message: '摄像头测试通过' };
+        } catch (error) {
+            console.error('❌ 摄像头测试失败:', error);
+            return { success: false, message: error.message };
+        }
+    }
+}
+
+// 创建全局状态管理器实例
+const presentationStatusManager = new PresentationStatusManager();
+
 // 初始化默认PPT的演讲要求（如果没有对应txt文件，则暂时没有要求）
 const initializeDefaultSlideRequirements = () => {
     slides.forEach((slide, index) => {
@@ -550,6 +687,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <i class='bx bx-arrow-back'></i>
                 </button>
                 <h2>1分钟即兴演讲</h2>
+                <div class="recording-status-indicators">
+                    <div class="status-indicator" id="microphoneStatusIndicator">
+                        <div class="status-dot" id="microphoneStatusDot"></div>
+                        <span class="status-text" id="microphoneStatusText">未录音</span>
+                    </div>
+                    <div class="status-indicator" id="cameraStatusIndicator">
+                        <div class="status-dot" id="cameraStatusDot"></div>
+                        <span class="status-text" id="cameraStatusText">未录像</span>
+                    </div>
+                    <div class="status-indicator" id="recordingStatusIndicator">
+                        <div class="status-dot" id="recordingStatusDot"></div>
+                        <span class="status-text" id="recordingStatusText">未识别</span>
+                    </div>
+                </div>
             </div>
             
             <!-- 预加载阶段 - 纯黑屏 -->
@@ -578,6 +729,193 @@ document.addEventListener('DOMContentLoaded', async function() {
     const getRandomSlide = () => {
         const randomIndex = Math.floor(Math.random() * slides.length);
         return slides[randomIndex];
+    };
+
+    // 初始化状态指示器
+    const initializeStatusIndicators = async (overlay) => {
+        console.log('🎯 初始化演讲状态指示器');
+        
+        const microphoneStatusDot = overlay.querySelector('#microphoneStatusDot');
+        const microphoneStatusText = overlay.querySelector('#microphoneStatusText');
+        const cameraStatusDot = overlay.querySelector('#cameraStatusDot');
+        const cameraStatusText = overlay.querySelector('#cameraStatusText');
+        const recordingStatusDot = overlay.querySelector('#recordingStatusDot');
+        const recordingStatusText = overlay.querySelector('#recordingStatusText');
+        
+        // 检查录音设置状态
+        const microphoneConfig = JSON.parse(localStorage.getItem('microphoneConfig') || '{}');
+        const microphoneConfigured = microphoneConfig.enabled && microphoneConfig.selectedDeviceId;
+        
+        // 检查摄像头设置状态
+        const cameraConfig = JSON.parse(localStorage.getItem('cameraConfig') || '{}');
+        const cameraConfigured = cameraConfig.enabled && cameraConfig.selectedDeviceId;
+        
+        // 检查录音文字识别设置状态（依赖录音设备）
+        const recordingConfig = simpleConfig ? simpleConfig.getAll() : {};
+        const recordingConfigured = recordingConfig.recordingEnabled && microphoneConfigured;
+        
+        console.log('📊 设备配置状态:', {
+            microphone: microphoneConfigured,
+            camera: cameraConfigured,
+            recording: recordingConfigured
+        });
+        
+        // 更新录音状态指示器
+        if (!microphoneConfigured) {
+            microphoneStatusDot.className = 'status-dot unconfigured';
+            microphoneStatusText.textContent = '未录音';
+            console.log('🎤 录音设备未配置');
+        } else {
+            // 执行录音快测
+            console.log('🎤 开始录音设备快测');
+            microphoneStatusDot.className = 'status-dot testing';
+            microphoneStatusText.textContent = '录音测试中';
+            
+            try {
+                // 使用设置管理器的缓存快测功能
+                const testResult = await window.settingsManager.performCachedTest('microphone', false);
+                if (testResult.success) {
+                    microphoneStatusDot.className = 'status-dot success';
+                    microphoneStatusText.textContent = '录音';
+                    console.log('✅ 录音设备快测成功');
+                } else {
+                    microphoneStatusDot.className = 'status-dot failed';
+                    microphoneStatusText.textContent = '未录音';
+                    console.log('❌ 录音设备快测失败:', testResult.message);
+                    
+                    // 调用失败处理接口
+                    if (window.settingsManager && window.settingsManager.updateMicrophoneStatusAfterFailedTest) {
+                        window.settingsManager.updateMicrophoneStatusAfterFailedTest(testResult.message);
+                    }
+                }
+            } catch (error) {
+                microphoneStatusDot.className = 'status-dot failed';
+                microphoneStatusText.textContent = '未录音';
+                console.log('❌ 录音设备快测出错:', error);
+            }
+        }
+        
+        // 更新摄像头状态指示器
+        if (!cameraConfigured) {
+            cameraStatusDot.className = 'status-dot unconfigured';
+            cameraStatusText.textContent = '未录像';
+            console.log('📹 摄像头设备未配置');
+        } else {
+            // 执行摄像头快测
+            console.log('📹 开始摄像头设备快测');
+            cameraStatusDot.className = 'status-dot testing';
+            cameraStatusText.textContent = '录像测试中';
+            
+            try {
+                // 使用设置管理器的缓存快测功能
+                const testResult = await window.settingsManager.performCachedTest('camera', false);
+                if (testResult.success) {
+                    cameraStatusDot.className = 'status-dot success';
+                    cameraStatusText.textContent = '录像';
+                    console.log('✅ 摄像头设备快测成功');
+                } else {
+                    cameraStatusDot.className = 'status-dot failed';
+                    cameraStatusText.textContent = '未录像';
+                    console.log('❌ 摄像头设备快测失败:', testResult.message);
+                    
+                    // 调用失败处理接口
+                    if (window.settingsManager && window.settingsManager.updateCameraStatusAfterFailedTest) {
+                        window.settingsManager.updateCameraStatusAfterFailedTest(testResult.message);
+                    }
+                }
+            } catch (error) {
+                cameraStatusDot.className = 'status-dot failed';
+                cameraStatusText.textContent = '未录像';
+                console.log('❌ 摄像头设备快测出错:', error);
+            }
+        }
+        
+        // 更新录音文字识别状态指示器
+        if (!recordingConfigured) {
+            recordingStatusDot.className = 'status-dot unconfigured';
+            recordingStatusText.textContent = '未识别';
+            console.log('📝 录音文字识别未配置');
+        } else {
+            // 执行录音文字识别快测（依赖录音设备快测结果）
+            console.log('📝 开始录音文字识别快测');
+            recordingStatusDot.className = 'status-dot testing';
+            recordingStatusText.textContent = '识别测试中';
+            
+            try {
+                // 使用设置管理器的缓存快测功能
+                const testResult = await window.settingsManager.performCachedTest('recording', false);
+                if (testResult.success) {
+                    recordingStatusDot.className = 'status-dot success';
+                    recordingStatusText.textContent = '识别';
+                    console.log('✅ 录音文字识别快测成功');
+                } else {
+                    recordingStatusDot.className = 'status-dot failed';
+                    recordingStatusText.textContent = '未识别';
+                    console.log('❌ 录音文字识别快测失败:', testResult.message);
+                    
+                    // 调用失败处理接口（更新录音文字识别设置状态）
+                    if (window.settingsManager && window.settingsManager.updateRecordingStatusAfterFailedTest) {
+                        window.settingsManager.updateRecordingStatusAfterFailedTest(testResult.message);
+                    }
+                }
+            } catch (error) {
+                recordingStatusDot.className = 'status-dot failed';
+                recordingStatusText.textContent = '未识别';
+                console.log('❌ 录音文字识别快测出错:', error);
+            }
+        }
+        
+        console.log('✅ 状态指示器初始化完成');
+    };
+    
+    // 录音设备快测
+    const quickTestMicrophone = async (config) => {
+        console.log('🎤 开始录音设备快速测试，设备ID:', config.selectedDeviceId);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { deviceId: config.selectedDeviceId }
+            });
+            
+            console.log('🎤 录音设备获取成功，音轨数量:', stream.getAudioTracks().length);
+            
+            // 停止流
+            stream.getTracks().forEach(track => track.stop());
+            
+            return { success: true, message: '录音设备测试成功' };
+        } catch (error) {
+            console.log('🎤 录音设备快测失败:', error.name, error.message);
+            return { 
+                success: false, 
+                message: error.name === 'NotAllowedError' ? '录音权限被拒绝' : 
+                        error.name === 'NotFoundError' ? '录音设备未找到' :
+                        error.message || '录音设备测试失败'
+            };
+        }
+    };
+    
+    // 摄像头设备快测
+    const quickTestCamera = async (config) => {
+        console.log('📹 开始摄像头设备快速测试，设备ID:', config.selectedDeviceId);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { deviceId: config.selectedDeviceId }
+            });
+            
+            console.log('📹 摄像头设备获取成功，视频轨数量:', stream.getVideoTracks().length);
+            
+            // 停止流
+            stream.getTracks().forEach(track => track.stop());
+            
+            return { success: true, message: '摄像头设备测试成功' };
+        } catch (error) {
+            console.log('📹 摄像头设备快测失败:', error.name, error.message);
+            return { 
+                success: false, 
+                message: error.name === 'NotAllowedError' ? '摄像头权限被拒绝' : 
+                        error.name === 'NotFoundError' ? '摄像头设备未找到' :
+                        error.message || '摄像头设备测试失败'
+            };
+        }
     };
 
     // 预加载阶段 - 纯黑屏，快速完成
@@ -1163,6 +1501,9 @@ window.getVideoStream = getVideoStream;
         
         // 首先执行预加载步骤
         await performPreloadSteps(overlay);
+        
+        // 初始化状态指示器
+        initializeStatusIndicators(overlay);
         
         // 隐藏预加载界面，显示主演讲界面
         const preloadStage = overlay.querySelector('#preloadStage');

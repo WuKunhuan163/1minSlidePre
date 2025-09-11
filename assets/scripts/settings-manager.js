@@ -392,11 +392,11 @@ class SettingsManager {
 
     // 更新设置字段UI显示
     updateSettingFieldsUI(settingId, fields) {
-        // console.log(`🖼️ updateSettingFieldsUI被调用: settingId=${settingId}`);
-        // console.log(`🖼️ 要更新的字段:`, fields);
+        console.log(`🖼️ updateSettingFieldsUI被调用: settingId=${settingId}`);
+        console.log(`🖼️ 要更新的字段:`, fields);
         
         const contentContainer = document.getElementById(`${settingId}Settings`);
-        // console.log(`🖼️ 查找容器元素 ${settingId}Settings:`, !!contentContainer);
+        console.log(`🖼️ 查找容器元素 ${settingId}Settings:`, !!contentContainer);
         
         if (!contentContainer) {
             console.warn(`未找到设置容器: ${settingId}Settings`);
@@ -410,6 +410,14 @@ class SettingsManager {
         // console.log(`🖼️ 清空现有内容，当前innerHTML长度: ${contentContainer.innerHTML.length}`);
         contentContainer.innerHTML = '';
         
+        // 检查是否有字段内容
+        if (!fields || fields.length === 0) {
+            // 没有字段时，确保容器保持隐藏状态
+            contentContainer.classList.remove('expanded');
+            // console.log(`🖼️ ${settingId}设置无字段内容，保持隐藏状态`);
+            return;
+        }
+        
         // 生成字段HTML
         // console.log(`🖼️ 开始生成${fields.length}个字段的HTML`);
         fields.forEach((field, index) => {
@@ -418,11 +426,12 @@ class SettingsManager {
             contentContainer.insertAdjacentHTML('beforeend', fieldHtml);
         });
         
+        // 有字段内容时，确保容器显示
+        contentContainer.classList.add('expanded');
+        // console.log(`🖼️ ${settingId}设置有${fields.length}个字段，已设置为展开状态`);
+        
         // console.log(`🖼️ 更新后的innerHTML长度: ${contentContainer.innerHTML.length}`);
         // console.log(`🖼️ 最终容器内容:`, contentContainer.innerHTML);
-        
-        // 注释：expanded类现在由CSS自动管理，基于toggle状态
-        // 如果设置已配置且启用，内容会自动展开
         
         // console.log(`✅ 已完成 ${settingId} 设置UI显示更新`);
     }
@@ -627,6 +636,8 @@ class SettingsManager {
                 // 注册字段（特殊处理）
                 if (settingId === 'microphone') {
                     this.registerMicrophoneFields(parsedConfig);
+                } else if (settingId === 'camera') {
+                    this.registerCameraFields(parsedConfig);
                 }
             }
         } else if (configKey === 'effectsVolume' || configKey === 'backgroundMusicVolume') {
@@ -647,6 +658,11 @@ class SettingsManager {
                 this.settingsState[settingId].enabled = this.isSettingEnabled(settingId, config);
                 this.settingsState[settingId].config = config;
                 this.settingsState[settingId].lastUpdate = Date.now();
+                
+                // 特殊处理录音文字识别字段显示
+                if (settingId === 'recording') {
+                    this.updateRecordingFieldsVisibility();
+                }
             }
         }
         
@@ -677,6 +693,46 @@ class SettingsManager {
         ];
         
         this.registerSettingFields('microphone', fields);
+    }
+
+    // 注册摄像头字段
+    registerCameraFields(config) {
+        const fields = [
+            {
+                name: '已选择设备',
+                value: config.selectedDeviceName || 'Unknown Device',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '设备状态',
+                value: config.enabled ? '已启用' : '已禁用',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '配置时间',
+                value: new Date(config.timestamp).toLocaleString(),
+                type: 'text',
+                copyable: false
+            }
+        ];
+        
+        this.registerSettingFields('camera', fields);
+    }
+
+    // 更新录音文字识别字段显示状态
+    updateRecordingFieldsVisibility() {
+        const recordingContainer = document.getElementById('recordingSettings');
+        if (recordingContainer) {
+            if (this.settingsState.recording?.enabled) {
+                console.log('📝 录音文字识别已启用，显示字段');
+                recordingContainer.classList.add('expanded');
+            } else {
+                console.log('📝 录音文字识别已禁用，隐藏字段');
+                recordingContainer.classList.remove('expanded');
+            }
+        }
     }
 
     // 处理依赖关系变化（递归处理传递性依赖）
@@ -963,6 +1019,9 @@ class SettingsManager {
         // 刷新所有设置显示
         this.refreshAllSettings();
         
+        // 初始化设备设置字段显示
+        this.initializeDeviceSettingsFields();
+        
         // 检测系统并初始化滑动条设置
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         if (!isIOS) {
@@ -973,6 +1032,37 @@ class SettingsManager {
         }
         
         // console.log('✅ 设置overlay初始化完成');
+    }
+
+    // 初始化设备设置字段显示
+    initializeDeviceSettingsFields() {
+        console.log('🔧 初始化设备设置字段显示');
+        
+        // 初始化录音设备字段 - 只有当设置被启用时才显示字段
+        if (this.settingsState.microphone?.enabled && this.settingsState.microphone?.config) {
+            console.log('🎤 初始化录音设备字段');
+            this.registerMicrophoneFields(this.settingsState.microphone.config);
+        }
+        
+        // 初始化摄像头设备字段 - 只有当设置被启用时才显示字段
+        if (this.settingsState.camera?.enabled && this.settingsState.camera?.config) {
+            console.log('📹 初始化摄像头设备字段');
+            this.registerCameraFields(this.settingsState.camera.config);
+        }
+        
+        // 控制录音文字识别字段显示 - 只有当设置被启用时才显示
+        const recordingContainer = document.getElementById('recordingSettings');
+        if (recordingContainer) {
+            if (this.settingsState.recording?.enabled) {
+                console.log('📝 录音文字识别已启用，显示字段');
+                recordingContainer.classList.add('expanded');
+            } else {
+                console.log('📝 录音文字识别未启用，隐藏字段');
+                recordingContainer.classList.remove('expanded');
+            }
+        }
+        
+        console.log('✅ 设备设置字段显示初始化完成');
     }
 
     // 设置toggle事件
@@ -2156,6 +2246,67 @@ class SettingsManager {
         this.refreshSettingDisplay('microphone');
         
         // console.log(`✅ 麦克风设备状态已更新为"启用失败，请重新设置"`);
+    }
+
+    // 更新摄像头设备测试失败后的状态显示
+    updateCameraStatusAfterFailedTest(errorMessage) {
+        // console.log(`🔄 更新摄像头设备状态显示为失败状态`);
+        
+        // 获取当前摄像头配置
+        const config = JSON.parse(localStorage.getItem('cameraConfig') || '{}');
+        
+        // 更新配置时间为当前时间（快测结束时间）
+        config.timestamp = Date.now();
+        // console.log(`⏰ 刷新配置时间: ${new Date(config.timestamp).toLocaleString()}`);
+        
+        // 保存更新后的配置
+        localStorage.setItem('cameraConfig', JSON.stringify(config));
+        
+        // 生成新的字段显示，设备状态为"启用失败，请重新设置"
+        const fields = [
+            {
+                name: '已选择设备',
+                value: config.selectedDeviceName || 'Unknown Device',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '设备状态',
+                value: '启用失败，请重新设置',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '配置时间',
+                value: new Date(config.timestamp).toLocaleString(),
+                type: 'text',
+                copyable: false
+            }
+        ];
+        
+        // 更新设置字段显示
+        this.registerSettingFields('camera', fields);
+        
+        // 强制刷新设置显示
+        this.refreshSettingDisplay('camera');
+        
+        // console.log(`✅ 摄像头设备状态已更新为"启用失败，请重新设置"`);
+    }
+
+    // 更新录音文字识别测试失败后的状态显示
+    updateRecordingStatusAfterFailedTest(errorMessage) {
+        console.log(`🔄 更新录音文字识别状态显示为失败状态`);
+        
+        // 录音文字识别的状态更新通过simpleConfig管理
+        if (simpleConfig) {
+            // 禁用录音文字识别设置
+            simpleConfig.set('recordingEnabled', false);
+            
+            // 强制刷新设置显示
+            this.refreshSettingDisplay('recording');
+            
+            console.log(`✅ 录音文字识别状态已更新为"启用失败，请重新设置"`);
+        }
     }
 
     // 优化错误信息显示
