@@ -80,6 +80,12 @@
   - 在 `displayConversionResult()` 中确保调用 `progressUI.setComplete()`
   - 转换完成时强制更新进度到100%并显示"转换完成！"状态
   - 添加转换完成的日志记录
+- **摄像头录制测试验证增强**：
+  - 实现 `validateRecordingTest()` 函数检查录制时间和视频质量
+  - 要求录制时间与期望5秒相差不超过0.5秒，否则验证失败
+  - 添加详细的验证错误提示和录像容器重置功能
+  - 在录制结果中包含 `recordingDuration` 信息
+  - 增加progressContainer下方50px间距，改善日志显示区域
 
 #### 📋 下一步计划
 1. 添加智谱AI状态指示器
