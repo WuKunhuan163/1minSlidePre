@@ -284,8 +284,19 @@ class SettingsManager {
         return this.isSettingConfigured(settingId, config);
     }
 
+    // 检测是否为移动端设备
+    isMobileDevice() {
+        const userAgent = navigator.userAgent;
+        return /iPhone|iPad|iPod|Android/i.test(userAgent);
+    }
+
     // 检查设置依赖是否满足（递归检查传递性依赖）
     areDependenciesMet(settingId, checkedIds = new Set()) {
+        // 移动端隐藏音频音量设置
+        if (this.isMobileDevice() && (settingId === 'effectsVolume' || settingId === 'backgroundMusic')) {
+            return false;
+        }
+        
         // 防止循环依赖
         if (checkedIds.has(settingId)) {
             console.warn(`⚠️ 检测到循环依赖: ${settingId}`);
