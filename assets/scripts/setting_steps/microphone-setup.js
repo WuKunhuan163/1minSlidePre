@@ -496,27 +496,18 @@ class MicrophoneSetupManager {
 
     // 初始化录音测试
     initializeRecordingTest() {
-        console.log('🔄 初始化录音测试，当前录音完成状态:', this.recordingTestCompleted);
+        console.log('🔄 初始化录音测试 - 清除所有录音数据');
         
-        // 检查是否已有有效的录音测试结果
-        const hasExistingValidRecording = this.recordingTestCompleted && this.hasValidRecording();
-        console.log('🔄 是否有现有有效录音:', hasExistingValidRecording);
-        
-        // 只有在没有有效录音时才重置录音状态
-        if (!hasExistingValidRecording) {
-            console.log('🔄 重置录音测试状态');
-            this.recordingTestCompleted = false;
-            this.currentRecordingUrl = null;
-            this.currentRecordingFileName = null;
-            this.totalAmplitude = 0;
-            this.sampleCount = 0;
-        } else {
-            console.log('🔄 保留现有录音测试结果');
-        }
-        
-        // 总是重置录音进行状态
+        // 第二步应该清除所有录音数据，这是正确的
+        this.recordingTestCompleted = false;
         this.isRecording = false;
         this.audioChunks = [];
+        this.currentRecordingUrl = null;
+        this.currentRecordingFileName = null;
+        this.totalAmplitude = 0;
+        this.sampleCount = 0;
+        
+        console.log('🔄 录音数据已清除，等待用户重新录音');
         
         // 清除可能存在的旧设备提示信息
         this.clearDeviceNotices();
@@ -524,12 +515,6 @@ class MicrophoneSetupManager {
         // 获取设备并填充下拉框
         this.detectAudioDevices().then(() => {
             this.populateDeviceSelect();
-            
-            // 如果有有效录音，显示完成按钮
-            if (hasExistingValidRecording) {
-                console.log('🔄 显示现有录音的完成按钮');
-                this.stepManager.showButton('step2', 'completeBtn');
-            }
         });
     }
 
@@ -2130,17 +2115,25 @@ class MicrophoneSetupManager {
     
     // ==================== 预跳转检查函数（字段F - 检查基本条件是否满足） ====================
     
-    // 步骤2预跳转检查 - 检查设备是否已选择
+    // 步骤2预跳转检查 - 检查设备是否已选择且有录音数据
     preJumpCheckStep2() {
         console.log('🔍 麦克风步骤2预跳转检查');
         
-        // 基本条件检查：设备已选择
+        // 基本条件检查：设备已选择且有录音数据
         const hasSelectedDevice = this.selectedDeviceId && this.selectedDeviceName;
+        const hasRecordingData = this.recordingTestCompleted && this.hasValidRecording();
+        
         console.log('🔍 麦克风步骤2预跳转检查:');
-        console.log('  - 设备已选择:', hasSelectedDevice);
+        console.log('  - 设备已选择:', hasSelectedDevice ? this.selectedDeviceName : '未选择');
+        console.log('  - 有录音数据:', hasRecordingData);
         
         if (!hasSelectedDevice) {
             console.log('❌ 麦克风步骤2预跳转检查失败：未选择设备');
+            return false;
+        }
+        
+        if (!hasRecordingData) {
+            console.log('❌ 麦克风步骤2预跳转检查失败：无录音数据');
             return false;
         }
         
