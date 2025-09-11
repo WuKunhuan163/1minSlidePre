@@ -783,9 +783,11 @@ class CameraSetupManager {
             const previewSection = document.getElementById('cameraPreviewSection');
             if (previewVideo) {
                 previewVideo.srcObject = this.currentStream;
+                // 添加流彩边框特效
+                previewVideo.classList.add('rainbow-border');
                 if (previewSection) previewSection.style.display = 'block';
                 this.isPreviewActive = true;
-                // console.log('✅ 摄像头预览已开始');
+                // console.log('✅ 摄像头预览已开始（含流彩边框特效）');
             }
             
         } catch (error) {

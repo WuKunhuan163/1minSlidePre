@@ -102,6 +102,41 @@
     border-radius: 8px;
     border: 2px solid #333;
     background: #000;
+    position: relative;
+}
+
+/* 摄像头预览流彩边框特效 */
+.camera-preview video.rainbow-border {
+    border: 3px solid transparent;
+    background: linear-gradient(45deg, 
+        #ff006e, #fb5607, #ffbe0b, #8338ec, 
+        #3a86ff, #06ffa5, #ff006e) 0 0 / 400% 400%;
+    background-clip: padding-box;
+    animation: rainbow-border 3s ease infinite;
+}
+
+.camera-preview video.rainbow-border::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: linear-gradient(45deg, 
+        #ff006e, #fb5607, #ffbe0b, #8338ec, 
+        #3a86ff, #06ffa5, #ff006e) 0 0 / 400% 400%;
+    border-radius: 8px;
+    z-index: -1;
+    animation: rainbow-border 3s ease infinite;
+}
+
+@keyframes rainbow-border {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
 }
 
 /* 演讲者模式设置样式 */
