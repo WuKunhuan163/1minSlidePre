@@ -1955,8 +1955,11 @@ class CameraSetupManager {
                         if (percent === -1 && timeData && typeof timeData === 'string') {
                             // 这是来自FFmpeg日志的时间信息
                             const timeMatch = timeData.match(/time=([0-9:\.]+)/);
+                            const speedMatch = timeData.match(/speed=([0-9\.]+)x/);
+                            
                             if (timeMatch) {
                                 const timeStr = timeMatch[1];
+                                const speed = speedMatch ? parseFloat(speedMatch[1]) : null;
                                 let currentTime = 0;
                                 
                                 // 解析时间格式（可能是 HH:MM:SS.MS 或者直接是秒数）
@@ -1974,20 +1977,26 @@ class CameraSetupManager {
                                 
                                 // 计算真实进度
                                 realProgress = Math.min(100, (currentTime / expectedDuration) * 100);
-                                displayMessage = `转换中... ${currentTime.toFixed(1)}s/${expectedDuration}s`;
                                 
-                                console.log(`FFmpeg时间进度: ${currentTime.toFixed(2)}s/${expectedDuration}s (${realProgress.toFixed(1)}%)`);
+                                // 构建显示消息，包含速度信息
+                                displayMessage = `转换中... ${currentTime.toFixed(1)}s/${expectedDuration}s`;
+                                if (speed !== null) {
+                                    displayMessage += ` (${speed}x速度)`;
+                                }
+                                
+                                console.log(`FFmpeg时间进度: ${currentTime.toFixed(2)}s/${expectedDuration}s (${realProgress.toFixed(1)}%)${speed ? `, 速度: ${speed}x` : ''}`);
                             } else {
-                                // 无法解析时间，使用原始百分比
-                                realProgress = Math.max(0, Math.min(100, percent));
-                                displayMessage = `转换中... ${percent}%`;
-                                console.log(`转换进度: ${percent}% (原始)`);
+                                // 无法解析时间，跳过这次更新（避免显示无用信息）
+                                return;
                             }
-                        } else {
-                            // 这是正常的百分比进度
+                        } else if (percent > 0) {
+                            // 这是正常的百分比进度（只显示大于0的进度）
                             realProgress = Math.max(0, Math.min(100, percent));
                             displayMessage = `转换中... ${percent}%`;
                             console.log(`转换进度: ${percent}%`);
+                        } else {
+                            // 跳过0%或负数进度的显示
+                            return;
                         }
                         
                         // 应用进度公式：渲染进度 = 25% + 75% * 计算结果
