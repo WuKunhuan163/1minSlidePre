@@ -296,7 +296,16 @@ async function compositeVideo(data) {
 
         // 获取PPT背景图片
         self.postMessage({ type: 'log', message: '📋 加载PPT背景图片...' });
-        const response = await fetch(pptBackground);
+        
+        // 修复Worker中的相对路径问题
+        let backgroundURL = pptBackground;
+        if (pptBackground.startsWith('./')) {
+            // 从Worker的角度，需要回到上级目录
+            backgroundURL = '../' + pptBackground.substring(2);
+        }
+        
+        self.postMessage({ type: 'log', message: `📋 解析后的图片URL: ${backgroundURL}` });
+        const response = await fetch(backgroundURL);
         if (!response.ok) {
             throw new Error(`无法加载PPT图片: ${response.status} ${response.statusText}`);
         }
