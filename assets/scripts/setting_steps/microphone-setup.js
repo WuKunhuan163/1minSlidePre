@@ -2033,13 +2033,36 @@ class MicrophoneSetupManager {
                         if (this.recordingTestCompleted) {
                             console.log('（6）录音测试已完成，保存基本配置、显示完成按钮并触发自动跳转');
                             
-                            // 保存基本配置
-                            this.saveBasicConfiguration();
+                            // 设置录音按钮为验证中状态（模拟手动验证过程）
+                            const recordBtn = document.getElementById(`${this.settingId}-step2-recordBtn`);
+                            if (recordBtn) {
+                                recordBtn.textContent = '验证中...';
+                                recordBtn.disabled = true;
+                                recordBtn.classList.add('force-no-interact');
+                                recordBtn.classList.remove('force-interact');
+                            }
                             
-                            this.stepManager.showButton('step2', 'completeBtn');
+                            // 显示验证状态
+                            this.stepManager.showStepStatus('step2', '正在验证已保存的配置...', 'info');
                             
-                            // 不自动跳转，让用户手动确认完成
-                            console.log('等待用户点击"完成设置"按钮确认...');
+                            // 延迟一下，让用户看到验证过程
+                            setTimeout(() => {
+                                // 保存基本配置
+                                this.saveBasicConfiguration();
+                                
+                                this.stepManager.showButton('step2', 'completeBtn');
+                                this.stepManager.showStepStatus('step2', '录音测试完成！', 'success');
+                                
+                                // 恢复录音按钮状态
+                                if (recordBtn) {
+                                    recordBtn.textContent = '开始录音';
+                                    recordBtn.disabled = false;
+                                    recordBtn.classList.remove('force-no-interact');
+                                    recordBtn.classList.add('force-interact');
+                                }
+                                
+                                console.log('等待用户点击"完成设置"按钮确认...');
+                            }, 1500); // 1.5秒验证时间，与手动验证保持一致
                         }
                         
                         // console.log('========== 自动配置加载完成 ==========');
