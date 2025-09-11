@@ -89,9 +89,9 @@ class AudioSetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.checkStep2FieldsCompleted(),
+                autoJumpCondition: () => this.canAutoJumpFromStep2(),
                 onEnter: () => this.loadSavedAppKey(),
-                validation: () => this.checkStep2FieldsCompleted()
+                validation: () => this.validateStep2Requirements()
             },
             {
                 id: 'step3',
@@ -124,8 +124,8 @@ class AudioSetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.checkStep3Completed(),
-                validation: () => this.checkStep3Completed()
+                autoJumpCondition: () => this.canAutoJumpFromStep3(),
+                validation: () => this.validateStep3Requirements()
             },
             {
                 id: 'step4',
@@ -176,9 +176,9 @@ class AudioSetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.checkStep4FieldsCompleted(),
+                autoJumpCondition: () => this.canAutoJumpFromStep4(),
                 onEnter: () => this.loadSavedAccessKeys(),
-                validation: () => this.checkStep4FieldsCompleted()
+                validation: () => this.validateStep4Requirements()
             },
             {
                 id: 'step5',
@@ -304,22 +304,8 @@ class AudioSetupManager {
 
     // 检查步骤2字段是否已填写（用于自动跳转验证）
     checkStep2FieldsCompleted() {
-        const formData = this.stepManager.getStepFormData('step2');
-        const appKey = formData.audioAppKey?.trim();
-        console.log('🔍 检查步骤2字段完成状态 - 表单AppKey:', appKey ? '已填写' : '未填写');
-        
-        // 检查表单字段是否填写
-        const isFormFilled = appKey && appKey.length > 0;
-        
-        // 如果表单已填写，也检查是否已保存到配置中
-        if (isFormFilled) {
-            const config = simpleConfig.getAll();
-            const savedAppKey = config.appKey?.trim();
-            console.log('🔍 已保存的AppKey:', savedAppKey ? '存在' : '不存在');
-            return savedAppKey && savedAppKey.length >= 10;
-        }
-        
-        return false;
+        // 兼容性函数，调用新的自动跳步函数
+        return this.canAutoJumpFromStep2();
     }
 
     // 检查步骤3是否已完成（基于已保存的配置）
@@ -328,30 +314,109 @@ class AudioSetupManager {
         return true; // 简化验证，直接返回true
     }
 
-    // 检查步骤4字段是否已填写（用于自动跳转验证）
-    checkStep4FieldsCompleted() {
+    // ==================== 验证函数（用于manager调用验证步骤状态） ====================
+    
+    // 验证步骤2要求是否满足
+    validateStep2Requirements() {
+        const formData = this.stepManager.getStepFormData('step2');
+        const appKey = formData.audioAppKey?.trim();
+        console.log('🔍 验证步骤2要求 - AppKey:', appKey ? '已填写' : '未填写');
+        
+        // 基本要求：AppKey已填写
+        return appKey && appKey.length > 0;
+    }
+    
+    // 验证步骤3要求是否满足
+    validateStep3Requirements() {
+        console.log('🔍 验证步骤3要求 - 简化验证，直接返回true');
+        return true; // 步骤3是手动确认步骤，没有特殊要求
+    }
+    
+    // 验证步骤4要求是否满足
+    validateStep4Requirements() {
         const formData = this.stepManager.getStepFormData('step4');
         const accessKeyId = formData.audioAccessKeyId?.trim();
         const accessKeySecret = formData.audioAccessKeySecret?.trim();
-        console.log('🔍 检查步骤4字段完成状态:');
+        console.log('🔍 验证步骤4要求:');
         console.log('  - AccessKeyId:', accessKeyId ? '已填写' : '未填写');
         console.log('  - AccessKeySecret:', accessKeySecret ? '已填写' : '未填写');
         
-        // 检查表单字段是否都填写了
-        const isFormFilled = accessKeyId && accessKeyId.length > 0 && accessKeySecret && accessKeySecret.length > 0;
+        // 基本要求：AccessKeyId和AccessKeySecret都已填写
+        return accessKeyId && accessKeyId.length > 0 && accessKeySecret && accessKeySecret.length > 0;
+    }
+    
+    // ==================== 自动跳步函数（用于manager调用判断是否可以自动跳步） ====================
+    
+    // 检查是否可以从步骤2自动跳步
+    canAutoJumpFromStep2() {
+        console.log('🔍 检查步骤2自动跳步条件');
         
-        // 如果表单已填写，也检查是否已保存到配置中
-        if (isFormFilled) {
-            const config = simpleConfig.getAll();
-            const savedAccessKeyId = config.accessKeyId?.trim();
-            const savedAccessKeySecret = config.accessKeySecret?.trim();
-            console.log('🔍 已保存的AccessKeys:');
-            console.log('  - AccessKeyId:', savedAccessKeyId ? '存在' : '不存在');
-            console.log('  - AccessKeySecret:', savedAccessKeySecret ? '存在' : '不存在');
-            return savedAccessKeyId && savedAccessKeyId.length > 0 && savedAccessKeySecret && savedAccessKeySecret.length > 0;
-        }
+        // 条件1：验证通过
+        const validationPassed = this.validateStep2Requirements();
+        console.log('  - 验证通过:', validationPassed);
         
-        return false;
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step2');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        // 条件3：配置已保存
+        const config = simpleConfig.getAll();
+        const savedAppKey = config.appKey?.trim();
+        const isConfigSaved = savedAppKey && savedAppKey.length >= 10;
+        console.log('  - 配置已保存:', isConfigSaved);
+        
+        const canAutoJump = validationPassed && isStepCompleted && isConfigSaved;
+        console.log('🔍 步骤2自动跳步结果:', canAutoJump);
+        return canAutoJump;
+    }
+    
+    // 检查是否可以从步骤3自动跳步
+    canAutoJumpFromStep3() {
+        console.log('🔍 检查步骤3自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = this.validateStep3Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step3');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        const canAutoJump = validationPassed && isStepCompleted;
+        console.log('🔍 步骤3自动跳步结果:', canAutoJump);
+        return canAutoJump;
+    }
+    
+    // 检查是否可以从步骤4自动跳步
+    canAutoJumpFromStep4() {
+        console.log('🔍 检查步骤4自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = this.validateStep4Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step4');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        // 条件3：配置已保存并验证成功
+        const config = simpleConfig.getAll();
+        const savedAccessKeyId = config.accessKeyId?.trim();
+        const savedAccessKeySecret = config.accessKeySecret?.trim();
+        const isConfigSaved = savedAccessKeyId && savedAccessKeyId.length > 0 && savedAccessKeySecret && savedAccessKeySecret.length > 0;
+        console.log('  - 配置已保存:', isConfigSaved);
+        
+        const canAutoJump = validationPassed && isStepCompleted && isConfigSaved;
+        console.log('🔍 步骤4自动跳步结果:', canAutoJump);
+        return canAutoJump;
+    }
+    
+    // ==================== 兼容性函数（保持向后兼容） ====================
+    
+    // 检查步骤4字段是否已填写（用于自动跳转验证）
+    checkStep4FieldsCompleted() {
+        // 兼容性函数，调用新的自动跳步函数
+        return this.canAutoJumpFromStep4();
     }
 
     // 通用格式检查接口

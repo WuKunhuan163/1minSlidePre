@@ -443,33 +443,48 @@ class SettingsStepManager {
             if (hasCompletedMark) {
                 console.log(`✅ 步骤 ${i + 1} 已有完成标记，需要验证是否仍然有效`);
                 
-                // 如果有完成标记，还需要验证是否仍然有效
+                // 如果有完成标记，需要同时验证validation函数和autoJumpCondition函数
+                let isValid = true;
+                
+                // 先检查validation函数（验证步骤要求）
                 if (step.validation && typeof step.validation === 'function') {
                     try {
                         this.goToStep(i, { clearTargetStatus: true });
                         await new Promise(resolve => setTimeout(resolve, 600));
                         
-                        const isValid = await step.validation();
-                        if (isValid) {
-                            console.log(`✅ 步骤 ${i + 1} 完成标记有效，继续下一步`);
-                            continue;
-                        } else {
-                            console.log(`❌ 步骤 ${i + 1} 完成标记已失效，停在此步骤`);
+                        const validationResult = await step.validation();
+                        console.log(`🔍 步骤 ${i + 1} validation函数结果: ${validationResult}`);
+                        if (!validationResult) {
+                            console.log(`❌ 步骤 ${i + 1} validation函数验证失败，停在此步骤`);
                             return;
                         }
                     } catch (error) {
-                        console.log(`❌ 步骤 ${i + 1} 验证失败:`, error.message);
+                        console.log(`❌ 步骤 ${i + 1} validation函数执行失败:`, error.message);
                         this.goToStep(i, { clearTargetStatus: true });
                         this.showStepStatus(step.id, `步骤 ${i + 1} 验证失败: ${error.message}`, 'error');
                         return;
                     }
-                } else {
-                    // 没有验证函数但有完成标记，直接继续
-                    console.log(`✅ 步骤 ${i + 1} 有完成标记且无验证函数，继续下一步`);
-                    this.goToStep(i, { clearTargetStatus: true });
-                    await new Promise(resolve => setTimeout(resolve, 600));
-                    continue;
                 }
+                
+                // 再检查autoJumpCondition函数（自动跳步条件）
+                if (step.autoJumpCondition && typeof step.autoJumpCondition === 'function') {
+                    try {
+                        const canAutoJump = await step.autoJumpCondition();
+                        console.log(`🔍 步骤 ${i + 1} autoJumpCondition函数结果: ${canAutoJump}`);
+                        if (!canAutoJump) {
+                            console.log(`❌ 步骤 ${i + 1} autoJumpCondition函数检查失败，停在此步骤`);
+                            return;
+                        }
+                    } catch (error) {
+                        console.log(`❌ 步骤 ${i + 1} autoJumpCondition函数执行失败:`, error.message);
+                        this.goToStep(i, { clearTargetStatus: true });
+                        this.showStepStatus(step.id, `步骤 ${i + 1} 自动跳步检查失败: ${error.message}`, 'error');
+                        return;
+                    }
+                }
+                
+                console.log(`✅ 步骤 ${i + 1} 所有检查通过，继续下一步`);
+                continue;
             } else {
                 // 没有完成标记，停在此步骤等待用户操作
                 console.log(`⏸️ 步骤 ${i + 1} 没有完成标记，停在此步骤等待用户操作`);
@@ -877,37 +892,68 @@ class SettingsStepManager {
         }
     }
 
-    // 检查自动跳转条件 - 函数B（验证函数）
+    // 检查自动跳转条件 - 统一验证validation和autoJumpCondition函数
     async checkAutoJump(stepId) {
         const step = this.steps.find(s => s.id === stepId);
-        if (!step || !step.autoJumpCondition) return;
+        if (!step) return;
+        
+        console.log(`🔄 checkAutoJump被调用 - 步骤: ${stepId}`);
         
         try {
-            const canJump = await step.autoJumpCondition();
-            if (canJump) {
-                // 标记当前步骤为完成
-                this.markStepCompleted(stepId, true);
-                
-                // 显示成功状态
-                this.showStepStatus(stepId, '步骤验证通过，即将跳转...', 'success');
-                
-                // 触发跳转前的回调，让具体步骤可以禁用按钮
-                if (step.onBeforeAutoJump && typeof step.onBeforeAutoJump === 'function') {
-                    step.onBeforeAutoJump();
+            let canJump = true;
+            
+            // 先检查validation函数（验证步骤要求）
+            if (step.validation && typeof step.validation === 'function') {
+                console.log(`🔍 执行${stepId}的validation函数`);
+                const validationResult = await step.validation();
+                console.log(`🔍 ${stepId} validation函数结果: ${validationResult}`);
+                if (!validationResult) {
+                    this.showStepStatus(stepId, '步骤要求验证失败', 'error');
+                    return;
                 }
-                
-                // 延迟跳转，让用户看到成功消息
-                setTimeout(() => {
-                    // 调用函数A（切换函数）实现跳转
-                    const nextIndex = this.currentStepIndex + 1;
-                    if (nextIndex < this.steps.length) {
-                        this.goToStep(nextIndex);
-                    } else {
-                        // 最后一步完成
-                        this.handleSetupComplete();
-                    }
-                }, 1500);
             }
+            
+            // 再检查autoJumpCondition函数（自动跳步条件）
+            if (step.autoJumpCondition && typeof step.autoJumpCondition === 'function') {
+                console.log(`🔍 执行${stepId}的autoJumpCondition函数`);
+                const autoJumpResult = await step.autoJumpCondition();
+                console.log(`🔍 ${stepId} autoJumpCondition函数结果: ${autoJumpResult}`);
+                if (!autoJumpResult) {
+                    this.showStepStatus(stepId, '自动跳步条件不满足', 'warning');
+                    return;
+                }
+            } else {
+                console.log(`⚠️ ${stepId}没有autoJumpCondition函数，无法自动跳转`);
+                return;
+            }
+            
+            // 所有条件都满足，可以自动跳转
+            console.log(`✅ ${stepId}所有自动跳转条件满足`);
+            
+            // 标记当前步骤为完成
+            this.markStepCompleted(stepId, true);
+            
+            // 显示成功状态
+            this.showStepStatus(stepId, '步骤验证通过，即将跳转...', 'success');
+            
+            // 触发跳转前的回调，让具体步骤可以禁用按钮
+            if (step.onBeforeAutoJump && typeof step.onBeforeAutoJump === 'function') {
+                step.onBeforeAutoJump();
+            }
+            
+            // 延迟跳转，让用户看到成功消息
+            setTimeout(() => {
+                console.log(`🔄 ${stepId}自动跳转到下一步`);
+                // 调用函数A（切换函数）实现跳转
+                const nextIndex = this.currentStepIndex + 1;
+                if (nextIndex < this.steps.length) {
+                    this.goToStep(nextIndex);
+                } else {
+                    // 最后一步完成
+                    this.handleSetupComplete();
+                }
+            }, 1500);
+            
         } catch (error) {
             console.error('自动跳转检查失败:', error);
             this.showStepStatus(stepId, error.message, 'error');

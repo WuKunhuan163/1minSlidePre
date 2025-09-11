@@ -61,9 +61,9 @@ class MicrophoneSetupManager {
                         show: false  // 默认隐藏，只在权限失败时显示
                     }
                 ],
-                autoJumpCondition: () => this.validatePermissionGranted(),
+                autoJumpCondition: () => this.canAutoJumpFromStep1(),
                 onEnter: () => this.initializePermissionStep(),
-                validation: () => this.validatePermissionGranted()
+                validation: () => this.validateStep1Requirements()
             },
             {
                 id: 'step2',
@@ -112,10 +112,10 @@ class MicrophoneSetupManager {
                         show: false
                     }
                 ],
-                autoJumpCondition: () => this.validateRecordingTest(), // 只有已保存的配置才自动跳转，当前测试完成不自动跳转
+                autoJumpCondition: () => this.canAutoJumpFromStep2(),
                 onEnter: () => this.initializeRecordingTest(),
                 onBeforeAutoJump: () => this.disableRecordingButtonForJump(),
-                validation: () => this.validateRecordingTest()
+                validation: () => this.validateStep2Requirements()
             }
         ];
     }
@@ -2105,6 +2105,86 @@ class MicrophoneSetupManager {
     // 导出配置
     exportConfig() {
         // console.log('导出麦克风配置');
+    }
+    
+    // ==================== 验证函数（用于manager调用验证步骤状态） ====================
+    
+    // 验证步骤1要求是否满足
+    async validateStep1Requirements() {
+        console.log('🔍 验证麦克风步骤1要求');
+        
+        // 基本要求：麦克风权限已获取
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            stream.getTracks().forEach(track => track.stop());
+            console.log('🔍 麦克风权限验证通过');
+            return true;
+        } catch (error) {
+            console.log('🔍 麦克风权限验证失败:', error.message);
+            return false;
+        }
+    }
+    
+    // 验证步骤2要求是否满足
+    validateStep2Requirements() {
+        console.log('🔍 验证麦克风步骤2要求');
+        
+        // 基本要求：设备已选择且录音测试已完成
+        const hasSelectedDevice = this.selectedDeviceId && this.selectedDeviceName;
+        const hasCompletedRecording = this.recordingCompleted;
+        
+        console.log('🔍 麦克风步骤2要求检查:');
+        console.log('  - 设备已选择:', hasSelectedDevice);
+        console.log('  - 录音已完成:', hasCompletedRecording);
+        
+        return hasSelectedDevice && hasCompletedRecording;
+    }
+    
+    // ==================== 自动跳步函数（用于manager调用判断是否可以自动跳步） ====================
+    
+    // 检查是否可以从步骤1自动跳步
+    async canAutoJumpFromStep1() {
+        console.log('🔍 检查麦克风步骤1自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = await this.validateStep1Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step1');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        const canAutoJump = validationPassed && isStepCompleted;
+        console.log('🔍 麦克风步骤1自动跳步结果:', canAutoJump);
+        return canAutoJump;
+    }
+    
+    // 检查是否可以从步骤2自动跳步
+    canAutoJumpFromStep2() {
+        console.log('🔍 检查麦克风步骤2自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = this.validateStep2Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step2');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        // 条件3：配置已保存
+        const config = JSON.parse(localStorage.getItem('microphoneConfig') || '{}');
+        const isConfigSaved = config.enabled && config.selectedDeviceId;
+        console.log('  - 配置已保存:', isConfigSaved);
+        
+        const canAutoJump = validationPassed && isStepCompleted && isConfigSaved;
+        console.log('🔍 麦克风步骤2自动跳步结果:', canAutoJump);
+        return canAutoJump;
     }
 }
 

@@ -48,9 +48,9 @@ class AISetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.validateStep1(),
+                autoJumpCondition: () => this.canAutoJumpFromStep1(),
                 onEnter: () => console.log('进入步骤1: 注册账号'),
-                validation: () => this.validateStep1()
+                validation: () => this.validateStep1Requirements()
             },
             {
                 id: 'step2',
@@ -93,9 +93,9 @@ class AISetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.validateStep2(),
+                autoJumpCondition: () => this.canAutoJumpFromStep2(),
                 onEnter: () => this.loadSavedApiKey(),
-                validation: () => this.validateApiKey()
+                validation: () => this.validateStep2Requirements()
             },
             {
                 id: 'step3',
@@ -122,9 +122,9 @@ class AISetupManager {
                         show: false
                     }
                 ],
-                autoJumpCondition: () => this.triggerAutoTest(),
+                autoJumpCondition: () => this.canAutoJumpFromStep3(),
                 onEnter: () => this.initializeChatTest(),
-                validation: () => this.validateApiTest()
+                validation: () => this.validateStep3Requirements()
             }
         ];
     }
@@ -687,6 +687,103 @@ class AISetupManager {
     exportConfig() {
         // 实现配置导出逻辑
         // console.log('导出AI配置');
+    }
+    
+    // ==================== 验证函数（用于manager调用验证步骤状态） ====================
+    
+    // 验证步骤1要求是否满足
+    validateStep1Requirements() {
+        console.log('🔍 验证AI步骤1要求');
+        // 步骤1是手动确认步骤，没有特殊要求
+        return true;
+    }
+    
+    // 验证步骤2要求是否满足
+    validateStep2Requirements() {
+        console.log('🔍 验证AI步骤2要求');
+        
+        const formData = this.stepManager.getStepFormData('step2');
+        const apiKey = formData.aiApiKey?.trim();
+        
+        console.log('🔍 AI步骤2要求检查:');
+        console.log('  - API Key已填写:', apiKey ? '是' : '否');
+        
+        // 基本要求：API Key已填写
+        return apiKey && apiKey.length > 0;
+    }
+    
+    // 验证步骤3要求是否满足
+    validateStep3Requirements() {
+        console.log('🔍 验证AI步骤3要求');
+        
+        // 基本要求：API测试已完成
+        const testCompleted = this.apiTestCompleted;
+        console.log('🔍 AI步骤3要求检查:');
+        console.log('  - API测试已完成:', testCompleted);
+        
+        return testCompleted;
+    }
+    
+    // ==================== 自动跳步函数（用于manager调用判断是否可以自动跳步） ====================
+    
+    // 检查是否可以从步骤1自动跳步
+    canAutoJumpFromStep1() {
+        console.log('🔍 检查AI步骤1自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = this.validateStep1Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step1');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        const canAutoJump = validationPassed && isStepCompleted;
+        console.log('🔍 AI步骤1自动跳步结果:', canAutoJump);
+        return canAutoJump;
+    }
+    
+    // 检查是否可以从步骤2自动跳步
+    canAutoJumpFromStep2() {
+        console.log('🔍 检查AI步骤2自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = this.validateStep2Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step2');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        // 条件3：配置已保存
+        const config = simpleConfig.getAll();
+        const isConfigSaved = config.zhipuApiKey && config.zhipuApiKey.trim().length > 0;
+        console.log('  - 配置已保存:', isConfigSaved);
+        
+        const canAutoJump = validationPassed && isStepCompleted && isConfigSaved;
+        console.log('🔍 AI步骤2自动跳步结果:', canAutoJump);
+        return canAutoJump;
+    }
+    
+    // 检查是否可以从步骤3自动跳步
+    canAutoJumpFromStep3() {
+        console.log('🔍 检查AI步骤3自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = this.validateStep3Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step3');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        // 条件3：设置已测试完成
+        const isSettingTested = simpleConfig.isSettingTested('ai');
+        console.log('  - 设置已测试:', isSettingTested);
+        
+        const canAutoJump = validationPassed && isStepCompleted && isSettingTested;
+        console.log('🔍 AI步骤3自动跳步结果:', canAutoJump);
+        return canAutoJump;
     }
 }
 

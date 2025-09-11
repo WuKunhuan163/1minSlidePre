@@ -75,10 +75,10 @@ class CameraSetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.checkDeviceConfigured() || this.checkCurrentDeviceSelected(),
+                autoJumpCondition: () => this.canAutoJumpFromStep2(),
                 onEnter: () => this.initializeDeviceSelection(),
                 onBeforeAutoJump: () => this.disableValidationButtonForJump(),
-                validation: () => this.validateVideoStreamSignal()
+                validation: () => this.validateStep2Requirements()
             },
             {
                 id: 'step3',
@@ -1513,6 +1513,47 @@ class CameraSetupManager {
     // 在自动跳转前禁用验证按钮
     disableValidationButtonForJump() {
         this.stepManager.disableButton('step2', 'nextBtn');
+    }
+    
+    // ==================== 验证函数（用于manager调用验证步骤状态） ====================
+    
+    // 验证步骤2要求是否满足
+    validateStep2Requirements() {
+        console.log('🔍 验证摄像头步骤2要求');
+        
+        // 基本要求：设备已选择且预览活跃
+        const hasDevice = this.selectedDeviceId && this.selectedDeviceName;
+        const hasActivePreview = this.isPreviewActive;
+        
+        console.log('🔍 摄像头步骤2要求检查:');
+        console.log('  - 设备已选择:', hasDevice);
+        console.log('  - 预览活跃:', hasActivePreview);
+        
+        return hasDevice && hasActivePreview;
+    }
+    
+    // ==================== 自动跳步函数（用于manager调用判断是否可以自动跳步） ====================
+    
+    // 检查是否可以从步骤2自动跳步
+    canAutoJumpFromStep2() {
+        console.log('🔍 检查摄像头步骤2自动跳步条件');
+        
+        // 条件1：验证通过
+        const validationPassed = this.validateStep2Requirements();
+        console.log('  - 验证通过:', validationPassed);
+        
+        // 条件2：步骤已标记为完成
+        const isStepCompleted = this.stepManager.isStepCompleted('step2');
+        console.log('  - 步骤已完成标记:', isStepCompleted);
+        
+        // 条件3：配置已保存
+        const config = this.loadConfiguration();
+        const isConfigSaved = config && config.selectedDeviceId && config.enabled;
+        console.log('  - 配置已保存:', isConfigSaved);
+        
+        const canAutoJump = validationPassed && isStepCompleted && isConfigSaved;
+        console.log('🔍 摄像头步骤2自动跳步结果:', canAutoJump);
+        return canAutoJump;
     }
 
     // 验证视频流并继续到下一步
