@@ -1996,14 +1996,12 @@ class CameraSetupManager {
                             console.log(`转换进度: ${percent}%`);
                         } else {
                             // 跳过无效进度的显示（0%、负数或超过100%的异常值）
-                            if (percent > 100) {
-                                console.log(`跳过异常进度值: ${percent}%`);
-                            }
+                            // 不输出任何日志，静默跳过异常值
                             return;
                         }
                         
-                        // 应用进度公式：渲染进度 = 25% + 75% * 计算结果
-                        const finalProgress = 25 + (realProgress * 0.75);
+                        // 应用进度公式：渲染进度 = 25% + 70% * 计算结果，为最后5%留出空间
+                        const finalProgress = Math.min(95, 25 + (realProgress * 0.70));
                         
                         if (this.progressUI) {
                             this.progressUI.updateProgress(finalProgress, displayMessage);
