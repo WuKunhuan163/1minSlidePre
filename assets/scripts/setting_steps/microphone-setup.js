@@ -496,15 +496,27 @@ class MicrophoneSetupManager {
 
     // 初始化录音测试
     initializeRecordingTest() {
-        this.recordingTestCompleted = false;
+        console.log('🔄 初始化录音测试，当前录音完成状态:', this.recordingTestCompleted);
+        
+        // 检查是否已有有效的录音测试结果
+        const hasExistingValidRecording = this.recordingTestCompleted && this.hasValidRecording();
+        console.log('🔄 是否有现有有效录音:', hasExistingValidRecording);
+        
+        // 只有在没有有效录音时才重置录音状态
+        if (!hasExistingValidRecording) {
+            console.log('🔄 重置录音测试状态');
+            this.recordingTestCompleted = false;
+            this.currentRecordingUrl = null;
+            this.currentRecordingFileName = null;
+            this.totalAmplitude = 0;
+            this.sampleCount = 0;
+        } else {
+            console.log('🔄 保留现有录音测试结果');
+        }
+        
+        // 总是重置录音进行状态
         this.isRecording = false;
         this.audioChunks = [];
-        
-        // 重置录音相关状态
-        this.currentRecordingUrl = null;
-        this.currentRecordingFileName = null;
-        this.totalAmplitude = 0;
-        this.sampleCount = 0;
         
         // 清除可能存在的旧设备提示信息
         this.clearDeviceNotices();
@@ -512,6 +524,12 @@ class MicrophoneSetupManager {
         // 获取设备并填充下拉框
         this.detectAudioDevices().then(() => {
             this.populateDeviceSelect();
+            
+            // 如果有有效录音，显示完成按钮
+            if (hasExistingValidRecording) {
+                console.log('🔄 显示现有录音的完成按钮');
+                this.stepManager.showButton('step2', 'completeBtn');
+            }
         });
     }
 

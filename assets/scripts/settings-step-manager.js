@@ -459,9 +459,9 @@ class SettingsStepManager {
                             console.log(`❌ 步骤 ${i + 1} validation函数验证失败，停在此步骤`);
                             return;
                         } else {
-                            // validation成功，显示相应的成功状态
+                            // validation成功，但不在初始化时显示成功状态
+                            // 让用户操作时再显示状态
                             console.log(`✅ 步骤 ${i + 1} validation函数验证成功`);
-                            this.showStepStatus(step.id, `步骤 ${i + 1} 验证通过`, 'success');
                         }
                     } catch (error) {
                         console.log(`❌ 步骤 ${i + 1} validation函数执行失败:`, error.message);
