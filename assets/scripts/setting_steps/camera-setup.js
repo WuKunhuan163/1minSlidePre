@@ -1006,6 +1006,17 @@ class CameraSetupManager {
             videoPreviewContainer.innerHTML = '';
         }
         
+        // 重置进度UI
+        if (this.progressUI) {
+            try {
+                this.progressUI.hide();
+                this.progressUI.destroy();
+            } catch (error) {
+                console.warn('⚠️ 清理进度UI时出错:', error);
+            }
+            this.progressUI = null;
+        }
+        
         // 隐藏步骤按钮
         if (this.stepManager && this.stepManager.currentStepIndex === 3) {
             this.stepManager.hideButton('step4', 'downloadBtn');
@@ -1951,11 +1962,6 @@ class CameraSetupManager {
     // 开始录制测试
     async startRecordingTest() {
         console.log('开始录制测试...');
-        
-        // 立即显示进度，禁用录制按钮
-        this.progressUI.updateProgress(1, '准备录制...');
-        
-        const progressContainer = document.getElementById('progressContainer');
         const resultContainer = document.getElementById('resultContainer');
         
         if (!this.currentStream) {
@@ -2069,10 +2075,6 @@ class CameraSetupManager {
                     console.log(`📹 开始录制 ${duration} 秒...`);
                     this.isRecording = true;
                     this.recordedChunks = [];
-                    
-                    if (this.progressUI) {
-                        this.progressUI.updateProgress(5, '开始录制...');
-                    }
                     
                     this.mediaRecorder = new MediaRecorder(this.currentStream, {
                         mimeType: 'video/webm;codecs=vp9'
