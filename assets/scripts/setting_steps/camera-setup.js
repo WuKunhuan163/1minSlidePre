@@ -1945,10 +1945,56 @@ class CameraSetupManager {
                         }
                     });
                     
-                    this.converter.setProgressCallback((percent) => {
-                        console.log(`转换进度: ${percent}%`);
+                    this.converter.setProgressCallback((percent, timeData) => {
+                        // 获取预期录制时间
+                        const expectedDuration = this.getRecordingDuration(); // 应该是5秒
+                        
+                        let realProgress = 0;
+                        let displayMessage = '转换中...';
+                        
+                        if (percent === -1 && timeData && typeof timeData === 'string') {
+                            // 这是来自FFmpeg日志的时间信息
+                            const timeMatch = timeData.match(/time=([0-9:\.]+)/);
+                            if (timeMatch) {
+                                const timeStr = timeMatch[1];
+                                let currentTime = 0;
+                                
+                                // 解析时间格式（可能是 HH:MM:SS.MS 或者直接是秒数）
+                                if (timeStr.includes(':')) {
+                                    const timeParts = timeStr.split(':');
+                                    if (timeParts.length >= 3) {
+                                        const hours = parseFloat(timeParts[0]) || 0;
+                                        const minutes = parseFloat(timeParts[1]) || 0;
+                                        const seconds = parseFloat(timeParts[2]) || 0;
+                                        currentTime = hours * 3600 + minutes * 60 + seconds;
+                                    }
+                                } else {
+                                    currentTime = parseFloat(timeStr) || 0;
+                                }
+                                
+                                // 计算真实进度
+                                realProgress = Math.min(100, (currentTime / expectedDuration) * 100);
+                                displayMessage = `转换中... ${currentTime.toFixed(1)}s/${expectedDuration}s`;
+                                
+                                console.log(`FFmpeg时间进度: ${currentTime.toFixed(2)}s/${expectedDuration}s (${realProgress.toFixed(1)}%)`);
+                            } else {
+                                // 无法解析时间，使用原始百分比
+                                realProgress = Math.max(0, Math.min(100, percent));
+                                displayMessage = `转换中... ${percent}%`;
+                                console.log(`转换进度: ${percent}% (原始)`);
+                            }
+                        } else {
+                            // 这是正常的百分比进度
+                            realProgress = Math.max(0, Math.min(100, percent));
+                            displayMessage = `转换中... ${percent}%`;
+                            console.log(`转换进度: ${percent}%`);
+                        }
+                        
+                        // 应用进度公式：渲染进度 = 25% + 75% * 计算结果
+                        const finalProgress = 25 + (realProgress * 0.75);
+                        
                         if (this.progressUI) {
-                            this.progressUI.updateProgress(25 + percent * 0.75, `转换中... ${percent}%`);
+                            this.progressUI.updateProgress(finalProgress, displayMessage);
                         }
                     });
                     
