@@ -1989,13 +1989,16 @@ class CameraSetupManager {
                                 // 无法解析时间，跳过这次更新（避免显示无用信息）
                                 return;
                             }
-                        } else if (percent > 0) {
-                            // 这是正常的百分比进度（只显示大于0的进度）
+                        } else if (percent > 0 && percent <= 100) {
+                            // 这是正常的百分比进度（只显示0-100%范围内的进度）
                             realProgress = Math.max(0, Math.min(100, percent));
                             displayMessage = `转换中... ${percent}%`;
                             console.log(`转换进度: ${percent}%`);
                         } else {
-                            // 跳过0%或负数进度的显示
+                            // 跳过无效进度的显示（0%、负数或超过100%的异常值）
+                            if (percent > 100) {
+                                console.log(`跳过异常进度值: ${percent}%`);
+                            }
                             return;
                         }
                         
@@ -2017,7 +2020,7 @@ class CameraSetupManager {
                     this.recordedChunks = [];
                     
                     if (this.progressUI) {
-                        this.progressUI.updateProgress(10, '开始录制...');
+                        this.progressUI.updateProgress(5, '开始录制...');
                     }
                     
                     this.mediaRecorder = new MediaRecorder(this.currentStream, {
@@ -2052,7 +2055,7 @@ class CameraSetupManager {
                             this.isRecording = false;
                             
                             if (this.progressUI) {
-                                this.progressUI.updateProgress(20, '录制完成，准备转换...');
+                                this.progressUI.updateProgress(15, '录制完成，准备转换...');
                             }
                         }
                     }, duration * 1000);
