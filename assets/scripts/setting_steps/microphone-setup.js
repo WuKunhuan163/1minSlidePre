@@ -1296,6 +1296,20 @@ class MicrophoneSetupManager {
                 
                 this.stepManager.showButton('step2', 'completeBtn');
                 
+                // 检查是否会触发自动跳转，如果会的话需要禁用按钮
+                setTimeout(() => {
+                    if (this.validateRecordingTest()) {
+                        // 会触发自动跳转，禁用录音按钮
+                        const recordBtn = document.getElementById(`${this.settingId}-step2-recordBtn`);
+                        if (recordBtn) {
+                            recordBtn.disabled = true;
+                            recordBtn.classList.add('force-no-interact');
+                            recordBtn.classList.remove('force-interact');
+                            console.log('🔒 检测到会自动跳转，录音按钮已禁用');
+                        }
+                    }
+                }, 100); // 短暂延迟，让按钮先恢复再检查
+                
                 // 不再自动跳转，需要用户手动点击"完成设置"按钮确认
                 console.log('🔄 录音测试完成，显示完成按钮，等待用户确认...');
             }
