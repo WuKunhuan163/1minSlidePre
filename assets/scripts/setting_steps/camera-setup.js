@@ -77,6 +77,7 @@ class CameraSetupManager {
                 ],
                 autoJumpCondition: () => this.checkDeviceConfigured() || this.checkCurrentDeviceSelected(),
                 onEnter: () => this.initializeDeviceSelection(),
+                onBeforeAutoJump: () => this.disableValidationButtonForJump(),
                 validation: () => this.validateVideoStreamSignal()
             },
             {
@@ -734,6 +735,10 @@ class CameraSetupManager {
             // 主动触发自动跳转检查（基于验证函数）
             console.log('🔄 摄像头预览成功，触发自动跳转检查...');
             setTimeout(() => {
+                // 在触发自动跳转检查前禁用验证按钮
+                this.stepManager.disableButton('step2', 'nextBtn');
+                console.log('🔒 预览成功，验证按钮已禁用');
+                
                 if (this.stepManager.triggerAutoJumpCheck) {
                     this.stepManager.triggerAutoJumpCheck();
                 }
@@ -1068,7 +1073,7 @@ class CameraSetupManager {
         const previewVideo = document.getElementById('speakerPreviewVideo');
         
         if (!container || !previewVideo) {
-            console.error('❌ 找不到预览容器或视频元素');
+            // console.error('❌ 找不到预览容器或视频元素');
             return;
         }
         
@@ -1465,6 +1470,12 @@ class CameraSetupManager {
         const isSelected = this.selectedDeviceId && this.selectedDeviceName && this.isPreviewActive;
         // console.log('当前设备选择结果:', isSelected);
         return isSelected;
+    }
+
+    // 在自动跳转前禁用验证按钮
+    disableValidationButtonForJump() {
+        this.stepManager.disableButton('step2', 'nextBtn');
+        console.log('🔒 即将跳转，验证按钮已禁用');
     }
 
     // 验证视频流并继续到下一步
