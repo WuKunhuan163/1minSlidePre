@@ -96,7 +96,7 @@ class ProgressUI {
         const titleElement = document.createElement('h3');
         titleElement.textContent = this.options.title;
         titleElement.style.cssText = `
-            margin: 0 0 20px 0;
+            margin: 60px 0px 0px;
             color: white;
             font-size: 18px;
             font-weight: 600;
