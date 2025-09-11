@@ -2066,6 +2066,16 @@ class CameraSetupManager {
             
             console.log('🎬 倒计时结束，开始录制...');
             
+            // 录制开始时暂停背景音乐以减少CPU竞争
+            if (window.BackgroundMusicVolumeController) {
+                try {
+                    window.BackgroundMusicVolumeController.pause(true);
+                    console.log('🎵 录制开始，已暂停背景音乐以优化性能');
+                } catch (error) {
+                    console.warn('⚠️ 暂停背景音乐时出错:', error);
+                }
+            }
+            
             // 开始录制（5秒自动停止并转换）
             console.log('📹 调用 startRecording(5)...');
             this.videoController.startRecording(5);
@@ -2255,6 +2265,16 @@ class CameraSetupManager {
                 console.log('✅ 转换完成！');
                 this.videoController.lastConvertedBlob = mp4Blob;
                 
+                // 转换完成后恢复背景音乐
+                if (window.BackgroundMusicVolumeController) {
+                    try {
+                        window.BackgroundMusicVolumeController.resume();
+                        console.log('🎵 转换完成，已恢复背景音乐');
+                    } catch (error) {
+                        console.warn('⚠️ 恢复背景音乐时出错:', error);
+                    }
+                }
+                
                 // 继续显示结果的逻辑
                 this.displayConversionResult({
                     success: true,
@@ -2264,6 +2284,17 @@ class CameraSetupManager {
                 
             } catch (error) {
                 console.error('❌ 转换过程中出错:', error);
+                
+                // 错误时也要恢复背景音乐
+                if (window.BackgroundMusicVolumeController) {
+                    try {
+                        window.BackgroundMusicVolumeController.resume();
+                        console.log('🎵 转换出错，已恢复背景音乐');
+                    } catch (bgError) {
+                        console.warn('⚠️ 恢复背景音乐时出错:', bgError);
+                    }
+                }
+                
                 this.handleRecordingError(error);
             }
         } else {
