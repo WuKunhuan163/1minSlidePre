@@ -89,9 +89,9 @@ class AudioSetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.checkStep2Completed(),
+                autoJumpCondition: () => this.checkStep2FieldsCompleted(),
                 onEnter: () => this.loadSavedAppKey(),
-                validation: () => this.checkStep2Completed()
+                validation: () => this.checkStep2FieldsCompleted()
             },
             {
                 id: 'step3',
@@ -176,9 +176,9 @@ class AudioSetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => this.validateStep4(),
+                autoJumpCondition: () => this.checkStep4FieldsCompleted(),
                 onEnter: () => this.loadSavedAccessKeys(),
-                validation: () => this.validateAccessKeys()
+                validation: () => this.checkStep4FieldsCompleted()
             },
             {
                 id: 'step5',
@@ -298,12 +298,60 @@ class AudioSetupManager {
     checkStep2Completed() {
         const config = simpleConfig.getAll();
         const appKey = config.appKey?.trim();
-        return appKey && appKey.length >= 10; // 简化验证，直接返回true
+        console.log('🔍 检查步骤2完成状态 - AppKey:', appKey ? '已设置' : '未设置');
+        return appKey && appKey.length >= 10;
+    }
+
+    // 检查步骤2字段是否已填写（用于自动跳转验证）
+    checkStep2FieldsCompleted() {
+        const formData = this.stepManager.getStepFormData('step2');
+        const appKey = formData.audioAppKey?.trim();
+        console.log('🔍 检查步骤2字段完成状态 - 表单AppKey:', appKey ? '已填写' : '未填写');
+        
+        // 检查表单字段是否填写
+        const isFormFilled = appKey && appKey.length > 0;
+        
+        // 如果表单已填写，也检查是否已保存到配置中
+        if (isFormFilled) {
+            const config = simpleConfig.getAll();
+            const savedAppKey = config.appKey?.trim();
+            console.log('🔍 已保存的AppKey:', savedAppKey ? '存在' : '不存在');
+            return savedAppKey && savedAppKey.length >= 10;
+        }
+        
+        return false;
     }
 
     // 检查步骤3是否已完成（基于已保存的配置）
     checkStep3Completed() {
+        console.log('🔍 检查步骤3完成状态 - 直接返回true（简化验证）');
         return true; // 简化验证，直接返回true
+    }
+
+    // 检查步骤4字段是否已填写（用于自动跳转验证）
+    checkStep4FieldsCompleted() {
+        const formData = this.stepManager.getStepFormData('step4');
+        const accessKeyId = formData.audioAccessKeyId?.trim();
+        const accessKeySecret = formData.audioAccessKeySecret?.trim();
+        console.log('🔍 检查步骤4字段完成状态:');
+        console.log('  - AccessKeyId:', accessKeyId ? '已填写' : '未填写');
+        console.log('  - AccessKeySecret:', accessKeySecret ? '已填写' : '未填写');
+        
+        // 检查表单字段是否都填写了
+        const isFormFilled = accessKeyId && accessKeyId.length > 0 && accessKeySecret && accessKeySecret.length > 0;
+        
+        // 如果表单已填写，也检查是否已保存到配置中
+        if (isFormFilled) {
+            const config = simpleConfig.getAll();
+            const savedAccessKeyId = config.accessKeyId?.trim();
+            const savedAccessKeySecret = config.accessKeySecret?.trim();
+            console.log('🔍 已保存的AccessKeys:');
+            console.log('  - AccessKeyId:', savedAccessKeyId ? '存在' : '不存在');
+            console.log('  - AccessKeySecret:', savedAccessKeySecret ? '存在' : '不存在');
+            return savedAccessKeyId && savedAccessKeyId.length > 0 && savedAccessKeySecret && savedAccessKeySecret.length > 0;
+        }
+        
+        return false;
     }
 
     // 通用格式检查接口
@@ -374,33 +422,48 @@ class AudioSetupManager {
     // 验证步骤2
     async validateStep2() {
         try {
+            console.log('🔄 validateStep2 开始执行');
             this.stepManager.showStepStatus('step2', '正在检查AppKey格式...', 'processing');
             
+            const formData = this.stepManager.getStepFormData('step2');
+            console.log('🔄 获取到的表单数据:', formData);
+            
+            if (!formData.audioAppKey || !formData.audioAppKey.trim()) {
+                console.log('❌ AppKey为空，验证失败');
+                this.stepManager.showStepStatus('step2', '请先填写AppKey', 'error');
+                return false;
+            }
+            
             const validationResult = await this.validateAppKey();
+            console.log('🔄 AppKey验证结果:', validationResult);
             
             // 保存AppKey
-            const formData = this.stepManager.getStepFormData('step2');
             if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+                console.log('🔄 保存AppKey到配置:', formData.audioAppKey.trim());
                 simpleConfig.set('appKey', formData.audioAppKey.trim());
             }
             
             if (validationResult.warning) {
                 // 格式有问题，显示警告并等待跳转
                 const warningMessage = `${validationResult.message}。${validationResult.suggestion}`;
+                console.log('⚠️ AppKey格式有问题，显示警告:', warningMessage);
                 
                 // 显示警告状态
                 this.stepManager.showStepStatus('step2', warningMessage, 'warning');
                 
                 // 等待2秒后跳转
                 setTimeout(() => {
+                    console.log('🔄 AppKey警告后跳转到步骤3');
                     this.stepManager.markStepCompleted('step2', true);
                     this.stepManager.goToStep(2); // 跳转到步骤3
                 }, 2000);
             } else {
                 // 格式正确，正常跳转
+                console.log('✅ AppKey格式正确，正常跳转');
                 this.stepManager.showStepStatus('step2', validationResult.message, 'success');
                 
                 setTimeout(() => {
+                    console.log('🔄 AppKey验证成功后跳转到步骤3');
                     this.stepManager.markStepCompleted('step2', true);
                     this.stepManager.goToStep(2); // 跳转到步骤3
                 }, 1000);
@@ -409,6 +472,7 @@ class AudioSetupManager {
             return true;
             
         } catch (error) {
+            console.error('❌ validateStep2 执行出错:', error);
             this.stepManager.showStepStatus('step2', error.message, 'error');
             return false;
         }
@@ -548,6 +612,8 @@ class AudioSetupManager {
     // 验证步骤4
     async validateStep4() {
         try {
+            console.log('🔄 validateStep4 开始执行');
+            
             // 禁用验证按钮并显示验证中状态
             const validateBtn = document.getElementById(`${this.settingId}-step4-validateBtn`);
             if (validateBtn) {
@@ -559,8 +625,28 @@ class AudioSetupManager {
             
             // 首先进行格式检查
             const formData = this.stepManager.getStepFormData('step4');
+            console.log('🔄 获取到的表单数据:', formData);
+            
             const accessKeyId = formData.audioAccessKeyId?.trim();
             const accessKeySecret = formData.audioAccessKeySecret?.trim();
+            
+            console.log('🔄 AccessKey字段检查:');
+            console.log('  - AccessKeyId:', accessKeyId ? '已填写' : '未填写');
+            console.log('  - AccessKeySecret:', accessKeySecret ? '已填写' : '未填写');
+            
+            if (!accessKeyId || !accessKeySecret) {
+                console.log('❌ AccessKey字段未完整填写，验证失败');
+                this.stepManager.showStepStatus('step4', '请先填写完整的AccessKey ID和AccessKey Secret', 'error');
+                
+                // 恢复按钮状态
+                if (validateBtn) {
+                    validateBtn.textContent = '验证';
+                    validateBtn.disabled = false;
+                    validateBtn.style.opacity = '1';
+                    validateBtn.style.cursor = 'pointer';
+                }
+                return false;
+            }
             
             // 检查AccessKeyID格式
             const idFormatCheck = this.validateAccessKeyIdFormat(accessKeyId);
@@ -589,9 +675,12 @@ class AudioSetupManager {
             this.stepManager.showStepStatus('step4', '正在验证AccessKey...', 'processing');
             
             const isValid = await this.validateAccessKeys();
+            console.log('🔄 AccessKey验证结果:', isValid);
+            
             if (isValid) {
                 // 保存AccessKeys
                 const formData = this.stepManager.getStepFormData('step4');
+                console.log('🔄 保存AccessKey到配置');
                 simpleConfig.set('accessKeyId', formData.audioAccessKeyId.trim());
                 simpleConfig.set('accessKeySecret', formData.audioAccessKeySecret.trim());
                 
@@ -605,6 +694,7 @@ class AudioSetupManager {
                 }
                 
                 setTimeout(() => {
+                    console.log('🔄 AccessKey验证成功后跳转到步骤5');
                     this.stepManager.markStepCompleted('step4', true);
                     this.stepManager.goToStep(4); // 跳转到步骤5
                 }, 1000);
@@ -612,6 +702,7 @@ class AudioSetupManager {
                 return true;
             }
         } catch (error) {
+            console.error('❌ validateStep4 执行出错:', error);
             this.stepManager.showStepStatus('step4', error.message, 'error');
             
             // 验证失败时，确保清除可能已经设置的启用状态

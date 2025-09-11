@@ -407,33 +407,75 @@ class SettingsManager {
         }
         
         // 清空现有内容
-        // console.log(`🖼️ 清空现有内容，当前innerHTML长度: ${contentContainer.innerHTML.length}`);
         contentContainer.innerHTML = '';
+        
+        // 统一的字段显示条件检查
+        const shouldShowFields = this.shouldShowSettingFields(settingId);
+        console.log(`🖼️ ${settingId} 字段显示条件检查: ${shouldShowFields}`);
+        
+        if (!shouldShowFields) {
+            // 不满足显示条件，保持隐藏状态
+            contentContainer.classList.remove('expanded');
+            console.log(`🖼️ ${settingId} 不满足字段显示条件，保持隐藏状态`);
+            return;
+        }
         
         // 检查是否有字段内容
         if (!fields || fields.length === 0) {
             // 没有字段时，确保容器保持隐藏状态
             contentContainer.classList.remove('expanded');
-            // console.log(`🖼️ ${settingId}设置无字段内容，保持隐藏状态`);
+            console.log(`🖼️ ${settingId}设置无字段内容，保持隐藏状态`);
             return;
         }
         
-        // 生成字段HTML
-        // console.log(`🖼️ 开始生成${fields.length}个字段的HTML`);
-        fields.forEach((field, index) => {
+        // 过滤出有值的字段（规则2：完成之后，如果字段不为空显示）
+        const fieldsWithValues = fields.filter(field => {
+            const hasValue = field.value && field.value.trim().length > 0;
+            console.log(`🖼️ 字段 ${field.name} 有值: ${hasValue} (值: ${field.value ? '有' : '无'})`);
+            return hasValue;
+        });
+        
+        console.log(`🖼️ ${settingId} 过滤后的字段数量: ${fieldsWithValues.length}/${fields.length}`);
+        
+        if (fieldsWithValues.length === 0) {
+            // 没有有值的字段，保持隐藏状态
+            contentContainer.classList.remove('expanded');
+            console.log(`🖼️ ${settingId} 没有有值的字段，保持隐藏状态`);
+            return;
+        }
+        
+        // 生成有值字段的HTML
+        fieldsWithValues.forEach((field, index) => {
             const fieldHtml = this.generateFieldHtml(field);
-            // console.log(`🖼️ 第${index + 1}个字段HTML:`, fieldHtml);
+            console.log(`🖼️ 第${index + 1}个字段HTML已生成: ${field.name}`);
             contentContainer.insertAdjacentHTML('beforeend', fieldHtml);
         });
         
         // 有字段内容时，确保容器显示
         contentContainer.classList.add('expanded');
-        // console.log(`🖼️ ${settingId}设置有${fields.length}个字段，已设置为展开状态`);
+        console.log(`🖼️ ${settingId}设置显示${fieldsWithValues.length}个字段，已设置为展开状态`);
         
-        // console.log(`🖼️ 更新后的innerHTML长度: ${contentContainer.innerHTML.length}`);
-        // console.log(`🖼️ 最终容器内容:`, contentContainer.innerHTML);
+        console.log(`✅ 已完成 ${settingId} 设置UI显示更新`);
+    }
+    
+    // 统一的字段显示条件检查
+    shouldShowSettingFields(settingId) {
+        const state = this.settingsState[settingId];
+        if (!state) {
+            console.log(`🔍 ${settingId} 没有状态信息，不显示字段`);
+            return false;
+        }
         
-        // console.log(`✅ 已完成 ${settingId} 设置UI显示更新`);
+        // 规则1：没有完成，字段肯定不显示
+        const isCompleted = this.isSettingConfigured(settingId, state.config);
+        if (!isCompleted) {
+            console.log(`🔍 ${settingId} 未完成配置，不显示字段`);
+            return false;
+        }
+        
+        // 规则2：完成之后，可以显示字段（具体哪些字段显示由字段值决定）
+        console.log(`🔍 ${settingId} 已完成配置，可以显示字段`);
+        return true;
     }
 
     // 生成单个字段的HTML
