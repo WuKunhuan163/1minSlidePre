@@ -183,7 +183,7 @@ export class PathResolver {
                 const module = await import(moduleURL);
                 
                 if (logCallback) {
-                    logCallback(`✅ FFmpeg模块加载成功 (第${attempt}次尝试)`);
+                    logCallback(`FFmpeg模块加载成功 (第${attempt}次尝试)`);
                 }
                 
                 return module;

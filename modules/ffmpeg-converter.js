@@ -7,7 +7,7 @@
 import { FFmpeg } from './ffmpeg-libs/ffmpeg/ffmpeg/dist/esm/index.js';
 import { PathResolver } from './path-resolver.js';
 
-class MigratedOptimizedFFmpegConverter {
+class FFmpegConverter {
     constructor(useWorker = true) {
         this.useWorker = useWorker;
         this.worker = null;
@@ -30,7 +30,7 @@ class MigratedOptimizedFFmpegConverter {
     
     // 核心接口方法（从参考项目迁移）
     async init() {
-        if (this.onLog) this.onLog('🎯🚀 MigratedOptimizedFFmpegConverter 初始化中...');
+        if (this.onLog) this.onLog('FFmpegConverter 初始化中...');
         if (this.isLoaded) return;
         
         if (this.useWorker && typeof Worker !== 'undefined') {
@@ -55,7 +55,7 @@ class MigratedOptimizedFFmpegConverter {
                         case 'initialized':
                             if (success) {
                                 this.isLoaded = true;
-                                if (this.onLog) this.onLog('✅ FFmpeg Worker 初始化完成！');
+                                if (this.onLog) this.onLog('FFmpeg Worker 初始化完成！');
                                 resolve();
                             } else {
                                 reject(new Error(message));
@@ -114,7 +114,7 @@ class MigratedOptimizedFFmpegConverter {
             await this.ffmpeg.load(loadConfig);
             
             this.isLoaded = true;
-            if (this.onLog) this.onLog('✅ FFmpeg 直接模式初始化完成！');
+            if (this.onLog) this.onLog('FFmpeg 直接模式初始化完成！');
             
         } catch (error) {
             if (this.onLog) this.onLog(`❌ FFmpeg 初始化失败: ${error.message}`);
@@ -155,7 +155,7 @@ class MigratedOptimizedFFmpegConverter {
     
     // 主要转换接口（从参考项目迁移）
     async convertWebMToMP4(webmBlob, options = {}) {
-        if (this.onLog) this.onLog('🎯⚡ 调用迁移接口：MigratedOptimizedFFmpegConverter.convertWebMToMP4()');
+        if (this.onLog) this.onLog('🎯⚡ 调用迁移接口：FFmpegConverter.convertWebMToMP4()');
         if (!this.isLoaded) {
             throw new Error('转换器未初始化，请先调用 init()');
         }
@@ -218,7 +218,7 @@ class MigratedOptimizedFFmpegConverter {
                         const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
                         const mp4Blob = new Blob([buffer], { type: 'video/mp4' });
                         if (this.onLog) this.onLog(`✅ Worker转换完成！耗时 ${convertTime} 秒`);
-                        if (this.onLog) this.onLog('🎊⚡ 迁移接口转换完成！使用了新的MigratedOptimizedFFmpegConverter！');
+                        if (this.onLog) this.onLog('🎊⚡ 迁移接口转换完成！使用了新的FFmpegConverter！');
                         resolve(mp4Blob);
                         break;
                         
@@ -337,7 +337,7 @@ class MigratedOptimizedFFmpegConverter {
     
     // 合成视频与背景图片
     async compositeVideoWithBackground(videoBlob, options) {
-        if (this.onLog) this.onLog('🎯🎬 调用迁移接口：MigratedOptimizedFFmpegConverter.compositeVideoWithBackground()');
+        if (this.onLog) this.onLog('🎯🎬 调用迁移接口：FFmpegConverter.compositeVideoWithBackground()');
         if (!this.isLoaded) {
             throw new Error('转换器未初始化，请先调用 init()');
         }
@@ -384,8 +384,7 @@ class MigratedOptimizedFFmpegConverter {
                     case 'composite_complete':
                         const convertTime = ((Date.now() - startTime) / 1000).toFixed(2);
                         const mp4Blob = new Blob([buffer], { type: 'video/mp4' });
-                        if (this.onLog) this.onLog(`✅ Worker合成完成！耗时 ${convertTime} 秒`);
-                        if (this.onLog) this.onLog('🎊🎉 迁移接口合成完成！使用了新的MigratedOptimizedFFmpegConverter！');
+                        if (this.onLog) this.onLog(`Worker合成完成！耗时 ${convertTime} 秒`);
                         resolve(mp4Blob);
                         break;
                         
@@ -480,7 +479,6 @@ class MigratedOptimizedFFmpegConverter {
             await this.ffmpeg.deleteFile('output_composite.mp4');
 
             if (this.onLog) this.onLog('✅ 直接模式背景合成完成！');
-            if (this.onLog) this.onLog('🎊🎉 迁移接口合成完成！使用了新的MigratedOptimizedFFmpegConverter！');
             return mp4Blob;
 
         } catch (error) {
@@ -518,4 +516,4 @@ class MigratedOptimizedFFmpegConverter {
     }
 }
 
-export default MigratedOptimizedFFmpegConverter;
+export default FFmpegConverter;

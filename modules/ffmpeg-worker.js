@@ -20,7 +20,7 @@ async function initFFmpeg() {
         const logCallback = (message) => {
             self.postMessage({
                 type: 'log',
-                message: `[FFmpeg Worker] ${message}`
+                message: message
             });
         };
         
@@ -41,7 +41,7 @@ async function initFFmpeg() {
             
             self.postMessage({
                 type: 'log',
-                message: `[FFmpeg Worker] ${message}`
+                message: message
             });
         });
 
@@ -62,18 +62,7 @@ async function initFFmpeg() {
             throw new Error('所需的FFmpeg核心文件不可访问');
         }
         
-        self.postMessage({
-            type: 'log',
-            message: `[FFmpeg Worker] 使用简化路径核心文件: ${loadConfig.coreURL}`
-        });
-        
-        self.postMessage({
-            type: 'log',
-            message: `[FFmpeg Worker] 使用简化路径WASM文件: ${loadConfig.wasmURL}`
-        });
-        
         await ffmpeg.load(loadConfig);
-
         isLoaded = true;
         self.postMessage({
             type: 'initialized',
@@ -402,7 +391,7 @@ async function compositeVideo(data) {
         await ffmpeg.exec(command);
         
         // 执行后检查
-        self.postMessage({ type: 'log', message: '✅ FFmpeg命令执行完成，检查输出文件...' });
+        self.postMessage({ type: 'log', message: 'FFmpeg命令执行完成，检查输出文件...' });
 
         // 检查输出文件是否存在
         let outputData;
@@ -411,7 +400,7 @@ async function compositeVideo(data) {
             if (!outputData || outputData.length === 0) {
                 throw new Error('输出文件为空或不存在');
             }
-            self.postMessage({ type: 'log', message: `📤 输出文件大小: ${outputData.length} bytes` });
+            self.postMessage({ type: 'log', message: `输出文件大小: ${outputData.length} bytes` });
         } catch (fileError) {
             self.postMessage({ type: 'log', message: `❌ 无法读取输出文件: ${fileError.message}` });
             throw new Error(`合成失败：无法读取输出文件 - ${fileError.message}`);
@@ -428,7 +417,7 @@ async function compositeVideo(data) {
         await ffmpeg.deleteFile('background.jpg');
         await ffmpeg.deleteFile('output_composite.mp4');
 
-        self.postMessage({ type: 'log', message: '✅ Worker背景合成完成！' });
+        self.postMessage({ type: 'log', message: 'Worker背景合成完成！' });
         self.postMessage({ 
             type: 'composite_complete', 
             buffer: outputData.buffer 
