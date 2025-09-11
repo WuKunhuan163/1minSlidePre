@@ -891,6 +891,11 @@ class SettingsStepManager {
                 // 显示成功状态
                 this.showStepStatus(stepId, '步骤验证通过，即将跳转...', 'success');
                 
+                // 触发跳转前的回调，让具体步骤可以禁用按钮
+                if (step.onBeforeAutoJump && typeof step.onBeforeAutoJump === 'function') {
+                    step.onBeforeAutoJump();
+                }
+                
                 // 延迟跳转，让用户看到成功消息
                 setTimeout(() => {
                     // 调用函数A（切换函数）实现跳转

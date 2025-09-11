@@ -117,6 +117,7 @@ class MicrophoneSetupManager {
                 ],
                 autoJumpCondition: () => this.validateRecordingTest(), // 只有已保存的配置才自动跳转，当前测试完成不自动跳转
                 onEnter: () => this.initializeRecordingTest(),
+                onBeforeAutoJump: () => this.disableRecordingButtonForJump(),
                 validation: () => this.validateRecordingTest()
             }
         ];
@@ -488,6 +489,17 @@ class MicrophoneSetupManager {
             previousStepStatus: '已完成当前步骤',
             previousStepType: 'success'
         });
+    }
+
+    // 在自动跳转前禁用录音按钮
+    disableRecordingButtonForJump() {
+        const recordBtn = document.getElementById(`${this.settingId}-step2-recordBtn`);
+        if (recordBtn) {
+            recordBtn.disabled = true;
+            recordBtn.classList.add('force-no-interact');
+            recordBtn.classList.remove('force-interact');
+            console.log('🔒 即将跳转，录音按钮已禁用');
+        }
     }
 
     // 初始化录音测试
