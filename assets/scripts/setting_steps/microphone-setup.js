@@ -2030,6 +2030,14 @@ class MicrophoneSetupManager {
 
     // 返回上一步
     goToPreviousStep() {
+        console.log('🔙 准备返回上一步，检查是否需要停止录音');
+        
+        // 如果正在录音，先停止录音
+        if (this.isRecording) {
+            console.log('🔙 检测到正在录音，先停止录音');
+            this.stopRecording();
+        }
+        
         const currentIndex = this.stepManager.currentStepIndex;
         if (currentIndex > 0) {
             this.stepManager.goToStep(currentIndex - 1);
