@@ -115,6 +115,7 @@ class MicrophoneSetupManager {
                 autoJumpCondition: () => this.canAutoJumpFromStep2(),
                 preJumpCheck: () => this.preJumpCheckStep2(),
                 onEnter: () => this.initializeRecordingTest(),
+                onLeave: () => this.handleStep2Leave(),
                 onBeforeAutoJump: () => this.disableRecordingButtonForJump(),
                 validation: () => this.validateStep2Requirements()
             }
@@ -494,6 +495,17 @@ class MicrophoneSetupManager {
         }
     }
 
+    // 处理离开步骤2时的清理工作
+    handleStep2Leave() {
+        console.log('🔄 离开录音测试步骤，执行清理工作');
+        
+        // 如果正在录音，停止录音
+        if (this.isRecording) {
+            console.log('🔄 检测到正在录音，自动停止录音');
+            this.stopRecording();
+        }
+    }
+    
     // 初始化录音测试
     initializeRecordingTest() {
         console.log('🔄 初始化录音测试 - 清除所有录音数据');
@@ -2030,13 +2042,7 @@ class MicrophoneSetupManager {
 
     // 返回上一步
     goToPreviousStep() {
-        console.log('🔙 准备返回上一步，检查是否需要停止录音');
-        
-        // 如果正在录音，先停止录音
-        if (this.isRecording) {
-            console.log('🔙 检测到正在录音，先停止录音');
-            this.stopRecording();
-        }
+        console.log('🔙 准备返回上一步（清理工作由onLeave自动处理）');
         
         const currentIndex = this.stepManager.currentStepIndex;
         if (currentIndex > 0) {

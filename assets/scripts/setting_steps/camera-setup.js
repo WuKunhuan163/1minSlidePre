@@ -78,6 +78,7 @@ class CameraSetupManager {
                 autoJumpCondition: () => this.canAutoJumpFromStep2(),
                 preJumpCheck: () => this.preJumpCheckStep2(),
                 onEnter: () => this.initializeDeviceSelection(),
+                onLeave: () => this.handleStep2Leave(),
                 onBeforeAutoJump: () => this.disableValidationButtonForJump(),
                 validation: () => this.validateStep2Requirements()
             },
@@ -1514,6 +1515,20 @@ class CameraSetupManager {
     // 在自动跳转前禁用验证按钮
     disableValidationButtonForJump() {
         this.stepManager.disableButton('step2', 'nextBtn');
+    }
+    
+    // 处理离开步骤2时的清理工作
+    handleStep2Leave() {
+        console.log('🔄 离开摄像头设置步骤，执行清理工作');
+        
+        // 停止预览和相关资源
+        if (this.isPreviewActive) {
+            console.log('🔄 检测到预览活跃，停止预览');
+            this.stopPreview();
+        }
+        
+        // 停止预览刷新定时器
+        this.stopPreviewRefresh();
     }
     
     // ==================== 预跳转检查函数（字段F - 检查基本条件是否满足） ====================

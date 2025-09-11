@@ -126,7 +126,8 @@ class SettingsStepManager {
      *   autoJumpCondition: () => {},    // 自动跳转条件函数
      *   preJumpCheck: () => {},         // 预跳转检查函数（字段F）- 检查是否满足跳转的基本条件
      *   onEnter: () => {},              // 进入步骤时的回调
-     *   onExit: () => {},               // 离开步骤时的回调
+     *   onLeave: () => {},              // 离开步骤时的回调（新增）
+     *   onExit: () => {},               // 离开步骤时的回调（兼容旧版本）
      *   validation: () => {}            // 步骤验证函数
      * }
      */
@@ -722,8 +723,31 @@ class SettingsStepManager {
             }
         }
         
-        // 隐藏当前步骤
+        // 调用当前步骤的onLeave回调并隐藏步骤
         if (previousStepIndex >= 0 && previousStepIndex < this.steps.length) {
+            const previousStep = this.steps[previousStepIndex];
+            
+            // 调用onLeave回调
+            if (previousStep.onLeave && typeof previousStep.onLeave === 'function') {
+                console.log(`🔄 执行步骤 ${previousStepIndex + 1} 的onLeave回调`);
+                try {
+                    previousStep.onLeave();
+                } catch (error) {
+                    console.error(`❌ 步骤 ${previousStepIndex + 1} onLeave回调执行失败:`, error);
+                }
+            }
+            
+            // 兼容旧版本的onExit回调
+            if (previousStep.onExit && typeof previousStep.onExit === 'function') {
+                console.log(`🔄 执行步骤 ${previousStepIndex + 1} 的onExit回调（兼容）`);
+                try {
+                    previousStep.onExit();
+                } catch (error) {
+                    console.error(`❌ 步骤 ${previousStepIndex + 1} onExit回调执行失败:`, error);
+                }
+            }
+            
+            // 隐藏当前步骤
             const currentStep = this.overlay.querySelector(`#${this.settingId}-${this.steps[previousStepIndex].id}`);
             if (currentStep) {
                 currentStep.classList.remove('visible', 'current-step');
