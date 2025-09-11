@@ -458,6 +458,10 @@ class SettingsStepManager {
                         if (!validationResult) {
                             console.log(`❌ 步骤 ${i + 1} validation函数验证失败，停在此步骤`);
                             return;
+                        } else {
+                            // validation成功，显示相应的成功状态
+                            console.log(`✅ 步骤 ${i + 1} validation函数验证成功`);
+                            this.showStepStatus(step.id, `步骤 ${i + 1} 验证通过`, 'success');
                         }
                     } catch (error) {
                         console.log(`❌ 步骤 ${i + 1} validation函数执行失败:`, error.message);
@@ -928,6 +932,14 @@ class SettingsStepManager {
                 if (!validationResult) {
                     this.showStepStatus(stepId, '步骤要求验证失败', 'error');
                     return;
+                } else {
+                    console.log(`✅ ${stepId} validation函数验证成功`);
+                    // 为特定步骤显示更友好的成功消息
+                    if (stepId === 'step2' && this.settingId === 'microphone') {
+                        this.showStepStatus(stepId, '录音测试完成！', 'success');
+                    } else {
+                        this.showStepStatus(stepId, '步骤验证通过', 'success');
+                    }
                 }
             }
             

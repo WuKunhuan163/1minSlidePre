@@ -1220,7 +1220,8 @@ class MicrophoneSetupManager {
             if (hasValidAudio) {
                 // 录音测试完成且质量合格
                 this.recordingTestCompleted = true;
-                this.stepManager.showStepStatus('step2', '录音测试完成！', 'success');
+                // 不在这里显示状态，让validation函数统一管理状态显示
+                console.log('✅ 录音测试质量检验通过');
             } else {
                 // 录音质量不合格
                 this.recordingTestCompleted = false;
@@ -1989,7 +1990,8 @@ class MicrophoneSetupManager {
                                 this.saveBasicConfiguration();
                                 
                                 this.stepManager.showButton('step2', 'completeBtn');
-                                this.stepManager.showStepStatus('step2', '录音测试完成！', 'success');
+                                // 不在这里显示状态，让validation函数统一管理状态显示
+                                console.log('✅ 录音测试完成，显示完成按钮');
                                 
                                 // 恢复录音按钮状态
                                 if (recordBtn) {
@@ -2158,13 +2160,17 @@ class MicrophoneSetupManager {
         
         // 基本要求：设备已选择且录音测试已完成
         const hasSelectedDevice = this.selectedDeviceId && this.selectedDeviceName;
-        const hasCompletedRecording = this.recordingCompleted;
+        const hasCompletedRecording = this.recordingTestCompleted;
+        const hasValidRecording = this.hasValidRecording();
         
         console.log('🔍 麦克风步骤2要求检查:');
-        console.log('  - 设备已选择:', hasSelectedDevice);
+        console.log('  - 设备已选择:', hasSelectedDevice ? this.selectedDeviceName : '未选择');
         console.log('  - 录音已完成:', hasCompletedRecording);
+        console.log('  - 录音有效:', hasValidRecording);
         
-        return hasSelectedDevice && hasCompletedRecording;
+        const result = hasSelectedDevice && hasCompletedRecording && hasValidRecording;
+        console.log('🔍 麦克风步骤2验证结果:', result);
+        return result;
     }
     
     // ==================== 自动跳步函数（用于manager调用判断是否可以自动跳步） ====================
@@ -2205,6 +2211,13 @@ class MicrophoneSetupManager {
         
         const canAutoJump = validationPassed && isStepCompleted && isConfigSaved;
         console.log('🔍 麦克风步骤2自动跳步结果:', canAutoJump);
+        
+        // 如果所有条件都满足，在这里显示成功状态
+        if (canAutoJump) {
+            console.log('🎉 麦克风设置完成，准备自动跳转');
+            // 这里可以显示最终的成功状态
+        }
+        
         return canAutoJump;
     }
 }
