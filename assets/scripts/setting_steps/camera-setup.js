@@ -1980,10 +1980,6 @@ class CameraSetupManager {
                                 
                                 // 构建显示消息，包含速度信息
                                 displayMessage = `转换中... ${currentTime.toFixed(1)}s/${expectedDuration}s`;
-                                if (speed !== null) {
-                                    displayMessage += ` (${speed}x速度)`;
-                                }
-                                
                                 console.log(`FFmpeg时间进度: ${currentTime.toFixed(2)}s/${expectedDuration}s (${realProgress.toFixed(1)}%)${speed ? `, 速度: ${speed}x` : ''}`);
                             } else {
                                 // 无法解析时间，跳过这次更新（避免显示无用信息）
@@ -2000,8 +1996,8 @@ class CameraSetupManager {
                             return;
                         }
                         
-                        // 应用进度公式：渲染进度 = 25% + 70% * 计算结果，为最后5%留出空间
-                        const finalProgress = Math.min(95, 25 + (realProgress * 0.70));
+                        // 应用进度公式：渲染进度 = 25% + 75% * 计算结果
+                        const finalProgress = 25 + (realProgress * 0.75);
                         
                         if (this.progressUI) {
                             this.progressUI.updateProgress(finalProgress, displayMessage);
