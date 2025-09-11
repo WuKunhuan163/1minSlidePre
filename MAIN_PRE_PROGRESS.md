@@ -75,6 +75,11 @@
   - 添加可配置参数：`displayDuration`（显示时长）、`fadeOutTime`（淡出时长）、`offsetTime`（间隔时间）
   - 实现更精确的时间控制和动画效果
   - 添加详细的console日志用于调试
+- **摄像头视频转换进度修复**：
+  - 修复视频转换完成时进度停在98%的问题
+  - 在 `displayConversionResult()` 中确保调用 `progressUI.setComplete()`
+  - 转换完成时强制更新进度到100%并显示"转换完成！"状态
+  - 添加转换完成的日志记录
 
 #### 📋 下一步计划
 1. 添加智谱AI状态指示器

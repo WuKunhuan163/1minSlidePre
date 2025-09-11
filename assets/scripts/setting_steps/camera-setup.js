@@ -2552,6 +2552,13 @@ class CameraSetupManager {
     displayConversionResult(result) {
         console.log('✅ 显示转换结果:', result);
         
+        // 确保进度显示为100%并显示完成状态
+        if (this.progressUI && result.success) {
+            console.log('🎉 设置进度UI为完成状态');
+            this.progressUI.setComplete();
+            this.progressUI.addLog('✅ 视频转换完成！');
+        }
+        
         const resultContainer = document.getElementById('resultContainer');
         const videoPreviewContainer = document.getElementById('videoPreviewContainer');
         
