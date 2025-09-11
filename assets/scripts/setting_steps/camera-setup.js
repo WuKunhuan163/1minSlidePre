@@ -75,17 +75,7 @@ class CameraSetupManager {
                         show: true
                     }
                 ],
-                autoJumpCondition: () => {
-                    const configured = this.checkDeviceConfigured();
-                    const selected = this.checkCurrentDeviceSelected();
-                    const result = configured || selected;
-                    console.log('🔍 [自动跳转条件] 检查结果:');
-                    console.log('  - 设备已配置:', configured);
-                    console.log('  - 当前设备已选择:', selected);
-                    console.log('  - 最终结果:', result);
-                    console.log('  - 调用堆栈:', new Error().stack.split('\n').slice(1, 4).join('\n'));
-                    return result;
-                },
+                autoJumpCondition: () => this.checkDeviceConfigured() || this.checkCurrentDeviceSelected(),
                 onEnter: () => this.initializeDeviceSelection(),
                 onBeforeAutoJump: () => this.disableValidationButtonForJump(),
                 validation: () => this.validateVideoStreamSignal()
@@ -743,32 +733,9 @@ class CameraSetupManager {
             this.saveBasicConfiguration();
             
             // 主动触发自动跳转检查（基于验证函数）
-            console.log('🔄 [预览成功] 摄像头预览成功，触发自动跳转检查...');
             setTimeout(() => {
-                console.log('🔄 [预览成功] 开始执行自动跳转检查逻辑');
-                console.log('🔄 [预览成功] 步骤管理器存在:', !!this.stepManager);
-                
-                // 在触发自动跳转检查前禁用验证按钮
-                this.stepManager.disableButton('step2', 'nextBtn');
-                console.log('🔒 [预览成功] 预览成功，验证按钮已禁用');
-                
-                // 验证按钮是否真的被禁用了
-                setTimeout(() => {
-                    const nextBtn = document.getElementById('camera-step2-nextBtn');
-                    if (nextBtn) {
-                        console.log('🔍 [预览成功] 验证按钮状态检查:');
-                        console.log('  - disabled属性:', nextBtn.disabled);
-                        console.log('  - CSS类列表:', nextBtn.className);
-                    } else {
-                        console.warn('⚠️ [预览成功] 找不到验证按钮元素');
-                    }
-                }, 50);
-                
                 if (this.stepManager.triggerAutoJumpCheck) {
-                    console.log('🚀 [预览成功] 调用 triggerAutoJumpCheck()');
                     this.stepManager.triggerAutoJumpCheck();
-                } else {
-                    console.warn('⚠️ [预览成功] triggerAutoJumpCheck 方法不存在');
                 }
             }, 2000); // 延迟2秒让用户看到预览
             
@@ -1502,24 +1469,7 @@ class CameraSetupManager {
 
     // 在自动跳转前禁用验证按钮
     disableValidationButtonForJump() {
-        console.log('🔄 [自动验证] disableValidationButtonForJump 被调用');
-        console.log('🔄 [自动验证] 当前步骤管理器存在:', !!this.stepManager);
-        console.log('🔄 [自动验证] disableButton方法存在:', typeof this.stepManager.disableButton);
-        
         this.stepManager.disableButton('step2', 'nextBtn');
-        console.log('🔒 [自动验证] 即将跳转，验证按钮已禁用');
-        
-        // 验证按钮是否真的被禁用了
-        setTimeout(() => {
-            const nextBtn = document.getElementById('camera-step2-nextBtn');
-            if (nextBtn) {
-                console.log('🔍 [自动验证] 验证按钮状态检查:');
-                console.log('  - disabled属性:', nextBtn.disabled);
-                console.log('  - CSS类列表:', nextBtn.className);
-            } else {
-                console.warn('⚠️ [自动验证] 找不到验证按钮元素');
-            }
-        }, 50);
     }
 
     // 验证视频流并继续到下一步
@@ -1698,12 +1648,8 @@ class CameraSetupManager {
     
     // 验证视频流信号并显示进度
     async validateVideoStreamSignal() {
-        console.log('🔧 [验证方法] validateVideoStreamSignal 被调用');
-        console.log('🔧 [验证方法] 调用堆栈:', new Error().stack.split('\n').slice(1, 3).join('\n'));
-        
         // 在验证开始时禁用验证按钮，防止用户重复操作
         this.stepManager.disableButton('step2', 'nextBtn');
-        console.log('🔒 [验证方法] 验证开始，验证按钮已禁用');
         
         // 首先尝试使用预览元素
         const videoElement = document.getElementById('cameraPreview');
