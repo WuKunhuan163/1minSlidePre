@@ -310,11 +310,29 @@ class CameraSetupManager {
 
     // 处理设置完成
     handleSetupComplete() {
-        // console.log('✅ 摄像头设置完成');
-        this.saveConfiguration();
-        if (window.settingsManager) {
-            window.settingsManager.refreshSetting(this.settingId);
+        console.log('✅ 摄像头设置完成');
+        console.log('🔧 调用 saveConfiguration 并标记设置为已测试');
+        
+        if (this.saveConfiguration()) {
+            // 标记设置为已测试完成
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
+                simpleConfig.markSettingTested('camera');
+                console.log('✅ 摄像头设置已标记为测试完成');
+            } else {
+                console.error('❌ simpleConfig.markSettingTested 不存在');
+            }
+            
+            // 刷新主设置页面显示
+            if (window.refreshSettingsDisplay) {
+                window.refreshSettingsDisplay();
+                console.log('✅ refreshSettingsDisplay 调用成功');
+            } else {
+                console.error('❌ window.refreshSettingsDisplay 不存在');
+            }
+        } else {
+            console.error('❌ 摄像头配置保存失败');
         }
+        
         this.cleanup();
     }
 
@@ -1322,7 +1340,7 @@ class CameraSetupManager {
             }
             
             console.log('✅ 摄像头设置完成');
-            this.stepManager.complete();
+            this.stepManager.completeSetup();
             this.cleanup();
         } else {
             this.stepManager.showStepStatus('step2', '保存配置失败', 'error');
@@ -1364,8 +1382,17 @@ class CameraSetupManager {
 
     // 保存完整配置（最后一步完成时调用）
     saveConfiguration() {
+        console.log('📹 开始保存摄像头完整配置...');
+        console.log('当前状态:', {
+            selectedDeviceId: this.selectedDeviceId,
+            selectedDeviceName: this.selectedDeviceName,
+            speakerPosition: this.speakerPosition,
+            speakerSize: this.speakerSize,
+            speakerMargin: this.speakerMargin
+        });
+        
         if (!this.selectedDeviceId || !this.selectedDeviceName) {
-            console.error('❌ 未选择摄像头设备');
+            console.error('❌ 未选择摄像头设备，无法保存配置');
             return false;
         }
         
@@ -1381,9 +1408,18 @@ class CameraSetupManager {
             timestamp: Date.now()
         };
         
+        console.log('📹 准备保存的摄像头配置:', config);
+        
         try {
             localStorage.setItem('cameraConfig', JSON.stringify(config));
-            console.log('✅ 摄像头完整配置已保存:', config);
+            console.log('✅ 摄像头完整配置已保存到localStorage');
+            
+            // 验证保存结果
+            const saved = localStorage.getItem('cameraConfig');
+            const parsedSaved = saved ? JSON.parse(saved) : null;
+            console.log('📹 验证保存结果:', parsedSaved);
+            console.log('📹 摄像头enabled状态:', parsedSaved?.enabled);
+            
             return true;
         } catch (error) {
             console.error('❌ 保存摄像头配置失败:', error);
@@ -2284,52 +2320,66 @@ class CameraSetupManager {
         
         const speakerWidth = Math.round(baseWidth * this.speakerSize);
         const speakerHeight = Math.round(speakerWidth * (9/16));
-        const margin = Math.round(baseWidth * this.speakerMargin);
+        const marginX = Math.round(baseWidth * this.speakerMargin);
+        const marginY = Math.round(baseHeight * this.speakerMargin);
+        
+        console.log('📐 边距计算调试:', {
+            baseWidth, baseHeight,
+            speakerMargin: this.speakerMargin,
+            marginX, marginY,
+            speakerPosition: this.speakerPosition
+        });
         
         let x, y;
         
         switch (this.speakerPosition) {
             case 'top-left':
-                x = margin;
-                y = margin;
+                x = marginX;
+                y = marginY;
                 break;
                 
             case 'top-right':
-                x = baseWidth - speakerWidth - margin;
-                y = margin;
+                x = baseWidth - speakerWidth - marginX;
+                y = marginY;
                 break;
                 
             case 'bottom-left':
-                x = margin;
-                y = baseHeight - speakerHeight - margin;
+                x = marginX;
+                y = baseHeight - speakerHeight - marginY;
                 break;
                 
             case 'bottom-right':
             default:
-                x = baseWidth - speakerWidth - margin;
-                y = baseHeight - speakerHeight - margin;
+                x = baseWidth - speakerWidth - marginX;
+                y = baseHeight - speakerHeight - marginY;
                 break;
                 
             case 'left':
-                x = margin;
+                x = marginX;
                 y = (baseHeight - speakerHeight) / 2;
                 break;
                 
             case 'right':
-                x = baseWidth - speakerWidth - margin;
+                x = baseWidth - speakerWidth - marginX;
                 y = (baseHeight - speakerHeight) / 2;
                 break;
                 
             case 'top':
                 x = (baseWidth - speakerWidth) / 2;
-                y = margin;
+                y = marginY;
                 break;
                 
             case 'bottom':
                 x = (baseWidth - speakerWidth) / 2;
-                y = baseHeight - speakerHeight - margin;
+                y = baseHeight - speakerHeight - marginY;
                 break;
         }
+        
+        console.log('📍 最终位置计算结果:', {
+            x: Math.round(x),
+            y: Math.round(y),
+            position: `${Math.round(x)}:${Math.round(y)}`
+        });
         
         return `${Math.round(x)}:${Math.round(y)}`;
     }

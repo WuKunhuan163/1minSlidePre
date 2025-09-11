@@ -148,10 +148,17 @@ class SettingsManager {
         const configKey = setting.configKey;
         let config = null;
 
+        console.log(`📥 加载 ${settingId} 设置状态，configKey: ${configKey}`);
+
         // 从不同来源加载配置
         if (configKey === 'microphoneConfig') {
             const stored = localStorage.getItem('microphoneConfig');
             config = stored ? JSON.parse(stored) : null;
+            console.log(`📥 ${settingId} 从localStorage加载:`, config);
+        } else if (configKey === 'cameraConfig') {
+            const stored = localStorage.getItem('cameraConfig');
+            config = stored ? JSON.parse(stored) : null;
+            console.log(`📥 ${settingId} 从localStorage加载:`, config);
         } else if (configKey === 'effectsVolume') {
             // 从simpleConfig加载计时音效音量
             const volume = simpleConfig ? simpleConfig.get('effectsVolume') : null;
@@ -163,20 +170,27 @@ class SettingsManager {
         } else {
             // 从simpleConfig加载
             config = simpleConfig ? simpleConfig.getAll() : {};
+            console.log(`📥 ${settingId} 从simpleConfig加载:`, config);
         }
+
+        const isConfigured = this.isSettingConfigured(settingId, config);
+        const isEnabled = this.isSettingEnabled(settingId, config);
+
+        console.log(`📊 ${settingId} 状态计算:`, {
+            isConfigured,
+            isEnabled,
+            config: config
+        });
 
         // 更新设置状态
         this.settingsState[settingId] = {
-            configured: this.isSettingConfigured(settingId, config),
-            enabled: this.isSettingEnabled(settingId, config),
+            configured: isConfigured,
+            enabled: isEnabled,
             config: config,
             lastUpdate: Date.now()
         };
 
-        // 减少日志输出：只在调试模式下输出详细信息
-        if (window.DEBUG_SETTINGS) {
-            // console.log(`✅ 已加载设置状态 ${settingId}:`, this.settingsState[settingId]);
-        }
+        console.log(`✅ ${settingId} 状态已更新:`, this.settingsState[settingId]);
     }
 
     // 加载访问过的设置记录
@@ -237,51 +251,86 @@ class SettingsManager {
 
     // 检查设置是否已配置
     isSettingConfigured(settingId, config) {
+        console.log(`🔍 检查 ${settingId} 是否已配置:`, config);
+        
         if (settingId === 'effectsVolume' || settingId === 'backgroundMusic') {
             return true;
         }
+        
         const isCompleted = simpleConfig ? simpleConfig.isSettingTested(settingId) : false;
+        console.log(`🔍 ${settingId} 测试完成状态: ${isCompleted}`);
+        
         if (!isCompleted) {
+            console.log(`❌ ${settingId} 未完成测试，配置状态为false`);
             return false;
         }
+        
         if (settingId === 'microphone') {
             const hasDevice = !!(config && config.selectedDeviceId);
+            console.log(`🔍 ${settingId} 设备配置检查: ${hasDevice}`);
+            return hasDevice;
+        } else if (settingId === 'camera') {
+            const hasDevice = !!(config && config.selectedDeviceId);
+            console.log(`🔍 ${settingId} 设备配置检查: ${hasDevice}`);
             return hasDevice;
         } else if (settingId === 'recording') {
-            return !!(config && config.appKey && config.accessKeyId && config.accessKeySecret);
+            const isConfigured = !!(config && config.appKey && config.accessKeyId && config.accessKeySecret);
+            console.log(`🔍 ${settingId} API配置检查: ${isConfigured}`);
+            return isConfigured;
         } else if (settingId === 'ai') {
-            return !!(config && config.zhipuApiKey);
+            const isConfigured = !!(config && config.zhipuApiKey);
+            console.log(`🔍 ${settingId} API配置检查: ${isConfigured}`);
+            return isConfigured;
         }
+        
+        console.log(`⚠️ ${settingId} 未匹配到配置检查逻辑`);
         return false;
     }
 
     // 检查设置是否启用
     isSettingEnabled(settingId, config) {
         const setting = this.settings[settingId];
+        console.log(`🔍 检查 ${settingId} 是否启用:`, config);
         
         if (settingId === 'microphone') {
-            return !!(config && config.enabled);
+            const isEnabled = !!(config && config.enabled);
+            console.log(`🔍 ${settingId} 启用状态: ${isEnabled}`);
+            return isEnabled;
+        } else if (settingId === 'camera') {
+            const isEnabled = !!(config && config.enabled);
+            console.log(`🔍 ${settingId} 启用状态: ${isEnabled}`);
+            return isEnabled;
         } else if (settingId === 'recording') {
             // 录音设置只有在已配置、已启用且已测试完成时才显示为启用
             const isConfigured = this.isSettingConfigured(settingId, config);
             const isEnabled = !!(config && config.recordingEnabled);
             const isTested = simpleConfig ? simpleConfig.isSettingTested('recording') : false;
             
-            return isConfigured && isEnabled && isTested;
+            const result = isConfigured && isEnabled && isTested;
+            console.log(`🔍 ${settingId} 启用状态检查:`, {
+                isConfigured, isEnabled, isTested, result
+            });
+            return result;
         } else if (settingId === 'ai') {
             // AI设置只有在已配置、已启用且已测试完成时才显示为启用
             const isConfigured = this.isSettingConfigured(settingId, config);
             const isEnabled = !!(config && config.aiEnabled);
             const isTested = simpleConfig ? simpleConfig.isSettingTested('ai') : false;
             
-            return isConfigured && isEnabled && isTested;
+            const result = isConfigured && isEnabled && isTested;
+            console.log(`🔍 ${settingId} 启用状态检查:`, {
+                isConfigured, isEnabled, isTested, result
+            });
+            return result;
         } else if (settingId === 'effectsVolume' || settingId === 'backgroundMusic') {
             // 滑动条类型的设置总是启用的
             return true;
         }
         
         // 其他设置根据配置情况自动启用
-        return this.isSettingConfigured(settingId, config);
+        const result = this.isSettingConfigured(settingId, config);
+        console.log(`🔍 ${settingId} 默认启用状态（基于配置状态）: ${result}`);
+        return result;
     }
 
     // 检测是否为移动端设备
@@ -806,13 +855,22 @@ class SettingsManager {
 
     // 更新toggle状态
     updateToggleState(settingId) {
+        console.log(`🎯 updateToggleState: ${settingId}`);
         const toggleElement = document.getElementById(`${settingId}Toggle`);
         const state = this.settingsState[settingId];
+        
+        console.log(`🎯 Toggle元素存在: ${!!toggleElement}, 状态存在: ${!!state}`);
         
         if (toggleElement && state) {
             // 使用isSettingConfigured函数来判断是否已配置完成
             const isConfigured = this.isSettingConfigured(settingId, state.config);
             const isEnabled = state.enabled;
+            
+            console.log(`🎯 ${settingId} Toggle状态判断:`, {
+                isConfigured,
+                isEnabled,
+                shouldBeOn: isConfigured && isEnabled
+            });
             
             // 移除所有状态类
             toggleElement.classList.remove('on', 'off');
@@ -822,21 +880,26 @@ class SettingsManager {
                 toggleElement.classList.add('on');
                 toggleElement.style.pointerEvents = 'auto';
                 toggleElement.style.opacity = '1';
+                console.log(`✅ ${settingId} Toggle设置为ON状态`);
             } else {
                 toggleElement.classList.add('off');
                 if (!isConfigured) {
                     // 未配置时可以点击进入设置
                     toggleElement.style.pointerEvents = 'auto';
                     toggleElement.style.opacity = '0.7';
+                    console.log(`⚪ ${settingId} Toggle设置为OFF状态（未配置）`);
                 } else {
                     // 已配置但未启用时也可以点击
                     toggleElement.style.pointerEvents = 'auto';
                     toggleElement.style.opacity = '1';
+                    console.log(`⚪ ${settingId} Toggle设置为OFF状态（已配置但未启用）`);
                 }
             }
             
             // 自动管理展开状态
             this.updateCardExpandedState(settingId, isConfigured && isEnabled);
+        } else {
+            console.warn(`⚠️ ${settingId} Toggle更新失败: 元素或状态不存在`);
         }
     }
 
@@ -856,7 +919,19 @@ class SettingsManager {
 
     // 刷新所有设置显示
     refreshAllSettings() {
+        console.log('🔄 refreshAllSettings 开始刷新所有设置');
         Object.keys(this.settings).forEach(settingId => {
+            console.log(`🔄 刷新设置: ${settingId}`);
+            
+            // 重新加载设置状态
+            this.loadSettingState(settingId);
+            const state = this.settingsState[settingId];
+            console.log(`📊 ${settingId} 状态:`, {
+                configured: state?.configured,
+                enabled: state?.enabled,
+                config: state?.config
+            });
+            
             this.refreshSettingDisplay(settingId);
             
             // 根据依赖关系显示或隐藏设置卡片
@@ -872,6 +947,7 @@ class SettingsManager {
         
         // 更新主菜单NEW badge
         this.updateMainMenuBadge();
+        console.log('✅ refreshAllSettings 完成');
     }
 
     // 初始化设置overlay
@@ -2158,7 +2234,9 @@ window.updateSettingFields = (settingId, fields) => {
 };
 
 window.refreshSettingsDisplay = () => {
+    console.log('🔄 refreshSettingsDisplay 被调用，开始刷新所有设置显示');
     window.settingsManager.refreshAllSettings();
+    console.log('✅ refreshSettingsDisplay 完成');
 };
 
 // 调试方法：清除访问记录
