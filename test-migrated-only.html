@@ -245,7 +245,7 @@
             try {
                 log('🔧 初始化迁移后的转换器...');
                 const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
-                converter = new MigratedConverter(false); // 使用直接模式
+                converter = new MigratedConverter(true); // 改为Worker模式以匹配集成app
                 
                 converter.setLogCallback((message) => {
                     log(`[转换器] ${message}`);

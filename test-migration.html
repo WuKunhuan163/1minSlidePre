@@ -305,7 +305,7 @@
                     updateProgress('migProgress', 10);
                     
                     const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
-                    migratedConverter = new MigratedConverter(false);
+                    migratedConverter = new MigratedConverter(true); // 改为Worker模式以匹配集成app
                     
                     migratedConverter.setLogCallback((message) => {
                         log('migLog', `[迁移转换器] ${message}`);
@@ -521,7 +521,7 @@
                     updateProgress('migProgress', 10);
                     
                     const { default: MigratedConverter } = await import('./modules/migrated-ffmpeg-converter.js');
-                    migratedConverter = new MigratedConverter(false);
+                    migratedConverter = new MigratedConverter(true); // 改为Worker模式以匹配集成app
                     
                     migratedConverter.setLogCallback((message) => {
                         log('migLog', `[迁移转换器] ${message}`);
