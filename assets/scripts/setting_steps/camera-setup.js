@@ -83,6 +83,7 @@ class CameraSetupManager {
                     console.log('  - 设备已配置:', configured);
                     console.log('  - 当前设备已选择:', selected);
                     console.log('  - 最终结果:', result);
+                    console.log('  - 调用堆栈:', new Error().stack.split('\n').slice(1, 4).join('\n'));
                     return result;
                 },
                 onEnter: () => this.initializeDeviceSelection(),
@@ -1697,7 +1698,12 @@ class CameraSetupManager {
     
     // 验证视频流信号并显示进度
     async validateVideoStreamSignal() {
-        // console.log('🔧 validateVideoStreamSignal 被调用');
+        console.log('🔧 [验证方法] validateVideoStreamSignal 被调用');
+        console.log('🔧 [验证方法] 调用堆栈:', new Error().stack.split('\n').slice(1, 3).join('\n'));
+        
+        // 在验证开始时禁用验证按钮，防止用户重复操作
+        this.stepManager.disableButton('step2', 'nextBtn');
+        console.log('🔒 [验证方法] 验证开始，验证按钮已禁用');
         
         // 首先尝试使用预览元素
         const videoElement = document.getElementById('cameraPreview');
