@@ -930,7 +930,8 @@ class SettingsStepManager {
                 const validationResult = await step.validation();
                 console.log(`🔍 ${stepId} validation函数结果: ${validationResult}`);
                 if (!validationResult) {
-                    this.showStepStatus(stepId, '步骤要求验证失败', 'error');
+                    // 不显示validation失败的错误消息，只在console中记录
+                    console.log(`❌ ${stepId} validation函数验证失败，但不显示错误消息`);
                     return;
                 } else {
                     console.log(`✅ ${stepId} validation函数验证成功`);
