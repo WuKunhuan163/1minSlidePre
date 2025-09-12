@@ -197,7 +197,7 @@ class CameraSetupManager {
                             </div>
                             
                             <div id="recordingControls" style="margin-bottom: 20px;">
-                                <button id="downloadVideoBtn" class="btn btn-success" style="
+                                <button id="downloadVideoBtn" class="rect-button success-button" style="
                                     padding: 12px 24px;
                                     font-size: 16px;
                                     border-radius: 8px;

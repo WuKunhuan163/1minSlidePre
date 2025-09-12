@@ -74,7 +74,7 @@ body {
     width: 100%;
 }
 
-.normal-button, .back-button {
+.round-button, .back-button {
     padding: 12px 24px;
     border: none;
     border-radius: 25px;
@@ -85,14 +85,14 @@ body {
     transition: all 0.3s ease;
 }
 
-.normal-button:hover {
+.round-button:hover {
     background-color: #666AF6;
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 20px rgba(102, 106, 246, 0.4);
 }
 
-.normal-button:disabled {
+.round-button:disabled {
     cursor: not-allowed;
     opacity: 0.3 !important;
 }
@@ -240,8 +240,8 @@ body {
     }
 
     /* 只对主界面的按钮应用100%宽度 */
-    .button-container .normal-button,
-    .controls-row .normal-button {
+    .button-container .round-button,
+    .controls-row .round-button {
         width: 100%;
     }
 
@@ -275,7 +275,7 @@ body {
 .back-button {
     width: 40px;
     height: 40px;
-    padding: 0;  /* 覆盖normal-button的padding */
+    padding: 0;  /* 覆盖round-button的padding */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -547,38 +547,38 @@ body {
     margin-top: 15px;
 }
 
-.speech-requirements .btn {
+.speech-requirements .rect-button {
     padding: 8px 16px;  /* 覆盖rect-button的padding */
     margin-right: 0;  /* 覆盖rect-button的margin-right */
 }
 
-.speech-requirements .btn-cancel {
+.speech-requirements .cancel-button {
     background: #444444;
     color: white;
 }
 
-.speech-requirements .btn-cancel:hover {
+.speech-requirements .cancel-button:hover {
     background: #555555;
 }
 
-.speech-requirements .btn-save {
+.speech-requirements .save-button {
     background: #666AF6;
     color: white;
 }
 
-.speech-requirements .btn-save:hover {
+.speech-requirements .save-button:hover {
     background: #5a5ce8;
 }
 
 /* 清空PPT按钮样式 - 默认红色，提高优先级 */
-.config-actions .btn-clear,
-.btn-clear {
+.config-actions .clear-button,
+.clear-button {
     background: #dc3545 !important;
     color: white !important;
 }
 
 /* 清空PPT按钮hover效果：变紫色并往上升 */
-.btn-clear:hover {
+.clear-button:hover {
     background: var(--primary-purple) !important;
     color: white !important;
     transform: translateY(-2px) !important;
@@ -586,7 +586,7 @@ body {
 }
 
 /* 清空PPT按钮点击后恢复原色 */
-.btn-clear:focus {
+.clear-button:focus {
     background: #dc3545 !important;
     color: white !important;
     transform: none !important;

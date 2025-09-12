@@ -59,10 +59,6 @@
     padding: 20px 0;
 }
 
-.btn-import,
-.btn-export {
-    padding: 8px 16px;  /* 覆盖rect-button的padding */
-}
 
 .setup-flow {
     position: relative;
@@ -248,11 +244,6 @@
     box-shadow: 0 0 0 0.2rem rgba(102, 106, 246, 0.25);
 }
 
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-}
 
 /* 统一的步骤状态样式类 */
 .step-status {
@@ -551,7 +542,7 @@
     }
     
     /* 常规按钮正常显示两个一排 */
-    .step-buttons-container .btn {
+    .step-buttons-container .rect-button {
         width: 100%;
     }
     
@@ -561,7 +552,7 @@
         padding-top: 10px;
     }
     
-    .step-complete-container .btn {
+    .step-complete-container .rect-button {
         width: 100%;
         max-width: 200px;
     }
@@ -584,24 +575,24 @@
     text-align: center !important;
 }
 
-/* 成功按钮样式 - 只覆盖颜色，其他继承自normal-button */
-.setup-step .btn.btn-success {
+/* 成功按钮样式 */
+.setup-step .rect-button.success-button {
     background: #28a745 !important; /* 更深的绿色 */
 }
 
-.setup-step .btn.btn-success:hover {
+.setup-step .rect-button.success-button:hover {
     background: #218838 !important; /* hover时更深的绿色 */
 }
 
-/* 二级按钮样式 - 只覆盖颜色和尺寸，其他继承自normal-button */
-.setup-step .btn.btn-secondary {
+/* 二级按钮样式 */
+.setup-step .rect-button.secondary-button {
     background: #666AF6 !important;
     padding: 8px 16px !important;
     border-radius: 6px !important;
     font-size: 12px !important;
 }
 
-.setup-step .btn.btn-secondary:hover {
+.setup-step .rect-button.secondary-button:hover {
     background: #5a5ee6 !important;
     transform: translateY(-1px) !important;
 }
@@ -745,8 +736,7 @@
     border-color: #ddd !important;
 }
 
-.setup-step:not(.current-step) button,
-.setup-step:not(.current-step) .btn {
+.setup-step:not(.current-step) button {
     background-color: #e9ecef !important;
     color: #6c757d !important;
     border-color: #dee2e6 !important;
@@ -819,15 +809,13 @@
 }
 
 /* 步骤按钮容器 - 为每个步骤的按钮区域添加flex布局 */
-.step-content .btn {
+.step-content .rect-button {
     margin-right: 5px;
     margin-bottom: 10px;
 }
 
 /* 完成设置按钮独占一行 - 只在显示时应用，不覆盖display:none */
-.step-content #completeSetupButton:not([style*="display: none"]),
-.step-content #completeAISetupButton:not([style*="display: none"]),
-.step-content .btn[id*="completeBtn"]:not([style*="display: none"]) {
+.step-content .rect-button[id*="completeBtn"]:not([style*="display: none"]) {
     display: block !important;
     margin-right: 0;
     margin-top: 15px;

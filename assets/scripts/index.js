@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         overlay.innerHTML = `
             <div class="slides-header">
-                <button class="normal-button back-button">
+                <button class="round-button back-button">
                     <i class='bx bx-arrow-back'></i>
                 </button>
                 <h2>已经上传的PPT</h2>
@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <div class="config-actions">
                     <div class="action-button-wrapper dropdown-container">
                         <div class="import-dropdown">
-                            <button class="rect-button btn btn-import" onclick="toggleImportDropdown(); this.blur();">批量导入</button>
+                            <button class="rect-button import-button" onclick="toggleImportDropdown(); this.blur();">批量导入</button>
                             <div class="import-options" id="importOptions" style="display: none;">
                                 <button onclick="batchImportSlides()">导入ZIP文件</button>
                                 <button onclick="batchImportFolder()">导入文件夹</button>
@@ -498,10 +498,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                         </div>
                     </div>
                     <div class="action-button-wrapper">
-                        <button class="rect-button btn btn-export" onclick="batchExportSlides(); this.blur();">批量导出</button>
+                        <button class="rect-button export-button" onclick="batchExportSlides(); this.blur();">批量导出</button>
                     </div>
                     <div class="action-button-wrapper">
-                        <button class="rect-button btn btn-clear" onclick="clearAllSlides(); this.blur();">清空PPT</button>
+                        <button class="rect-button clear-button" onclick="clearAllSlides(); this.blur();">清空PPT</button>
                     </div>
                 </div>
             </div>
@@ -525,8 +525,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <div class="char-count" id="charCount">0/4096</div>
                 </div>
                 <div class="button-row">
-                    <button class="rect-button btn btn-cancel" onclick="cancelSpeechRequirements()">取消</button>
-                    <button class="rect-button btn btn-save" onclick="saveSpeechRequirements()">保存</button>
+                    <button class="rect-button cancel-button" onclick="cancelSpeechRequirements()">取消</button>
+                    <button class="rect-button save-button" onclick="saveSpeechRequirements()">保存</button>
                 </div>
             </div>
             </div>
@@ -751,7 +751,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         overlay.innerHTML = `
             <div class="presentation-header">
                 <div class="back-button-container">
-                    <button class="normal-button back-button">
+                    <button class="round-button back-button">
                         <i class='bx bx-arrow-back'></i>
                     </button>
                 </div>
@@ -1357,8 +1357,8 @@ window.getVideoStream = getVideoStream;
         
         // 将"已结束"按钮移到新的行容器中
         recordStopButton.parentNode.removeChild(recordStopButton);
-        // 应用normal-button类样式（不可交互）
-        recordStopButton.className = 'normal-button';
+        // 应用round-button类样式（不可交互）
+        recordStopButton.className = 'round-button';
         recordStopButton.disabled = true;
         buttonRow.appendChild(recordStopButton);
         
@@ -1366,7 +1366,7 @@ window.getVideoStream = getVideoStream;
         if (audioBlob) {
             const downloadAudioBtn = document.createElement('button');
             downloadAudioBtn.textContent = '下载音频';
-            downloadAudioBtn.className = 'normal-button download-btn audio-btn';
+            downloadAudioBtn.className = 'round-button download-btn audio-btn';
             
             downloadAudioBtn.onclick = () => {
                 // console.log('🎤 用户点击下载音频按钮');
@@ -1390,7 +1390,7 @@ window.getVideoStream = getVideoStream;
         if (videoBlob) {
             const downloadVideoBtn = document.createElement('button');
             downloadVideoBtn.textContent = '下载视频';
-            downloadVideoBtn.className = 'normal-button download-btn video-btn';
+            downloadVideoBtn.className = 'round-button download-btn video-btn';
             
             downloadVideoBtn.onclick = () => {
                 // console.log('📹 用户点击下载视频按钮');
@@ -1414,7 +1414,7 @@ window.getVideoStream = getVideoStream;
         if (shouldShowTranscriptButton()) {
             const transcriptBtn = document.createElement('button');
             transcriptBtn.textContent = '转译中';
-            transcriptBtn.className = 'normal-button download-btn transcript-btn';
+            transcriptBtn.className = 'round-button download-btn transcript-btn';
             transcriptBtn.id = 'transcriptButton';
             transcriptBtn.disabled = true;
             
@@ -1667,7 +1667,7 @@ window.getVideoStream = getVideoStream;
 
             backButton.addEventListener('click', cleanup);
             controlsContainer.innerHTML = `
-                <button class="normal-button stop-recording">停止</button>
+                <button class="round-button stop-recording">停止</button>
             `;
             const recordStopButton = controlsContainer.querySelector('.stop-recording');
             recordStopButton.style.cursor = 'none';
@@ -2342,7 +2342,7 @@ const batchExportSlides = async () => {
     }
     
     // 禁用导出按钮
-    const exportBtn = document.querySelector('.btn-export');
+    const exportBtn = document.querySelector('.export-button');
     if (exportBtn) {
         exportBtn.disabled = true;
         exportBtn.textContent = '导出中...';
@@ -2466,7 +2466,7 @@ const batchExportSlides = async () => {
     } finally {
         // 1秒后恢复导出按钮
         setTimeout(() => {
-            const exportBtn = document.querySelector('.btn-export');
+            const exportBtn = document.querySelector('.export-button');
             if (exportBtn) {
                 exportBtn.disabled = false;
                 exportBtn.textContent = '批量导出';
@@ -2481,7 +2481,7 @@ const batchImportSlides = () => {
     // console.log('📥 开始批量导入PPT和演讲要求');
     
     // 禁用导入按钮
-    const importBtn = document.querySelector('.btn-import');
+    const importBtn = document.querySelector('.import-button');
     if (importBtn) {
         importBtn.disabled = true;
         importBtn.textContent = '选择文件...';
@@ -2497,7 +2497,7 @@ const batchImportSlides = () => {
         const file = e.target.files[0];
         if (!file) {
             // 用户取消选择，恢复按钮
-            const importBtn = document.querySelector('.btn-import');
+            const importBtn = document.querySelector('.import-button');
             if (importBtn) {
                 importBtn.disabled = false;
                 importBtn.textContent = '批量导入';
@@ -2507,7 +2507,7 @@ const batchImportSlides = () => {
         }
         
         // 更新按钮状态为导入中
-        const importBtn = document.querySelector('.btn-import');
+        const importBtn = document.querySelector('.import-button');
         if (importBtn) {
             importBtn.textContent = '导入中...';
         }
@@ -2565,7 +2565,7 @@ const batchImportSlides = () => {
         } finally {
             // 1秒后恢复导入按钮
             setTimeout(() => {
-                const importBtn = document.querySelector('.btn-import');
+                const importBtn = document.querySelector('.import-button');
                 if (importBtn) {
                     importBtn.disabled = false;
                     importBtn.textContent = '批量导入';

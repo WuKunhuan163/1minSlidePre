@@ -189,8 +189,8 @@ class SettingsStepManager {
                 <h2>${this.title}</h2>
                 ${this.config.showImportExport ? `
                 <div class="config-actions">
-                    <button class="rect-button btn btn-import" onclick="${this.settingId}Manager.importConfig()">导入设置</button>
-                    <button class="rect-button btn btn-export" onclick="${this.settingId}Manager.exportConfig()">导出设置</button>
+                    <button class="rect-button import-button" onclick="${this.settingId}Manager.importConfig()">导入设置</button>
+                    <button class="rect-button export-button" onclick="${this.settingId}Manager.exportConfig()">导出设置</button>
                 </div>
                 ` : ''}
             </div>
@@ -344,7 +344,7 @@ class SettingsStepManager {
             const buttonId = `${this.settingId}-${step.id}-${button.id}`;
             
             const buttonHtml = `
-                <button class="rect-button btn ${buttonClass} normal-button" 
+                <button class="rect-button ${buttonClass}" 
                         id="${buttonId}"
                         data-step-id="${step.id}" 
                         data-button-id="${button.id}">
@@ -387,10 +387,10 @@ class SettingsStepManager {
     // 获取按钮样式类
     getButtonClass(type) {
         switch (type) {
-            case 'back': return 'btn-back';
-            case 'primary': return 'btn-secondary';
-            case 'success': return 'btn-success';
-            default: return 'btn-secondary';
+            case 'back': return 'back-button';
+            case 'primary': return 'secondary-button';
+            case 'success': return 'success-button';
+            default: return 'secondary-button';
         }
     }
 
@@ -1309,7 +1309,7 @@ class SettingsStepManager {
             const buttonId_full = `${this.settingId}-${stepId}-${buttonId}`;
             
             const newButtonHtml = `
-                <button class="btn ${buttonClass} normal-button" 
+                <button class="btn ${buttonClass} round-button" 
                         id="${buttonId_full}"
                         data-step-id="${stepId}" 
                         data-button-id="${buttonId}">

@@ -2,7 +2,7 @@
 
 
 /* 录音按钮在录音状态时的特殊样式 */
-.btn-record.recording {
+.record-button.recording {
     background: #ff6b6b !important;
     color: white !important;
     animation: pulse-recording 1.5s infinite;
