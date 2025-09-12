@@ -756,24 +756,47 @@
 .setup-step:not(.current-step) .btn,
 .setup-step:not(.current-step) input,
 .setup-step:not(.current-step) select,
-.setup-step:not(.current-step) textarea {
+.setup-step:not(.current-step) textarea,
+.setup-step:not(.current-step) button {
     pointer-events: none !important;
     opacity: 0.6 !important;
     cursor: not-allowed !important;
 }
 
-/* 特殊类：强制可交互 */
-.force-interact {
+/* 确保form元素也被禁用 */
+.setup-step:not(.current-step) input {
+    background-color: #f5f5f5 !important;
+    color: #999 !important;
+    border-color: #ddd !important;
+}
+
+.setup-step:not(.current-step) button,
+.setup-step:not(.current-step) .btn {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    border-color: #dee2e6 !important;
+}
+
+/* 特殊类：强制可交互 - 优先级更高 */
+.setup-step .force-interact,
+.setup-step:not(.current-step) .force-interact {
     pointer-events: auto !important;
     opacity: 1 !important;
     cursor: pointer !important;
+    background-color: initial !important;
+    color: initial !important;
+    border-color: initial !important;
 }
 
-/* 特殊类：强制不可交互 */
-.force-no-interact {
+/* 特殊类：强制不可交互 - 优先级更高 */
+.setup-step .force-no-interact,
+.setup-step.current-step .force-no-interact {
     pointer-events: none !important;
     opacity: 0.6 !important;
     cursor: not-allowed !important;
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    border-color: #dee2e6 !important;
 }
 
 /* 移动端竖屏模式样式 */

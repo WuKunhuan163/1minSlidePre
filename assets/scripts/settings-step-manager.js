@@ -719,7 +719,11 @@ class SettingsStepManager {
             for (let i = stepIndex; i <= previousStepIndex; i++) {
                 const stepId = this.steps[i].id;
                 this.clearStepCompletion(stepId);
-                // console.log(`🔄 已清除步骤 ${i + 1} (${stepId}) 的完成状态`);
+                
+                // 自动清除步骤的status显示
+                this.clearStatus(stepId);
+                
+                // console.log(`🔄 已清除步骤 ${i + 1} (${stepId}) 的完成状态和status显示`);
             }
         }
         
