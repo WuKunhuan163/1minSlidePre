@@ -994,9 +994,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         const microphoneSetupCompleted = simpleConfig ? simpleConfig.isSettingTested('microphone') : false;
         const cameraSetupCompleted = simpleConfig ? simpleConfig.isSettingTested('camera') : false;
         
+        // 检查实际设备启用状态
+        const microphoneConfig = JSON.parse(localStorage.getItem('microphoneConfig') || '{}');
+        const cameraConfig = JSON.parse(localStorage.getItem('cameraConfig') || '{}');
+        const microphoneEnabled = microphoneConfig.enabled && microphoneConfig.selectedDeviceId;
+        const cameraEnabled = cameraConfig.enabled && cameraConfig.selectedDeviceId;
+        
         console.log('📋 录音录像设置状态:');
-        console.log('  - 录音设备设置完成:', microphoneSetupCompleted);
-        console.log('  - 录像设备设置完成:', cameraSetupCompleted);
+        console.log('  - 录音设备设置完成:', microphoneSetupCompleted, '启用状态:', microphoneEnabled);
+        console.log('  - 录像设备设置完成:', cameraSetupCompleted, '启用状态:', cameraEnabled);
         
         if (!microphoneSetupCompleted && !cameraSetupCompleted) {
             console.warn('⚠️ 录音和录像设置都未完成，无法开始录制');
@@ -1669,7 +1675,7 @@ window.getVideoStream = getVideoStream;
             const countdownConfig = {
                 displayDuration: 1000,   // 每个数字显示的总时长（毫秒）- 增加200ms
                 fadeOutTime: 600,       // 淡出动画时长（毫秒）
-                offsetTime: -400        // 第一个数字开始显示的时间偏移（毫秒）- 提早400ms卡准音乐鼓点
+                offsetTime: -600        // 第一个数字开始显示的时间偏移（毫秒）- 提早400ms卡准音乐鼓点
             };
             
             // 等待offset时间（如果是负数，则提前开始）
