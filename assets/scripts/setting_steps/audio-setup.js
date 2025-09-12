@@ -543,7 +543,11 @@ class AudioSetupManager {
             const validationResult = await this.validateAppKey();
             console.log('🔄 AppKey验证结果:', validationResult);
             
-            // AppKey验证成功，字段保存将在completeSetup中统一处理
+            // AppKey验证成功，立即保存以便后续步骤使用
+            if (validationResult.success) {
+                simpleConfig.set('appKey', formData.audioAppKey.trim());
+                console.log('✅ AppKey已保存到simpleConfig');
+            }
             
             if (validationResult.warning) {
                 // 格式有问题，显示警告并等待跳转
@@ -591,12 +595,8 @@ class AudioSetupManager {
 
     // 完成步骤3
     completeStep3() {
-        this.stepManager.showStepStatus('step3', '正在验证RAM用户...', 'info');
-        
-        setTimeout(() => {
-            this.stepManager.markStepCompleted('step3', true);
-            this.stepManager.goToStep(3); // 跳转到步骤4
-        }, 1000);
+        this.stepManager.markStepCompleted('step3', true);
+        this.stepManager.goToStep(3); // 跳转到步骤4
     }
 
     // 加载保存的AccessKeys

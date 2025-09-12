@@ -967,7 +967,7 @@ class SettingsStepManager {
                     } else if (stepId === 'step4' && this.settingId === 'recording') {
                         successMessage = 'AccessKey验证通过';
                     } else if (stepId === 'step2' && this.settingId === 'recording') {
-                        successMessage = 'AppKey验证通过';
+                        successMessage = 'AppKey格式正确，会在语音识别测试阶段进行实际验证';
                     }
                     
                     this.showStepStatus(stepId, successMessage, 'success');
