@@ -97,8 +97,8 @@
   - 修正计时器代码，适配新的秒数单位
 - **演讲界面响应式设计修复**：
   - 修复600px边界时返回按钮错误跑到右边的问题
-  - 将.back-button的order样式限制为只应用于slides-header
-  - 为返回按钮添加back-button-container包装div
+  - 将.back-arrow-button的order样式限制为只应用于slides-header
+  - 为返回按钮添加back-arrow-button-container包装div
   - 添加presentation-overlay最小宽度300px
   - 添加450px边界的响应式设计，让recording-status-indicators换行显示
 - **CSS架构重构**：

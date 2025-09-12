@@ -183,7 +183,7 @@ class SettingsStepManager {
         
         overlay.innerHTML = `
             <div class="slides-header">
-                <button class="back-button">
+                <button class="back-arrow-button">
                     <i class='bx bx-arrow-back'></i>
                 </button>
                 <h2>${this.title}</h2>
@@ -387,7 +387,7 @@ class SettingsStepManager {
     // 获取按钮样式类
     getButtonClass(type) {
         switch (type) {
-            case 'back': return 'back-button';
+            case 'back': return 'step-back-button';
             case 'primary': return 'secondary-button';
             case 'success': return 'success-button';
             default: return 'secondary-button';
@@ -397,7 +397,7 @@ class SettingsStepManager {
     // 设置事件监听器
     setupEventListeners() {
         // 返回按钮
-        const backButton = this.overlay.querySelector('.back-button');
+        const backButton = this.overlay.querySelector('.back-arrow-button');
         if (backButton) {
             backButton.addEventListener('click', () => this.handleBackToSettings());
         }

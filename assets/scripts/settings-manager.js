@@ -2459,7 +2459,7 @@ class SettingsManager {
         
         overlay.innerHTML = `
             <div class="slides-header">
-                <button class="back-button">
+                <button class="back-arrow-button">
                     <i class='bx bx-arrow-back'></i>
                 </button>
                 <h2>系统设置</h2>

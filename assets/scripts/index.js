@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         overlay.innerHTML = `
             <div class="slides-header">
-                <button class="round-button back-button">
+                <button class="round-button back-arrow-button">
                     <i class='bx bx-arrow-back'></i>
                 </button>
                 <h2>已经上传的PPT</h2>
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         initializeDragAndDrop(overlay);
 
         // Back button handler
-        overlay.querySelector('.back-button').addEventListener('click', () => {
+        overlay.querySelector('.back-arrow-button').addEventListener('click', () => {
             overlay.remove();
         });
 
@@ -750,8 +750,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         overlay.className = 'presentation-overlay';
         overlay.innerHTML = `
             <div class="presentation-header">
-                <div class="back-button-container">
-                    <button class="round-button back-button">
+                <div class="back-arrow-button-container">
+                    <button class="round-button back-arrow-button">
                         <i class='bx bx-arrow-back'></i>
                     </button>
                 </div>
@@ -1595,7 +1595,7 @@ window.getVideoStream = getVideoStream;
         const slideContainer = overlay.querySelector('.slide-container');
         const controlsContainer = overlay.querySelector('.presentation-controls');
         const countdownOverlay = overlay.querySelector('.countdown-overlay');
-        const backButton = overlay.querySelector('.back-button');
+        const backButton = overlay.querySelector('.back-arrow-button');
         const timerDisplay = overlay.querySelector('.timer-display');
         const progressBar = overlay.querySelector('.progress');
         const startSound = new Audio('assets/sounds/start.mp3');
@@ -1845,7 +1845,7 @@ window.getVideoStream = getVideoStream;
         const header = document.createElement('div');
         header.className = 'slides-header';
         header.innerHTML = `
-            <button class="back-button">
+            <button class="back-arrow-button">
                 <i class='bx bx-arrow-back'></i>
             </button>
             <h2>调整音效音量</h2>
@@ -1855,7 +1855,7 @@ window.getVideoStream = getVideoStream;
         overlay.appendChild(header);
         overlay.appendChild(container);  
         document.body.appendChild(overlay);
-        const backButton = header.querySelector('.back-button');
+        const backButton = header.querySelector('.back-arrow-button');
         backButton.addEventListener('click', () => {
             playTestSound(true);
             overlay.remove();

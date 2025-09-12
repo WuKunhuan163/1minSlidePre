@@ -112,7 +112,7 @@ class CursorIndicator {
             select,
             textarea,
             a,
-            .back-button {
+            .back-arrow-button {
                 cursor: pointer !important;
             }
         `;

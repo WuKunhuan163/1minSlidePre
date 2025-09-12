@@ -15,7 +15,7 @@ const createSettingsOverlay = () => {
         errorOverlay.className = 'slides-overlay';
         errorOverlay.innerHTML = `
             <div class="slides-header">
-                <button class="back-button">
+                <button class="back-arrow-button">
                     <i class='bx bx-arrow-back'></i>
                 </button>
                 <h2>系统设置</h2>
@@ -548,7 +548,7 @@ window.overlayManager = overlayManager;
 const setupSettingsOverlayEvents = (overlay) => {
     
             // 返回按钮事件
-    const backButton = overlay.querySelector('.back-button');
+    const backButton = overlay.querySelector('.back-arrow-button');
     if (backButton) {
         backButton.addEventListener('click', () => {
                 // console.log('🔙 点击设置页面的返回按钮，回到主菜单');

@@ -575,6 +575,17 @@
     text-align: center !important;
 }
 
+/* 步骤返回按钮样式 */
+.setup-step .rect-button.step-back-button {
+    background: #6c757d !important;
+    color: white !important;
+}
+
+.setup-step .rect-button.step-back-button:hover {
+    background: #5a6268 !important;
+    transform: translateY(-1px) !important;
+}
+
 /* 成功按钮样式 */
 .setup-step .rect-button.success-button {
     background: #28a745 !important; /* 更深的绿色 */
