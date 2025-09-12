@@ -384,9 +384,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.log('✅ 其他模式：只显示设置按钮');
         }
     };
-    
-    // 初始化按钮可见性（默认不显示上传PPT和开始演讲按钮）
-    updateButtonVisibility('other');
 
     let isIOSFunction = () => {
         const userAgent = window.navigator.userAgent;
@@ -441,6 +438,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     const uploadButton = document.getElementById('uploadButton');
     const startButton = document.getElementById('startButton');
     const settingsButton = document.getElementById('settingsButton');
+    
+    // 初始化按钮可见性（默认不显示上传PPT和开始演讲按钮）
+    updateButtonVisibility('other');
     
     // Render thumbnails - 全局函数
     window.renderThumbnails = (container) => {
