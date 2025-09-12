@@ -813,16 +813,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         const cameraConfig = JSON.parse(localStorage.getItem('cameraConfig') || '{}');
         const cameraConfigured = cameraConfig.enabled && cameraConfig.selectedDeviceId;
         
+        // 检查设置测试完成状态（更重要的指标）
+        const microphoneSetupCompleted = simpleConfig ? simpleConfig.isSettingTested('microphone') : false;
+        const cameraSetupCompleted = simpleConfig ? simpleConfig.isSettingTested('camera') : false;
+        
         console.log('📊 设备配置状态:', {
-            microphone: microphoneConfigured,
-            camera: cameraConfigured
+            microphone: `配置:${microphoneConfigured}, 测试完成:${microphoneSetupCompleted}`,
+            camera: `配置:${cameraConfigured}, 测试完成:${cameraSetupCompleted}`
         });
         
-        // 更新录音状态指示器
-        if (!microphoneConfigured) {
+        // 更新录音状态指示器（优先使用测试完成状态）
+        if (!microphoneSetupCompleted) {
             microphoneStatusDot.className = 'status-dot unconfigured';
             microphoneStatusText.textContent = '未录音';
-            console.log('🎤 录音设备未配置');
+            console.log('🎤 录音设备测试未完成');
+        } else if (!microphoneConfigured) {
+            microphoneStatusDot.className = 'status-dot unconfigured';
+            microphoneStatusText.textContent = '未录音';
+            console.log('🎤 录音设备已测试但未启用');
         } else {
             // 执行录音快测
             console.log('🎤 开始录音设备快测');
@@ -853,11 +861,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
         
-        // 更新摄像头状态指示器
-        if (!cameraConfigured) {
+        // 更新摄像头状态指示器（优先使用测试完成状态）
+        if (!cameraSetupCompleted) {
             cameraStatusDot.className = 'status-dot unconfigured';
             cameraStatusText.textContent = '未录像';
-            console.log('📹 摄像头设备未配置');
+            console.log('📹 摄像头设备测试未完成');
+        } else if (!cameraConfigured) {
+            cameraStatusDot.className = 'status-dot unconfigured';
+            cameraStatusText.textContent = '未录像';
+            console.log('📹 摄像头设备已测试但未启用');
         } else {
             // 执行摄像头快测
             console.log('📹 开始摄像头设备快测');
@@ -1670,12 +1682,11 @@ window.getVideoStream = getVideoStream;
                 startSound.volume = effectsVolume * effectsVolume; // 平方权重
                 await startSound.play();
             }
-            await new Promise(resolve => setTimeout(resolve, 300));
             // 倒计时动画配置参数
             const countdownConfig = {
                 displayDuration: 1000,   // 每个数字显示的总时长（毫秒）- 增加200ms
                 fadeOutTime: 600,       // 淡出动画时长（毫秒）
-                offsetTime: -600        // 第一个数字开始显示的时间偏移（毫秒）- 提早400ms卡准音乐鼓点
+                offsetTime: 100        // 第一个数字开始显示的时间偏移（毫秒）- 提早400ms卡准音乐鼓点
             };
             
             // 等待offset时间（如果是负数，则提前开始）
@@ -1694,8 +1705,6 @@ window.getVideoStream = getVideoStream;
                 countdownOverlay.style.opacity = '1';
                 countdownOverlay.style.visibility = 'visible';
                 
-                console.log(`🎬 倒计时显示: ${text} (突然显示)`);
-                
                 // 等待显示时间减去淡出时间
                 const waitTime = countdownConfig.displayDuration - countdownConfig.fadeOutTime;
                 await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -1704,8 +1713,6 @@ window.getVideoStream = getVideoStream;
                 if (text !== "开始") {
                     countdownOverlay.style.transition = `opacity ${countdownConfig.fadeOutTime}ms ease-out`;
                     countdownOverlay.style.opacity = '0';
-                    
-                    console.log(`🎬 倒计时淡出: ${text} (${countdownConfig.fadeOutTime}ms)`);
                     
                     // 等待淡出完成
                     await new Promise(resolve => setTimeout(resolve, countdownConfig.fadeOutTime));
