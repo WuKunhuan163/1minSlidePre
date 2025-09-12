@@ -575,6 +575,22 @@
     text-align: center !important;
 }
 
+/* 完成设置按钮样式 */
+.setup-step .rect-button.complete-setup-button {
+    background: #28a745 !important; /* 绿色 */
+    color: white !important;
+    width: 100% !important;
+    margin-top: 15px !important;
+    padding: 12px 24px !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+}
+
+.setup-step .rect-button.complete-setup-button:hover {
+    background: #218838 !important; /* 更深的绿色 */
+    transform: translateY(-1px) !important;
+}
+
 
 @keyframes thinking {
     0% { content: ''; }

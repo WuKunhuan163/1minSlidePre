@@ -384,9 +384,12 @@ class SettingsStepManager {
         return html;
     }
 
-    // 获取按钮样式类 - 暂时返回空，未来可能扩展
+    // 获取按钮样式类 - 为完成设置按钮提供特殊样式
     getButtonClass(type) {
-        return '';
+        switch (type) {
+            case 'success': return 'complete-setup-button';
+            default: return '';
+        }
     }
 
     // 设置事件监听器
@@ -1304,7 +1307,7 @@ class SettingsStepManager {
             const buttonId_full = `${this.settingId}-${stepId}-${buttonId}`;
             
             const newButtonHtml = `
-                <button class="btn ${buttonClass} round-button" 
+                <button class="rect-button ${buttonClass}" 
                         id="${buttonId_full}"
                         data-step-id="${stepId}" 
                         data-button-id="${buttonId}">
