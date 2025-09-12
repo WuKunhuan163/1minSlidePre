@@ -365,6 +365,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             titleElement.textContent = `${formatTimeToText(presentationTime)}即兴演讲`;
         }
     };
+    
+    // 更新按钮可见性的函数
+    const updateButtonVisibility = (selectedMode) => {
+        console.log('🎛️ 更新按钮可见性，选择的模式:', selectedMode);
+        
+        if (selectedMode === 'trainer' || selectedMode === '讲师训') {
+            // 讲师训模式：显示所有按钮
+            uploadButton.style.display = 'block';
+            startButton.style.display = 'block';
+            settingsButton.style.display = 'block';
+            console.log('✅ 讲师训模式：显示所有按钮');
+        } else {
+            // 其他模式：只显示设置按钮
+            uploadButton.style.display = 'none';
+            startButton.style.display = 'none';
+            settingsButton.style.display = 'block';
+            console.log('✅ 其他模式：只显示设置按钮');
+        }
+    };
+    
+    // 初始化按钮可见性（默认不显示上传PPT和开始演讲按钮）
+    updateButtonVisibility('other');
 
     let isIOSFunction = () => {
         const userAgent = window.navigator.userAgent;
@@ -381,8 +403,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     modeOptions.forEach(option => {
         option.addEventListener('click', () => {
-            // 根据选择的模式设置录音时长（秒数）
+            const modeValue = option.getAttribute('data-value');
             const modeText = option.textContent;
+            
+            console.log('🎛️ 模式选择:', { value: modeValue, text: modeText });
+            
+            // 根据选择的模式设置录音时长（秒数）
             if (modeText.includes('1分钟')) {
                 presentationTime = 60;
             } else if (modeText.includes('30秒')) {
@@ -392,8 +418,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             } else {
                 presentationTime = 60; // 默认1分钟（60秒）
             }
-            selectedValue.textContent = option.textContent;
+            
+            // 更新选中的模式文本
+            selectedValue.textContent = modeText;
             customSelect.classList.remove('open');
+            
+            // 更新按钮可见性
+            updateButtonVisibility(modeValue);
             
             // 更新演讲标题
             updatePresentationTitle();
@@ -406,8 +437,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 
-    // Slides management - 使用全局变量 
-    const uploadButton = document.querySelector('.normal-button');
+    // 获取按钮元素
+    const uploadButton = document.getElementById('uploadButton');
+    const startButton = document.getElementById('startButton');
+    const settingsButton = document.getElementById('settingsButton');
     
     // Render thumbnails - 全局函数
     window.renderThumbnails = (container) => {
@@ -694,8 +727,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
 
-    // Presentation management
-    const startButton = document.querySelectorAll('.normal-button')[1]; // Second button
+    // Presentation management (startButton已在上面定义)
     
     const updateStartButton = () => {
         // 开始演讲按钮始终可用，没有PPT时会跳转到上传PPT
