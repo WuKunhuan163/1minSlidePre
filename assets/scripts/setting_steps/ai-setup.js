@@ -123,8 +123,9 @@ class AISetupManager {
                         show: false
                     }
                 ],
-                autoJumpCondition: () => this.canAutoJumpFromStep3(),
+                autoJumpCondition: () => this.triggerAutoTest(),
                 onEnter: () => this.initializeChatTest(),
+                onLeave: () => this.handleStep3Leave(),
                 validation: () => this.validateStep3Requirements()
             }
         ];
@@ -263,7 +264,7 @@ class AISetupManager {
                 validateBtn.style.cursor = 'not-allowed';
             }
             
-            this.stepManager.showStepStatus('step2', '正在验证API Key...', 'info');
+            this.stepManager.showStepStatus('step2', '正在验证API Key...', 'processing');
             
             const isValid = await this.validateApiKey();
             if (isValid) {
@@ -308,7 +309,7 @@ class AISetupManager {
             // 恢复按钮状态为错误状态
             const validateBtn = document.getElementById(`${this.settingId}-step2-validateBtn`);
             if (validateBtn) {
-                validateBtn.textContent = '验证失败，重试';
+                validateBtn.textContent = '验证';
                 validateBtn.disabled = false;
                 validateBtn.style.opacity = '1';
                 validateBtn.style.cursor = 'pointer';
@@ -360,7 +361,7 @@ class AISetupManager {
                     </div>
                 </div>
                 <div class="chatbot-input">
-                    <input type="text" id="chatInput" placeholder="输入你的问题测试AI功能..." maxlength="200" onkeypress="if(event.key==='Enter') aiManager.sendTestMessage()">
+                    <textarea id="chatInput" placeholder="输入你的问题测试AI功能..." maxlength="200" rows="1" oninput="aiManager.autoResizeTextarea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); aiManager.sendTestMessage(); }"></textarea>
                     <button id="sendChatBtn" onclick="aiManager.sendTestMessage()">发送</button>
                 </div>
             </div>
@@ -378,7 +379,34 @@ class AISetupManager {
             }
         ];
         
-        // console.log('🤖 聊天测试界面已初始化，等待自动验证触发');
+        console.log('🤖 聊天测试界面已初始化，准备自动发送测试消息');
+        
+        // 延迟自动发送测试消息进行验证
+        setTimeout(() => {
+            this.autoSendTestMessage();
+        }, 1000);
+    }
+
+    // 处理步骤3离开事件
+    handleStep3Leave() {
+        console.log('🔄 离开AI步骤3，清除完成设置状态');
+        
+        // 隐藏完成按钮
+        this.stepManager.hideButton('step3', 'completeBtn');
+        
+        // 重置测试状态，允许重新测试
+        this.apiTestCompleted = false;
+        this.autoTestSent = false;
+        
+        // 清除设置的测试完成状态
+        if (typeof simpleConfig !== 'undefined' && simpleConfig.clearSettingTested) {
+            simpleConfig.clearSettingTested('ai');
+        }
+        
+        // 禁用AI功能，需要重新完成设置
+        if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+            simpleConfig.set('aiEnabled', false);
+        }
     }
 
     // 触发自动测试（用于自动跳转条件）
@@ -471,6 +499,26 @@ class AISetupManager {
         }
     }
 
+    // 自动调整textarea高度
+    autoResizeTextarea(textarea) {
+        // 重置高度以获取正确的scrollHeight
+        textarea.style.height = 'auto';
+        
+        // 计算新高度
+        const maxHeight = 120; // 约3行的高度
+        const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+        
+        // 设置新高度
+        textarea.style.height = newHeight + 'px';
+        
+        // 如果内容超过最大高度，显示滚动条
+        if (textarea.scrollHeight > maxHeight) {
+            textarea.style.overflowY = 'auto';
+        } else {
+            textarea.style.overflowY = 'hidden';
+        }
+    }
+
     // 发送测试消息
     async sendTestMessage() {
         const chatInput = document.getElementById('chatInput');
@@ -486,6 +534,9 @@ class AISetupManager {
         chatInput.disabled = true;
         sendBtn.disabled = true;
         chatInput.value = '';
+        
+        // 重置textarea高度
+        this.autoResizeTextarea(chatInput);
         
         // 添加用户消息
         this.addMessageToChat(userMessage, 'user');
@@ -631,7 +682,7 @@ class AISetupManager {
 
     // 完成设置
     completeSetup() {
-        // console.log('🎯 完成智谱AI设置');
+        console.log('🎯 完成智谱AI设置');
         
         // 标记设置为已测试（这是完成的标志）
         if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
@@ -643,9 +694,63 @@ class AISetupManager {
             simpleConfig.set('aiEnabled', true);
         }
         
-        // console.log('✅ AI功能设置完成并已启用');
+        // 注册配置显示字段
+        this.registerConfigFields();
+        
+        console.log('✅ AI功能设置完成并已启用');
         
         this.stepManager.completeSetup();
+    }
+
+    // 注册配置显示字段
+    registerConfigFields() {
+        console.log('🤖 开始注册智谱AI配置显示字段');
+        
+        // 获取当前保存的配置
+        let apiKey = '';
+        if (typeof simpleConfig !== 'undefined' && simpleConfig.getAll) {
+            const config = simpleConfig.getAll();
+            apiKey = config.zhipuApiKey || '';
+        }
+        
+        if (!apiKey) {
+            console.warn('⚠️ 未找到保存的API Key，无法注册字段');
+            return;
+        }
+        
+        const fields = [
+            {
+                name: '智谱AI API Key',
+                value: apiKey,
+                type: 'password',
+                copyable: true
+            },
+            {
+                name: '设置状态',
+                value: '已启用',
+                type: 'text',
+                copyable: false
+            },
+            {
+                name: '配置时间',
+                value: new Date().toLocaleString(),
+                type: 'text',
+                copyable: false
+            }
+        ];
+        
+        console.log('🤖 准备注册的字段:', fields);
+        
+        // 通知设置管理器更新显示字段
+        if (window.updateSettingFields) {
+            console.log('🤖 调用window.updateSettingFields');
+            window.updateSettingFields('ai', fields);
+        } else if (window.settingsManager && window.settingsManager.registerSettingFields) {
+            console.log('🤖 调用window.settingsManager.registerSettingFields');
+            window.settingsManager.registerSettingFields('ai', fields);
+        } else {
+            console.error('❌ 字段注册方法不可用');
+        }
     }
 
     // 返回上一步
@@ -714,6 +819,10 @@ class AISetupManager {
     // 验证步骤1要求是否满足
     validateStep1Requirements() {
         console.log('🔍 验证AI步骤1要求');
+        
+        // 显示验证状态
+        this.stepManager.showStepStatus('step1', '账号注册已确认', 'success');
+        
         // 步骤1是手动确认步骤，没有特殊要求
         return true;
     }
@@ -728,6 +837,13 @@ class AISetupManager {
         console.log('🔍 AI步骤2要求检查:');
         console.log('  - API Key已填写:', apiKey ? '是' : '否');
         
+        // 显示验证状态
+        if (apiKey && apiKey.length > 0) {
+            this.stepManager.showStepStatus('step2', 'API Key已配置', 'success');
+        } else {
+            this.stepManager.showStepStatus('step2', '请填写API Key', 'warning');
+        }
+        
         // 基本要求：API Key已填写
         return apiKey && apiKey.length > 0;
     }
@@ -740,6 +856,13 @@ class AISetupManager {
         const testCompleted = this.apiTestCompleted;
         console.log('🔍 AI步骤3要求检查:');
         console.log('  - API测试已完成:', testCompleted);
+        
+        // 显示验证状态
+        if (testCompleted) {
+            this.stepManager.showStepStatus('step3', 'AI对话测试已完成', 'success');
+        } else {
+            this.stepManager.showStepStatus('step3', '正在进行AI对话测试...', 'processing');
+        }
         
         return testCompleted;
     }

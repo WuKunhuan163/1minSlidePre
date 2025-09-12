@@ -822,7 +822,7 @@ class AudioSetupManager {
             // 恢复按钮状态为错误状态
             const validateBtn = document.getElementById(`${this.settingId}-step4-validateBtn`);
             if (validateBtn) {
-                validateBtn.textContent = '验证失败，重试';
+                validateBtn.textContent = '验证';
                 validateBtn.disabled = false;
                 validateBtn.style.opacity = '1';
                 validateBtn.style.cursor = 'pointer';

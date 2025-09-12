@@ -933,11 +933,67 @@ class SettingsStepManager {
         }
         
         // 如果是核心按钮，检查自动跳转条件
-        if (button.isPrimary && step.autoJumpCondition) {
-            this.checkAutoJump(stepId);
+        // 但是如果按钮类型是primary且是验证按钮，则执行验证逻辑而不是自动跳转
+        if (button.isPrimary) {
+            if (button.text && (button.text.includes('验证') || button.text.includes('测试'))) {
+                // 这是验证按钮，执行验证并显示结果
+                this.handleValidationButton(stepId, button);
+            } else if (step.autoJumpCondition) {
+                // 这是其他核心按钮，执行自动跳转检查
+                this.checkAutoJump(stepId);
+            }
         }
     }
 
+    // 处理验证按钮点击
+    async handleValidationButton(stepId, button) {
+        const step = this.steps.find(s => s.id === stepId);
+        if (!step) return;
+        
+        console.log(`🔍 处理验证按钮点击 - 步骤: ${stepId}, 按钮: ${button.text}`);
+        
+        // 显示验证中状态 - 蓝色框
+        this.showStepStatus(stepId, '验证中...', 'processing');
+        
+        try {
+            // 执行验证函数
+            if (step.validation && typeof step.validation === 'function') {
+                const validationResult = await step.validation();
+                console.log(`🔍 ${stepId} validation函数结果: ${validationResult}`);
+                
+                if (validationResult) {
+                    // 验证成功
+                    console.log(`✅ ${stepId} 验证成功`);
+                    let successMessage = '验证通过';
+                    
+                    // 为特定步骤显示更友好的成功消息
+                    if (stepId === 'step2' && this.settingId === 'microphone') {
+                        successMessage = '录音测试完成！';
+                    } else if (stepId === 'step4' && this.settingId === 'recording') {
+                        successMessage = 'AccessKey验证通过';
+                    } else if (stepId === 'step2' && this.settingId === 'recording') {
+                        successMessage = 'AppKey验证通过';
+                    }
+                    
+                    this.showStepStatus(stepId, successMessage, 'success');
+                    
+                    // 验证成功后，可以考虑自动跳转到下一步
+                    // 但这需要额外的逻辑来确定是否应该跳转
+                } else {
+                    // 验证失败
+                    console.log(`❌ ${stepId} 验证失败`);
+                    this.showStepStatus(stepId, '验证失败，请检查配置', 'error');
+                }
+            } else {
+                console.warn(`⚠️ ${stepId} 没有validation函数`);
+                this.showStepStatus(stepId, '无验证函数', 'warning');
+            }
+        } catch (error) {
+            console.error(`❌ ${stepId} 验证过程出错:`, error);
+            this.showStepStatus(stepId, `验证出错: ${error.message}`, 'error');
+        }
+    }
+    
     // 检查自动跳转条件 - 统一验证validation和autoJumpCondition函数
     async checkAutoJump(stepId) {
         const step = this.steps.find(s => s.id === stepId);
