@@ -152,12 +152,12 @@ class PresentationStatusManager {
             this.updateMicrophoneStatus('unconfigured', '未录音');
         } else {
             // 有配置，进行快速测试
-            this.updateMicrophoneStatus('testing', '录音测试中');
+            this.updateMicrophoneStatus('testing', '测试中');
             const micResult = await this.testMicrophone(micConfigParsed);
             if (micResult.success) {
                 this.updateMicrophoneStatus('success', '录音');
             } else {
-                this.updateMicrophoneStatus('failed', '录音失败');
+                this.updateMicrophoneStatus('failed', '未录音');
             }
         }
 
@@ -176,12 +176,12 @@ class PresentationStatusManager {
             this.updateCameraStatus('unconfigured', '未录像');
         } else {
             // 有配置，进行快速测试
-            this.updateCameraStatus('testing', '录像测试中');
+            this.updateCameraStatus('testing', '测试中')
             const camResult = await this.testCamera(camConfigParsed);
             if (camResult.success) {
                 this.updateCameraStatus('success', '录像');
             } else {
-                this.updateCameraStatus('failed', '录像失败');
+                this.updateCameraStatus('failed', '未录像');
             }
         }
     }
@@ -340,7 +340,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     const selectHeader = customSelect.querySelector('.select-header');
     const selectedValue = customSelect.querySelector('.selected-value');
     const modeOptions = customSelect.querySelectorAll('.mode-option');
-    let presentationTime = 10 / 60; // 临时调整为10秒测试 
+    let presentationTime = 10; // 演讲时间（秒数）
+    
+    // 时间转换函数：将秒数X转换为文字描述Y
+    const formatTimeToText = (seconds) => {
+        if (seconds < 60) {
+            return `${seconds}秒`;
+        } else if (seconds === 60) {
+            return '1分钟';
+        } else if (seconds % 60 === 0) {
+            const minutes = Math.floor(seconds / 60);
+            return `${minutes}分钟`;
+        } else {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}分${remainingSeconds}秒`;
+        }
+    };
+    
+    // 更新演讲标题的函数
+    const updatePresentationTitle = () => {
+        const titleElement = document.getElementById('presentationTitle');
+        if (titleElement) {
+            titleElement.textContent = `${formatTimeToText(presentationTime)}即兴演讲`;
+        }
+    };
 
     let isIOSFunction = () => {
         const userAgent = window.navigator.userAgent;
@@ -357,19 +381,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     modeOptions.forEach(option => {
         option.addEventListener('click', () => {
-            // 根据选择的模式设置录音时长
+            // 根据选择的模式设置录音时长（秒数）
             const modeText = option.textContent;
             if (modeText.includes('1分钟')) {
-                presentationTime = 1;
+                presentationTime = 60;
             } else if (modeText.includes('30秒')) {
-                presentationTime = 0.5;
+                presentationTime = 30;
             } else if (modeText.includes('2分钟')) {
-                presentationTime = 2;
+                presentationTime = 120;
             } else {
-                presentationTime = 1; // 默认1分钟
+                presentationTime = 60; // 默认1分钟（60秒）
             }
             selectedValue.textContent = option.textContent;
             customSelect.classList.remove('open');
+            
+            // 更新演讲标题
+            updatePresentationTitle();
         });
     });
 
@@ -691,7 +718,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <button class="normal-button back-button">
                     <i class='bx bx-arrow-back'></i>
                 </button>
-                <h2>1分钟即兴演讲</h2>
+                <h2 id="presentationTitle">${formatTimeToText(presentationTime)}即兴演讲</h2>
                 <div class="recording-status-indicators">
                     <div class="status-indicator" id="microphoneStatusIndicator">
                         <div class="status-dot" id="microphoneStatusDot"></div>
@@ -1545,13 +1572,13 @@ window.getVideoStream = getVideoStream;
         const updateTimer = () => {
             if (!isActive) return;
             const currentTime = (Date.now() - startTime) / 1000;
-            const totalTime = presentationTime * 60;
+            const totalTime = presentationTime; // presentationTime现在已经是秒数
             const progress = Math.min((currentTime / totalTime) * 100, 100);
             timerDisplay.textContent = formatTime(currentTime);
             progressBar.style.width = `${progress}%`;
             if (isActive) {
             if (currentTime >= totalTime && !endWarned) {
-                // console.log(`⏰ 演讲时间到! 实际时长: ${totalTime}秒 (${presentationTime}分钟)`);
+                // console.log(`⏰ 演讲时间到! 实际时长: ${totalTime}秒`);
                 endWarned = true;
                     if (!effectsMuted) {
                         endSound.volume = effectsVolume * effectsVolume; // 平方权重 
@@ -1669,7 +1696,7 @@ window.getVideoStream = getVideoStream;
             await startRecording();
             
             startTime = Date.now();
-            // console.log(`🎬 演讲开始! 预设时长: ${presentationTime * 60}秒 (${presentationTime}分钟)`);
+            // console.log(`🎬 演讲开始! 预设时长: ${presentationTime}秒`);
             timerInterval = setInterval(updateTimer, 100);
             if (overlay) {
                 recordStopButton.addEventListener('click', async () => {
