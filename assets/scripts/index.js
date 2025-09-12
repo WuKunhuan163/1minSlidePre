@@ -1669,7 +1669,7 @@ window.getVideoStream = getVideoStream;
             const countdownConfig = {
                 displayDuration: 1000,   // 每个数字显示的总时长（毫秒）- 增加200ms
                 fadeOutTime: 600,       // 淡出动画时长（毫秒）
-                offsetTime: -200        // 第一个数字开始显示的时间偏移（毫秒）- 提早200ms卡准音乐鼓点
+                offsetTime: -400        // 第一个数字开始显示的时间偏移（毫秒）- 提早400ms卡准音乐鼓点
             };
             
             // 等待offset时间（如果是负数，则提前开始）
