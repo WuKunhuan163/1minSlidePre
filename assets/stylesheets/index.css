@@ -126,11 +126,6 @@ body {
 
 .rect-button:focus {
     outline: none;
-    background-color: #333333 !important; /* 强制失去焦点后恢复灰色 */
-}
-
-.rect-button:not(:hover):not(:active):not(:focus) {
-    background-color: #333333 !important; /* 确保在非交互状态下是灰色 */
 }
 
 .rect-button:disabled {
