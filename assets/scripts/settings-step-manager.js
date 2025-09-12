@@ -388,9 +388,9 @@ class SettingsStepManager {
     getButtonClass(type) {
         switch (type) {
             case 'back': return 'btn-back';
-            case 'primary': return 'btn-primary';
+            case 'primary': return 'btn-secondary';
             case 'success': return 'btn-success';
-            default: return 'btn-primary';
+            default: return 'btn-secondary';
         }
     }
 
@@ -1647,12 +1647,12 @@ class SettingsStepManager {
         console.log('🎤 保存录音设备配置:', formData);
         
         // 获取录音设备管理器的当前状态
-        if (typeof microphoneSetupManager !== 'undefined' && microphoneSetupManager) {
+        if (typeof window.microphoneManager !== 'undefined' && window.microphoneManager) {
             const config = {
                 enabled: true,
-                selectedDeviceId: microphoneSetupManager.selectedDeviceId,
-                selectedDeviceName: microphoneSetupManager.selectedDeviceName,
-                recordingTestCompleted: microphoneSetupManager.recordingTestCompleted,
+                selectedDeviceId: window.microphoneManager.selectedDeviceId,
+                selectedDeviceName: window.microphoneManager.selectedDeviceName,
+                recordingTestCompleted: window.microphoneManager.recordingTestCompleted,
                 timestamp: Date.now()
             };
             
