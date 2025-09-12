@@ -439,8 +439,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const startButton = document.getElementById('startButton');
     const settingsButton = document.getElementById('settingsButton');
     
-    // 初始化按钮可见性（默认不显示上传PPT和开始演讲按钮）
-    updateButtonVisibility('other');
+    // 初始化按钮可见性（默认讲师训模式，显示所有按钮）
+    updateButtonVisibility('trainer');
     
     // Render thumbnails - 全局函数
     window.renderThumbnails = (container) => {
