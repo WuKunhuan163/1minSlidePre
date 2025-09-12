@@ -752,8 +752,6 @@
 
 
 /* 简化的交互逻辑 - 基于当前步骤状态 */
-/* 默认：非当前步骤不可交互（包括回退按钮） */
-.setup-step:not(.current-step) .btn,
 .setup-step:not(.current-step) input,
 .setup-step:not(.current-step) select,
 .setup-step:not(.current-step) textarea,

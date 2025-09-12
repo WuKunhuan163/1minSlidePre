@@ -407,6 +407,14 @@ class AISetupManager {
         if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
             simpleConfig.set('aiEnabled', false);
         }
+        
+        // 清除注册的字段显示
+        this.clearConfigFields();
+        
+        // 刷新设置显示以确保toggle和字段状态同步
+        if (window.refreshSettingsDisplay) {
+            window.refreshSettingsDisplay();
+        }
     }
 
     // 触发自动测试（用于自动跳转条件）
@@ -750,6 +758,22 @@ class AISetupManager {
             window.settingsManager.registerSettingFields('ai', fields);
         } else {
             console.error('❌ 字段注册方法不可用');
+        }
+    }
+
+    // 清除配置显示字段
+    clearConfigFields() {
+        console.log('🤖 开始清除智谱AI配置显示字段');
+        
+        // 通知设置管理器清除字段显示
+        if (window.updateSettingFields) {
+            console.log('🤖 调用window.updateSettingFields清除字段');
+            window.updateSettingFields('ai', []);
+        } else if (window.settingsManager && window.settingsManager.registerSettingFields) {
+            console.log('🤖 调用window.settingsManager.registerSettingFields清除字段');
+            window.settingsManager.registerSettingFields('ai', []);
+        } else {
+            console.error('❌ 字段清除方法不可用');
         }
     }
 
