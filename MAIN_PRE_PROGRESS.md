@@ -87,11 +87,50 @@
   - 在录制结果中包含 `recordingDuration` 信息
   - 增加progressContainer下方50px间距，改善日志显示区域
 
+#### ✅ 2025年1月12日 - 演讲时间动态绑定和CSS重构
+- **演讲时间和标题动态绑定**：
+  - 将presentationTime变量改为秒数单位，提高精度
+  - 创建formatTimeToText函数，将秒数转换为文字描述（如'10秒'、'1分钟'、'1分30秒'）
+  - 修改createPresentationView中的标题为动态显示
+  - 添加updatePresentationTitle函数，实时更新演讲标题
+  - 在模式选择时自动更新标题显示
+  - 修正计时器代码，适配新的秒数单位
+- **演讲界面响应式设计修复**：
+  - 修复600px边界时返回按钮错误跑到右边的问题
+  - 将.back-button的order样式限制为只应用于slides-header
+  - 为返回按钮添加back-button-container包装div
+  - 添加presentation-overlay最小宽度300px
+  - 添加450px边界的响应式设计，让recording-status-indicators换行显示
+- **CSS架构重构**：
+  - 创建Python脚本自动提取index.css中的演讲相关CSS规则
+  - 新建assets/stylesheets/presentation.css文件
+  - 迁移了34个CSS规则块，包括演讲界面、预加载、状态指示器等样式
+  - 更新index.html引用新的presentation.css
+  - 清理并优化CSS结构，提高代码组织性
+- **统一配置保存逻辑**：
+  - 在settings-step-manager中实现saveAllStepsConfiguration统一保存方法
+  - 支持ai、camera、microphone、recording等不同设置类型的保存
+  - 移除各个设置步骤JS中的分散保存实现
+  - 统一处理字段注册和设置完成状态标记
+
+#### ✅ 2025年1月12日 - 录音录像检测和自动下载修复
+- **录音录像设置状态检测修复**：
+  - 修复startRecording函数中的设置状态检查逻辑
+  - 从检查audioSetupCompleted/videoSetupCompleted改为检查simpleConfig.isSettingTested('microphone'/'camera')
+  - 确保正确识别已完成的录音和录像设置
+- **自动下载音频功能增强**：
+  - 升级downloadAudio函数为异步函数，支持webm转mp3转换
+  - 集成convertToMp3函数，自动将webm格式录音转换为mp3
+  - 添加转换失败的备用方案，直接下载原始webm文件
+  - 修复演讲结束后的自动下载调用，支持异步处理
+  - 提供完整的音频处理接口函数，方便后续下载按钮集成
+
 #### 📋 下一步计划
 1. 添加智谱AI状态指示器
 2. 实现演讲过程中的实时状态监控
 3. 完善错误处理和用户反馈机制
 4. 集成所有功能到完整的演讲评估流程
+5. 测试录音设备快测和自动下载功能
 
 ## 技术实现细节
 

@@ -1005,14 +1005,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         // console.log('🎤 开始录音录像');
         
         // 检查设置状态
-        const audioSetupCompleted = simpleConfig.get('audioSetupCompleted');
-        const videoSetupCompleted = simpleConfig.get('videoSetupCompleted');
+        const microphoneSetupCompleted = simpleConfig ? simpleConfig.isSettingTested('microphone') : false;
+        const cameraSetupCompleted = simpleConfig ? simpleConfig.isSettingTested('camera') : false;
         
-        // console.log('📋 录音录像设置状态:');
-        // console.log('  - 录音设置完成:', audioSetupCompleted);
-        // console.log('  - 录像设置完成:', videoSetupCompleted);
+        console.log('📋 录音录像设置状态:');
+        console.log('  - 录音设备设置完成:', microphoneSetupCompleted);
+        console.log('  - 录像设备设置完成:', cameraSetupCompleted);
         
-        if (!audioSetupCompleted && !videoSetupCompleted) {
+        if (!microphoneSetupCompleted && !cameraSetupCompleted) {
             console.warn('⚠️ 录音和录像设置都未完成，无法开始录制');
             console.warn('💡 请先在设置中完成录音或录像测试');
             return;
@@ -1025,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         videoBlob = null;
         
         // 根据设置状态决定录制内容
-        if (videoSetupCompleted) {
+        if (cameraSetupCompleted) {
             // 尝试录像（包含音频）
             try {
                 // console.log('📹 尝试开始录像（包含音频）');
@@ -1055,12 +1055,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 console.warn('⚠️ 视频录制失败:', error);
                 
                 // 如果录像失败但录音设置完成，尝试仅录音
-                if (audioSetupCompleted) {
+                if (microphoneSetupCompleted) {
                     // console.log('🎤 录像失败，尝试仅录音');
                     await startAudioOnlyRecording();
                 }
             }
-        } else if (audioSetupCompleted) {
+        } else if (microphoneSetupCompleted) {
             // 仅录音
             // console.log('🎤 开始仅录音模式');
             await startAudioOnlyRecording();
@@ -1421,31 +1421,70 @@ window.getVideoStream = getVideoStream;
         timerContainer.appendChild(buttonRow);
     };
 
-    // 下载音频
-    const downloadAudio = () => {
-        // console.log('🎤 开始下载音频');
-        // console.log('  - audioBlob可用:', !!audioBlob, audioBlob ? `大小:${audioBlob.size}` : '');
-        // console.log('  - videoBlob可用:', !!videoBlob, videoBlob ? `大小:${videoBlob.size}` : '');
+    // 下载音频（自动转换webm为mp3）
+    const downloadAudio = async () => {
+        console.log('🎤 开始下载音频');
+        console.log('  - audioBlob可用:', !!audioBlob, audioBlob ? `大小:${audioBlob.size}` : '');
+        console.log('  - videoBlob可用:', !!videoBlob, videoBlob ? `大小:${videoBlob.size}` : '');
         
-        let blob = audioBlob;
+        let sourceBlob = audioBlob;
         let filename = '演讲录音.mp3';
         
         // 如果有视频但没有单独的音频，从视频中提取音频
         if (!audioBlob && videoBlob) {
-            // console.log('🔄 没有音频blob，使用视频blob');
-            blob = videoBlob;
-            filename = '演讲录音.webm'; // 视频文件保持webm格式
+            console.log('🔄 没有音频blob，使用视频blob');
+            sourceBlob = videoBlob;
         }
         
-        if (blob) {
-            // console.log(`📥 开始下载文件: ${filename}, 大小: ${blob.size} bytes`);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
-            // console.log('✅ 下载链接已创建并触发');
+        if (sourceBlob) {
+            try {
+                // 检查是否是webm格式，需要转换为mp3
+                if (sourceBlob.type.includes('webm') || filename.includes('.webm')) {
+                    console.log('🔄 检测到webm格式，开始转换为mp3...');
+                    
+                    // 使用convertToMp3函数进行转换
+                    const mp3Blob = await convertToMp3(sourceBlob);
+                    
+                    if (mp3Blob) {
+                        console.log(`✅ webm转mp3成功，大小: ${mp3Blob.size} bytes`);
+                        
+                        // 下载转换后的mp3文件
+                        const url = URL.createObjectURL(mp3Blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        
+                        console.log('✅ mp3文件下载完成');
+                    } else {
+                        throw new Error('webm转mp3失败，返回空blob');
+                    }
+                } else {
+                    // 直接下载原始音频文件
+                    console.log(`📥 直接下载原始音频文件: ${filename}, 大小: ${sourceBlob.size} bytes`);
+                    const url = URL.createObjectURL(sourceBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    console.log('✅ 原始音频下载完成');
+                }
+            } catch (error) {
+                console.error('❌ 音频下载/转换失败:', error);
+                
+                // 如果转换失败，尝试直接下载原始文件
+                console.log('🔄 转换失败，尝试直接下载原始webm文件...');
+                const fallbackFilename = '演讲录音.webm';
+                const url = URL.createObjectURL(sourceBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fallbackFilename;
+                a.click();
+                URL.revokeObjectURL(url);
+                console.log('✅ 原始webm文件下载完成（备用方案）');
+            }
         } else {
             console.error('❌ 没有可下载的音频或视频数据');
         }
@@ -1736,10 +1775,14 @@ window.getVideoStream = getVideoStream;
                             
                             // 自动下载音频（如果有音频数据）
                             if (audioBlob || videoBlob) {
-                                // console.log('🎤 满足自动下载条件，开始自动下载音频');
+                                console.log('🎤 满足自动下载条件，开始自动下载音频');
                                 try {
-                                    downloadAudio();
-                                    // console.log('✅ 自动下载音频调用成功');
+                                    // downloadAudio现在是异步函数
+                                    downloadAudio().then(() => {
+                                        console.log('✅ 自动下载音频调用成功');
+                                    }).catch(error => {
+                                        console.error('❌ 自动下载音频调用失败:', error);
+                                    });
                                 } catch (error) {
                                     console.error('❌ 自动下载音频调用失败:', error);
                                 }
