@@ -700,6 +700,14 @@ class SettingsManager {
                 const enabledKey = settingId + 'Enabled';
                 simpleConfig.set(enabledKey, enabled);
                 
+                // 如果toggle被关闭且设置之前已完成，则清除完成状态
+                if (!enabled && simpleConfig.isSettingTested && simpleConfig.isSettingTested(settingId)) {
+                    console.log(`🔄 ${settingId} toggle关闭，清除已完成状态`);
+                    if (simpleConfig.clearSettingTested) {
+                        simpleConfig.clearSettingTested(settingId);
+                    }
+                }
+                
                 // 重新加载配置
                 const config = simpleConfig.getAll();
                 

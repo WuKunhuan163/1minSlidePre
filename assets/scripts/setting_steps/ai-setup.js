@@ -407,14 +407,6 @@ class AISetupManager {
         if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
             simpleConfig.set('aiEnabled', false);
         }
-        
-        // 清除注册的字段显示
-        this.clearConfigFields();
-        
-        // 刷新设置显示以确保toggle和字段状态同步
-        if (window.refreshSettingsDisplay) {
-            window.refreshSettingsDisplay();
-        }
     }
 
     // 触发自动测试（用于自动跳转条件）
