@@ -1273,9 +1273,9 @@ class SettingsManager {
         // 创建测试音效
         let testAudio = null;
         if (settingId === 'effectsVolume') {
-            testAudio = new Audio('assets/effects/end.mp3');
+            testAudio = new Audio('assets/sounds/end.mp3');
         } else if (settingId === 'backgroundMusic') {
-            testAudio = new Audio('assets/effects/background.mp3');
+            testAudio = new Audio('assets/sounds/background.mp3');
         }
         
         // 鼠标按下时开始编辑状态

@@ -54,7 +54,7 @@ const initEffectsVolumeControl = (overlay) => {
     inlineVolumeControl.appendChild(slider);
     
     // 创建测试音效
-    const testSound = new Audio('assets/effects/end.mp3');
+    const testSound = new Audio('assets/sounds/end.mp3');
     testSound.volume = effectsVolume;
     
     const playTestSound = () => {
@@ -131,7 +131,7 @@ const initBackgroundMusicVolumeControl = (overlay) => {
     inlineVolumeControl.appendChild(slider);
     
     // 创建测试音效（使用背景音乐片段）
-    const testMusic = new Audio('assets/effects/background.mp3');
+    const testMusic = new Audio('assets/sounds/background.mp3');
     testMusic.volume = Math.min(backgroundMusicVolume * 4.0, 1.0); // 使用相同的倍数
     testMusic.loop = false;
     

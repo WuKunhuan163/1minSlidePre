@@ -804,8 +804,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         const microphoneStatusText = overlay.querySelector('#microphoneStatusText');
         const cameraStatusDot = overlay.querySelector('#cameraStatusDot');
         const cameraStatusText = overlay.querySelector('#cameraStatusText');
-        const recordingStatusDot = overlay.querySelector('#recordingStatusDot');
-        const recordingStatusText = overlay.querySelector('#recordingStatusText');
         
         // 检查录音设置状态
         const microphoneConfig = JSON.parse(localStorage.getItem('microphoneConfig') || '{}');
@@ -815,14 +813,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const cameraConfig = JSON.parse(localStorage.getItem('cameraConfig') || '{}');
         const cameraConfigured = cameraConfig.enabled && cameraConfig.selectedDeviceId;
         
-        // 检查录音文字识别设置状态（依赖录音设备）
-        const recordingConfig = simpleConfig ? simpleConfig.getAll() : {};
-        const recordingConfigured = recordingConfig.recordingEnabled && microphoneConfigured;
-        
         console.log('📊 设备配置状态:', {
             microphone: microphoneConfigured,
-            camera: cameraConfigured,
-            recording: recordingConfigured
+            camera: cameraConfigured
         });
         
         // 更新录音状态指示器
@@ -892,41 +885,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 cameraStatusDot.className = 'status-dot failed';
                 cameraStatusText.textContent = '未录像';
                 console.log('❌ 摄像头设备快测出错:', error);
-            }
-        }
-        
-        // 更新录音文字识别状态指示器
-        if (!recordingConfigured) {
-            recordingStatusDot.className = 'status-dot unconfigured';
-            recordingStatusText.textContent = '未识别';
-            console.log('📝 录音文字识别未配置');
-        } else {
-            // 执行录音文字识别快测（依赖录音设备快测结果）
-            console.log('📝 开始录音文字识别快测');
-            recordingStatusDot.className = 'status-dot testing';
-            recordingStatusText.textContent = '测试中';
-            
-            try {
-                // 使用设置管理器的缓存快测功能
-                const testResult = await window.settingsManager.performCachedTest('recording', false);
-                if (testResult.success) {
-                    recordingStatusDot.className = 'status-dot success';
-                    recordingStatusText.textContent = '识别中';
-                    console.log('✅ 录音文字识别快测成功');
-                } else {
-                    recordingStatusDot.className = 'status-dot failed';
-                    recordingStatusText.textContent = '未识别';
-                    console.log('❌ 录音文字识别快测失败:', testResult.message);
-                    
-                    // 调用失败处理接口（更新录音文字识别设置状态）
-                    if (window.settingsManager && window.settingsManager.updateRecordingStatusAfterFailedTest) {
-                        window.settingsManager.updateRecordingStatusAfterFailedTest(testResult.message);
-                    }
-                }
-            } catch (error) {
-                recordingStatusDot.className = 'status-dot failed';
-                recordingStatusText.textContent = '未识别';
-                console.log('❌ 录音文字识别快测出错:', error);
             }
         }
         
@@ -1622,9 +1580,9 @@ window.getVideoStream = getVideoStream;
         const backButton = overlay.querySelector('.back-button');
         const timerDisplay = overlay.querySelector('.timer-display');
         const progressBar = overlay.querySelector('.progress');
-        const startSound = new Audio('assets/effects/start.mp3');
-        const halfwaySound = new Audio('assets/effects/halfway.mp3');
-        const endSound = new Audio('assets/effects/end.mp3');
+        const startSound = new Audio('assets/sounds/start.mp3');
+        const halfwaySound = new Audio('assets/sounds/halfway.mp3');
+        const endSound = new Audio('assets/sounds/end.mp3');
         let startTime;
         let timerInterval;
         let isActive = true;
@@ -1711,8 +1669,13 @@ window.getVideoStream = getVideoStream;
             const countdownConfig = {
                 displayDuration: 800,    // 每个数字显示的总时长（毫秒）
                 fadeOutTime: 600,       // 淡出动画时长（毫秒）
-                offsetTime: 0           // 数字间隔时间（毫秒）- 提早200ms卡准音乐鼓点
+                offsetTime: -200        // 第一个数字开始显示的时间偏移（毫秒）- 提早200ms卡准音乐鼓点
             };
+            
+            // 等待offset时间（如果是负数，则提前开始）
+            if (countdownConfig.offsetTime > 0) {
+                await new Promise(resolve => setTimeout(resolve, countdownConfig.offsetTime));
+            }
             
             const countdown = ['3', '2', '1', '开始'];
             for (let i = 0; i < countdown.length; i++) {
@@ -1738,8 +1701,8 @@ window.getVideoStream = getVideoStream;
                     
                     console.log(`🎬 倒计时淡出: ${text} (${countdownConfig.fadeOutTime}ms)`);
                     
-                    // 等待淡出完成 + 间隔时间
-                    await new Promise(resolve => setTimeout(resolve, countdownConfig.fadeOutTime + countdownConfig.offsetTime));
+                    // 等待淡出完成
+                    await new Promise(resolve => setTimeout(resolve, countdownConfig.fadeOutTime));
                 } else {
                     // "开始"文字的特殊处理
                     countdownOverlay.style.transition = `opacity ${countdownConfig.fadeOutTime}ms ease-out`;
@@ -1851,7 +1814,7 @@ window.getVideoStream = getVideoStream;
         startPresentation(overlay);
     });
     updateStartButton();
-    const testSound = new Audio('assets/effects/end.mp3');
+    const testSound = new Audio('assets/sounds/end.mp3');
     const playTestSound = (stop = false) => {
         if (!effectsMuted && !stop) {
             testSound.currentTime = 0;
@@ -1919,7 +1882,7 @@ window.getVideoStream = getVideoStream;
             sliderContainer.appendChild(slider);
             sliderContainer.appendChild(description);
             container.appendChild(sliderContainer);
-            const testSound = new Audio('assets/effects/end.mp3');
+            const testSound = new Audio('assets/sounds/end.mp3');
             testSound.volume = effectsVolume * effectsVolume; // 平方权重
             let toggleRadius = 10;
             let sliderFullWidth = slider.offsetWidth;
@@ -1976,7 +1939,7 @@ const BACKGROUND_MUSIC_VOLUME_MULTIPLIER = 4.0;
 // 初始化背景音乐
 const initBackgroundMusic = () => {
     const backgroundMusicVolume = simpleConfig.get('backgroundMusicVolume') || 0.5;
-    backgroundMusic = new Audio('assets/effects/background.mp3');
+    backgroundMusic = new Audio('assets/sounds/background.mp3');
     backgroundMusic.loop = true;
     backgroundMusic.volume = Math.min(backgroundMusicVolume * BACKGROUND_MUSIC_VOLUME_MULTIPLIER, 1.0);
     
