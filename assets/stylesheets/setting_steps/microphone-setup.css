@@ -498,14 +498,6 @@
     min-width: 60px;
 }
 
-.audio-test-section.testing .test-button {
-    background: #dc3545;
-    color: white;
-}
-
-.audio-test-section.testing .test-button:hover {
-    background: #c82333;
-}
 
 /* 权限建议样式 */
 .permission-advice {

@@ -466,38 +466,6 @@
     margin-top: 30px;
 }
 
-.save-button, .test-button {
-    padding: 12px 30px;
-    border: none;
-    border-radius: 25px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.save-button {
-    background: #333;
-    color: white;
-    border: none;
-}
-
-.save-button:hover {
-    background: #666AF6;
-    color: white;
-    transform: translateY(-2px);
-}
-
-.test-button {
-    background: #333;
-    color: white;
-    border: none;
-}
-
-.test-button:hover {
-    background: #666AF6;
-    color: white;
-    transform: translateY(-2px);
-}
 
 .settings-footer {
     text-align: center;
@@ -844,14 +812,6 @@
     min-width: 60px;
 }
 
-.audio-test-section.testing .test-button {
-    background: #dc3545;
-    color: white;
-}
-
-.audio-test-section.testing .test-button:hover {
-    background: #c82333;
-}
 
 /* 通用badge基础样式 */
 .badge-base {
