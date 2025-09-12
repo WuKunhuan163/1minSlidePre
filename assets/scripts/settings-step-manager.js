@@ -942,6 +942,9 @@ class SettingsStepManager {
             if (button.text && (button.text.includes('验证') || button.text.includes('测试'))) {
                 // 这是验证按钮，执行验证并显示结果
                 this.handleValidationButton(stepId, button);
+            } else if (button.text && button.text.includes('完成设置')) {
+                // 这是完成设置按钮，不需要额外处理，因为onClick已经被调用了
+                console.log('🎉 完成设置按钮被点击，onClick已执行');
             } else if (step.autoJumpCondition) {
                 // 这是其他核心按钮，执行自动跳转检查
                 this.checkAutoJump(stepId);
