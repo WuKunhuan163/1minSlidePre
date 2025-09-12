@@ -956,28 +956,48 @@ class SettingsStepManager {
                 const validationResult = await step.validation();
                 console.log(`🔍 ${stepId} validation函数结果: ${validationResult}`);
                 
-                if (validationResult) {
+                // 根据validationResult的具体内容判断状态
+                if (validationResult && validationResult.success) {
                     // 验证成功
                     console.log(`✅ ${stepId} 验证成功`);
-                    let successMessage = '验证通过';
+                    let successMessage = validationResult.message || '验证通过';
                     
                     // 为特定步骤显示更友好的成功消息
                     if (stepId === 'step2' && this.settingId === 'microphone') {
                         successMessage = '录音测试完成！';
                     } else if (stepId === 'step4' && this.settingId === 'recording') {
                         successMessage = 'AccessKey验证通过';
-                    } else if (stepId === 'step2' && this.settingId === 'recording') {
-                        successMessage = 'AppKey格式正确，会在语音识别测试阶段进行实际验证';
                     }
                     
                     this.showStepStatus(stepId, successMessage, 'success');
+                } else if (validationResult && validationResult.warning) {
+                    // 验证有警告
+                    console.log(`⚠️ ${stepId} 验证有警告`);
+                    let warningMessage = validationResult.message || '验证有警告';
                     
-                    // 验证成功后，可以考虑自动跳转到下一步
-                    // 但这需要额外的逻辑来确定是否应该跳转
-                } else {
+                    // 为特定步骤显示更友好的警告消息
+                    if (stepId === 'step2' && this.settingId === 'recording') {
+                        warningMessage = 'AppKey格式正确，会在语音识别测试阶段进行实际验证';
+                    }
+                    
+                    this.showStepStatus(stepId, warningMessage, 'warning');
+                } else if (validationResult && validationResult.error) {
                     // 验证失败
                     console.log(`❌ ${stepId} 验证失败`);
+                    const errorMessage = validationResult.message || '验证失败，请检查配置';
+                    this.showStepStatus(stepId, errorMessage, 'error');
+                } else if (validationResult === false) {
+                    // 简单的false返回
+                    console.log(`❌ ${stepId} 验证失败`);
                     this.showStepStatus(stepId, '验证失败，请检查配置', 'error');
+                } else if (validationResult === true) {
+                    // 简单的true返回
+                    console.log(`✅ ${stepId} 验证成功`);
+                    this.showStepStatus(stepId, '验证通过', 'success');
+                } else {
+                    // 其他情况
+                    console.log(`❓ ${stepId} 验证结果未知:`, validationResult);
+                    this.showStepStatus(stepId, '验证结果未知', 'warning');
                 }
             } else {
                 console.warn(`⚠️ ${stepId} 没有validation函数`);
