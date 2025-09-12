@@ -936,19 +936,10 @@ class SettingsStepManager {
             button.onClick();
         }
         
-        // 如果是核心按钮，检查自动跳转条件
-        // 但是如果按钮类型是primary且是验证按钮，则执行验证逻辑而不是自动跳转
-        if (button.isPrimary) {
-            if (button.text && (button.text.includes('验证') || button.text.includes('测试'))) {
-                // 这是验证按钮，执行验证并显示结果
-                this.handleValidationButton(stepId, button);
-            } else if (button.text && button.text.includes('完成设置')) {
-                // 这是完成设置按钮，不需要额外处理，因为onClick已经被调用了
-                console.log('🎉 完成设置按钮被点击，onClick已执行');
-            } else if (step.autoJumpCondition) {
-                // 这是其他核心按钮，执行自动跳转检查
-                this.checkAutoJump(stepId);
-            }
+        // 检查是否是验证按钮，如果是则执行验证逻辑
+        if (button.text && (button.text.includes('验证') || button.text.includes('测试'))) {
+            // 这是验证按钮，执行验证并显示结果
+            this.handleValidationButton(stepId, button);
         }
     }
 
