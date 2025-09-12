@@ -1489,6 +1489,9 @@ class SettingsStepManager {
         const lastStep = this.steps[this.steps.length - 1];
         this.markStepCompleted(lastStep.id, true);
         
+        // 统一保存所有步骤的配置数据
+        this.saveAllStepsConfiguration();
+        
         // 调用完成回调
         if (this.onComplete && typeof this.onComplete === 'function') {
             this.onComplete();
@@ -1538,6 +1541,340 @@ class SettingsStepManager {
                 element.value = data[field.id];
             }
         });
+    }
+
+    // 统一保存所有步骤的配置数据
+    saveAllStepsConfiguration() {
+        console.log(`💾 开始统一保存 ${this.settingId} 设置的所有配置数据`);
+        
+        // 收集所有步骤的表单数据
+        const allFormData = {};
+        this.steps.forEach(step => {
+            if (step.content && step.content.form) {
+                const stepData = this.getStepFormData(step.id);
+                Object.assign(allFormData, stepData);
+            }
+        });
+        
+        console.log(`💾 收集到的所有表单数据:`, allFormData);
+        
+        // 根据settingId决定保存方式和配置结构
+        let savedSuccessfully = false;
+        
+        try {
+            switch (this.settingId) {
+                case 'ai':
+                    savedSuccessfully = this.saveAIConfiguration(allFormData);
+                    break;
+                case 'camera':
+                    savedSuccessfully = this.saveCameraConfiguration(allFormData);
+                    break;
+                case 'microphone':
+                    savedSuccessfully = this.saveMicrophoneConfiguration(allFormData);
+                    break;
+                case 'recording':
+                    savedSuccessfully = this.saveRecordingConfiguration(allFormData);
+                    break;
+                default:
+                    console.warn(`⚠️ 未知的settingId: ${this.settingId}，使用默认保存方式`);
+                    savedSuccessfully = this.saveDefaultConfiguration(allFormData);
+                    break;
+            }
+            
+            if (savedSuccessfully) {
+                console.log(`✅ ${this.settingId} 配置保存成功`);
+                
+                // 注册配置显示字段
+                this.registerConfigurationFields(allFormData);
+                
+                // 标记设置为已测试/已完成
+                if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
+                    simpleConfig.markSettingTested(this.settingId);
+                    console.log(`✅ ${this.settingId} 已标记为完成状态`);
+                }
+            } else {
+                console.error(`❌ ${this.settingId} 配置保存失败`);
+            }
+        } catch (error) {
+            console.error(`❌ 保存 ${this.settingId} 配置时发生错误:`, error);
+        }
+    }
+
+    // 保存智谱AI配置
+    saveAIConfiguration(formData) {
+        console.log('🤖 保存智谱AI配置:', formData);
+        
+        if (!formData.zhipuApiKey || !formData.zhipuApiKey.trim()) {
+            console.error('❌ 智谱AI API Key为空，无法保存');
+            return false;
+        }
+        
+        try {
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+                simpleConfig.set('zhipuApiKey', formData.zhipuApiKey.trim());
+                simpleConfig.set('aiEnabled', true);
+                console.log('✅ 智谱AI配置已保存到simpleConfig');
+                return true;
+            }
+        } catch (error) {
+            console.error('❌ 保存智谱AI配置失败:', error);
+        }
+        
+        return false;
+    }
+
+    // 保存摄像头配置
+    saveCameraConfiguration(formData) {
+        console.log('📹 保存摄像头配置:', formData);
+        
+        // 获取摄像头管理器的当前状态
+        if (typeof cameraSetupManager !== 'undefined' && cameraSetupManager) {
+            const config = {
+                enabled: true,
+                selectedDeviceId: cameraSetupManager.selectedDeviceId,
+                selectedDeviceName: cameraSetupManager.selectedDeviceName,
+                speakerSettings: {
+                    position: cameraSetupManager.speakerPosition,
+                    size: cameraSetupManager.speakerSize,
+                    margin: cameraSetupManager.speakerMargin
+                },
+                timestamp: Date.now()
+            };
+            
+            try {
+                localStorage.setItem('cameraConfig', JSON.stringify(config));
+                console.log('✅ 摄像头配置已保存到localStorage');
+                return true;
+            } catch (error) {
+                console.error('❌ 保存摄像头配置失败:', error);
+            }
+        } else {
+            console.error('❌ 摄像头管理器不可用，无法保存配置');
+        }
+        
+        return false;
+    }
+
+    // 保存录音设备配置
+    saveMicrophoneConfiguration(formData) {
+        console.log('🎤 保存录音设备配置:', formData);
+        
+        // 获取录音设备管理器的当前状态
+        if (typeof microphoneSetupManager !== 'undefined' && microphoneSetupManager) {
+            const config = {
+                enabled: true,
+                selectedDeviceId: microphoneSetupManager.selectedDeviceId,
+                selectedDeviceName: microphoneSetupManager.selectedDeviceName,
+                recordingTestCompleted: microphoneSetupManager.recordingTestCompleted,
+                timestamp: Date.now()
+            };
+            
+            try {
+                localStorage.setItem('microphoneConfig', JSON.stringify(config));
+                console.log('✅ 录音设备配置已保存到localStorage');
+                return true;
+            } catch (error) {
+                console.error('❌ 保存录音设备配置失败:', error);
+            }
+        } else {
+            console.error('❌ 录音设备管理器不可用，无法保存配置');
+        }
+        
+        return false;
+    }
+
+    // 保存录音文字识别配置
+    saveRecordingConfiguration(formData) {
+        console.log('🎙️ 保存录音文字识别配置:', formData);
+        
+        if (!formData.audioAppKey || !formData.accessKeyId || !formData.accessKeySecret) {
+            console.error('❌ 录音文字识别配置不完整，无法保存');
+            return false;
+        }
+        
+        try {
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+                simpleConfig.set('appKey', formData.audioAppKey.trim());
+                simpleConfig.set('accessKeyId', formData.accessKeyId.trim());
+                simpleConfig.set('accessKeySecret', formData.accessKeySecret.trim());
+                simpleConfig.set('recordingEnabled', true);
+                console.log('✅ 录音文字识别配置已保存到simpleConfig');
+                return true;
+            }
+        } catch (error) {
+            console.error('❌ 保存录音文字识别配置失败:', error);
+        }
+        
+        return false;
+    }
+
+    // 默认配置保存方式
+    saveDefaultConfiguration(formData) {
+        console.log(`💾 使用默认方式保存 ${this.settingId} 配置:`, formData);
+        
+        try {
+            if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
+                // 将所有表单数据保存到simpleConfig
+                Object.keys(formData).forEach(key => {
+                    if (formData[key] && formData[key].trim) {
+                        simpleConfig.set(key, formData[key].trim());
+                    } else {
+                        simpleConfig.set(key, formData[key]);
+                    }
+                });
+                
+                // 设置启用状态
+                simpleConfig.set(`${this.settingId}Enabled`, true);
+                
+                console.log(`✅ ${this.settingId} 配置已保存到simpleConfig`);
+                return true;
+            }
+        } catch (error) {
+            console.error(`❌ 保存 ${this.settingId} 配置失败:`, error);
+        }
+        
+        return false;
+    }
+
+    // 注册配置显示字段
+    registerConfigurationFields(formData) {
+        console.log(`📝 为 ${this.settingId} 注册配置显示字段`);
+        
+        const fields = [];
+        
+        // 根据settingId生成对应的显示字段
+        switch (this.settingId) {
+            case 'ai':
+                if (formData.zhipuApiKey) {
+                    fields.push(
+                        {
+                            name: '智谱AI API Key',
+                            value: formData.zhipuApiKey,
+                            type: 'password',
+                            copyable: true
+                        },
+                        {
+                            name: '设置状态',
+                            value: '已启用',
+                            type: 'text',
+                            copyable: false
+                        },
+                        {
+                            name: '配置时间',
+                            value: new Date().toLocaleString(),
+                            type: 'text',
+                            copyable: false
+                        }
+                    );
+                }
+                break;
+                
+            case 'camera':
+                if (typeof cameraSetupManager !== 'undefined' && cameraSetupManager) {
+                    fields.push(
+                        {
+                            name: '已选择设备',
+                            value: cameraSetupManager.selectedDeviceName || '未知设备',
+                            type: 'text',
+                            copyable: false
+                        },
+                        {
+                            name: '设备状态',
+                            value: '已启用',
+                            type: 'text',
+                            copyable: false
+                        },
+                        {
+                            name: '配置时间',
+                            value: new Date().toLocaleString(),
+                            type: 'text',
+                            copyable: false
+                        }
+                    );
+                }
+                break;
+                
+            case 'microphone':
+                if (typeof microphoneSetupManager !== 'undefined' && microphoneSetupManager) {
+                    fields.push(
+                        {
+                            name: '已选择设备',
+                            value: microphoneSetupManager.selectedDeviceName || '未知设备',
+                            type: 'text',
+                            copyable: false
+                        },
+                        {
+                            name: '设备状态',
+                            value: '已启用',
+                            type: 'text',
+                            copyable: false
+                        },
+                        {
+                            name: '配置时间',
+                            value: new Date().toLocaleString(),
+                            type: 'text',
+                            copyable: false
+                        }
+                    );
+                }
+                break;
+                
+            case 'recording':
+                if (formData.audioAppKey && formData.accessKeyId && formData.accessKeySecret) {
+                    fields.push(
+                        {
+                            name: 'App Key',
+                            value: formData.audioAppKey,
+                            type: 'password',
+                            copyable: true
+                        },
+                        {
+                            name: 'AccessKey ID',
+                            value: formData.accessKeyId,
+                            type: 'password',
+                            copyable: true
+                        },
+                        {
+                            name: 'AccessKey Secret',
+                            value: formData.accessKeySecret,
+                            type: 'password',
+                            copyable: true
+                        }
+                    );
+                }
+                break;
+                
+            default:
+                // 默认显示所有表单字段
+                Object.keys(formData).forEach(key => {
+                    if (formData[key]) {
+                        fields.push({
+                            name: key,
+                            value: formData[key],
+                            type: key.toLowerCase().includes('key') || key.toLowerCase().includes('secret') || key.toLowerCase().includes('password') ? 'password' : 'text',
+                            copyable: key.toLowerCase().includes('key') || key.toLowerCase().includes('secret')
+                        });
+                    }
+                });
+                break;
+        }
+        
+        if (fields.length > 0) {
+            console.log(`📝 准备注册的字段:`, fields);
+            
+            // 通知设置管理器更新显示字段
+            if (window.updateSettingFields) {
+                console.log(`📝 调用window.updateSettingFields`);
+                window.updateSettingFields(this.settingId, fields);
+            } else if (window.settingsManager && window.settingsManager.registerSettingFields) {
+                console.log(`📝 调用window.settingsManager.registerSettingFields`);
+                window.settingsManager.registerSettingFields(this.settingId, fields);
+            } else {
+                console.error('❌ 字段注册方法不可用');
+            }
+        } else {
+            console.warn(`⚠️ ${this.settingId} 没有可注册的字段`);
+        }
     }
 
     // 销毁管理器

@@ -548,11 +548,7 @@ class AudioSetupManager {
             const validationResult = await this.validateAppKey();
             console.log('🔄 AppKey验证结果:', validationResult);
             
-            // 保存AppKey
-            if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
-                console.log('🔄 保存AppKey到配置:', formData.audioAppKey.trim());
-                simpleConfig.set('appKey', formData.audioAppKey.trim());
-            }
+            // AppKey验证成功，字段保存将在completeSetup中统一处理
             
             if (validationResult.warning) {
                 // 格式有问题，显示警告并等待跳转
@@ -790,10 +786,7 @@ class AudioSetupManager {
             
             if (isValid) {
                 // 保存AccessKeys
-                const formData = this.stepManager.getStepFormData('step4');
-                console.log('🔄 保存AccessKey到配置');
-                simpleConfig.set('accessKeyId', formData.audioAccessKeyId.trim());
-                simpleConfig.set('accessKeySecret', formData.audioAccessKeySecret.trim());
+                // AccessKey验证成功，字段保存将在completeSetup中统一处理
                 
                 this.stepManager.showStepStatus('step4', 'AccessKey验证成功！', 'success');
                 
@@ -816,8 +809,7 @@ class AudioSetupManager {
             console.error('❌ validateStep4 执行出错:', error);
             this.stepManager.showStepStatus('step4', error.message, 'error');
             
-            // 验证失败时，确保清除可能已经设置的启用状态
-            simpleConfig.set('recordingEnabled', false);
+            // 验证失败，启用状态将由统一的保存逻辑处理
             
             // 恢复按钮状态为错误状态
             const validateBtn = document.getElementById(`${this.settingId}-step4-validateBtn`);
@@ -1610,16 +1602,9 @@ class AudioSetupManager {
 
     // 完成设置
     completeSetup() {
-        // console.log('🎯 完成录音文字识别设置');
+        console.log('✅ 录音文字识别设置完成，配置保存将由统一管理器处理');
         
-        // 标记设置为已测试（这是完成的标志）
-        simpleConfig.markSettingTested('recording');
-        
-        // 启用录音功能
-        simpleConfig.set('recordingEnabled', true);
-        
-        // console.log('✅ 录音功能设置完成并已启用');
-        
+        // 统一的设置完成处理（包括保存配置、标记已测试、启用功能等）
         this.stepManager.completeSetup();
     }
     

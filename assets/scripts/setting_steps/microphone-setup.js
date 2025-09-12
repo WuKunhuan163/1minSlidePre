@@ -1808,23 +1808,15 @@ class MicrophoneSetupManager {
     completeSetup() {
         // console.log('🎤 完成录音设备设置...');
         
-        if (this.saveConfiguration()) {
-            // 标记设置为已测试
-            if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
-                simpleConfig.markSettingTested('microphone');
-            }
-            
-            // console.log('✅ 录音设备设置完成');
-            
-            // 刷新主设置页面显示
-            if (window.refreshSettingsDisplay) {
-                window.refreshSettingsDisplay();
-            }
-            
-            this.stepManager.completeSetup();
-        } else {
-            this.stepManager.showStepStatus('step2', '保存配置失败', 'error');
+        console.log('✅ 录音设备设置完成，配置保存将由统一管理器处理');
+        
+        // 刷新主设置页面显示
+        if (window.refreshSettingsDisplay) {
+            window.refreshSettingsDisplay();
         }
+        
+        // 统一的设置完成处理（包括保存配置、标记已测试等）
+        this.stepManager.completeSetup();
     }
 
     // 保存基本配置（录音测试完成时调用）

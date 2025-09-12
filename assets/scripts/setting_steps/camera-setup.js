@@ -315,24 +315,14 @@ class CameraSetupManager {
         console.log('✅ 摄像头设置完成');
         console.log('🔧 调用 saveConfiguration 并标记设置为已测试');
         
-        if (this.saveConfiguration()) {
-            // 标记设置为已测试完成
-            if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
-                simpleConfig.markSettingTested('camera');
-                console.log('✅ 摄像头设置已标记为测试完成');
-            } else {
-                console.error('❌ simpleConfig.markSettingTested 不存在');
-            }
-            
-            // 刷新主设置页面显示
-            if (window.refreshSettingsDisplay) {
-                window.refreshSettingsDisplay();
-                console.log('✅ refreshSettingsDisplay 调用成功');
-            } else {
-                console.error('❌ window.refreshSettingsDisplay 不存在');
-            }
+        // 配置保存和测试标记将由统一管理器处理
+        
+        // 刷新主设置页面显示
+        if (window.refreshSettingsDisplay) {
+            window.refreshSettingsDisplay();
+            console.log('✅ refreshSettingsDisplay 调用成功');
         } else {
-            console.error('❌ 摄像头配置保存失败');
+            console.error('❌ window.refreshSettingsDisplay 不存在');
         }
         
         this.cleanup();
@@ -1335,18 +1325,11 @@ class CameraSetupManager {
     completeSetup() {
         // console.log('📹 完成摄像头设置...');
         
-        if (this.saveConfiguration()) {
-            // 标记设置为已测试完成
-            if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
-                simpleConfig.markSettingTested('camera');
-            }
-            
-            console.log('✅ 摄像头设置完成');
-            this.stepManager.completeSetup();
-            this.cleanup();
-        } else {
-            this.stepManager.showStepStatus('step2', '保存配置失败', 'error');
-        }
+        console.log('✅ 摄像头设置完成，配置保存将由统一管理器处理');
+        
+        // 统一的设置完成处理（包括保存配置、标记已测试等）
+        this.stepManager.completeSetup();
+        this.cleanup();
     }
 
     // 保存基本配置（第二步完成时调用）

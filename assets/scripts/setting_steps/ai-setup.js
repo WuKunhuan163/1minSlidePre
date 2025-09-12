@@ -274,11 +274,7 @@ class AISetupManager {
                 
                 const testResult = await this.testApiConnection(apiKey);
                 if (testResult.success) {
-                    // 保存API Key
-                    if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
-                        simpleConfig.set('zhipuApiKey', apiKey);
-                    }
-                    
+                    // API Key验证成功，字段保存将在completeSetup中统一处理
                     this.stepManager.showStepStatus('step2', 'API Key验证成功！', 'success');
                     
                     // 恢复按钮状态为成功状态
@@ -301,10 +297,7 @@ class AISetupManager {
         } catch (error) {
             this.stepManager.showStepStatus('step2', error.message, 'error');
             
-            // 验证失败时，确保清除可能已经设置的启用状态
-            if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
-                simpleConfig.set('aiEnabled', false);
-            }
+            // 验证失败，启用状态将由统一的保存逻辑处理
             
             // 恢复按钮状态为错误状态
             const validateBtn = document.getElementById(`${this.settingId}-step2-validateBtn`);
@@ -403,10 +396,7 @@ class AISetupManager {
             simpleConfig.clearSettingTested('ai');
         }
         
-        // 禁用AI功能，需要重新完成设置
-        if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
-            simpleConfig.set('aiEnabled', false);
-        }
+        // 清除测试状态，需要重新完成设置
     }
 
     // 触发自动测试（用于自动跳转条件）
@@ -684,74 +674,14 @@ class AISetupManager {
     completeSetup() {
         console.log('🎯 完成智谱AI设置');
         
-        // 标记设置为已测试（这是完成的标志）
-        if (typeof simpleConfig !== 'undefined' && simpleConfig.markSettingTested) {
-            simpleConfig.markSettingTested('ai');
-        }
+        console.log('✅ AI功能设置完成，配置保存和字段注册将由统一管理器处理');
         
-        // 启用AI功能
-        if (typeof simpleConfig !== 'undefined' && simpleConfig.set) {
-            simpleConfig.set('aiEnabled', true);
-        }
-        
-        // 注册配置显示字段
-        this.registerConfigFields();
-        
-        console.log('✅ AI功能设置完成并已启用');
-        
+        // 统一的设置完成处理（包括保存配置、注册字段、标记已测试等）
         this.stepManager.completeSetup();
     }
 
-    // 注册配置显示字段
-    registerConfigFields() {
-        console.log('🤖 开始注册智谱AI配置显示字段');
-        
-        // 获取当前保存的配置
-        let apiKey = '';
-        if (typeof simpleConfig !== 'undefined' && simpleConfig.getAll) {
-            const config = simpleConfig.getAll();
-            apiKey = config.zhipuApiKey || '';
-        }
-        
-        if (!apiKey) {
-            console.warn('⚠️ 未找到保存的API Key，无法注册字段');
-            return;
-        }
-        
-        const fields = [
-            {
-                name: '智谱AI API Key',
-                value: apiKey,
-                type: 'password',
-                copyable: true
-            },
-            {
-                name: '设置状态',
-                value: '已启用',
-                type: 'text',
-                copyable: false
-            },
-            {
-                name: '配置时间',
-                value: new Date().toLocaleString(),
-                type: 'text',
-                copyable: false
-            }
-        ];
-        
-        console.log('🤖 准备注册的字段:', fields);
-        
-        // 通知设置管理器更新显示字段
-        if (window.updateSettingFields) {
-            console.log('🤖 调用window.updateSettingFields');
-            window.updateSettingFields('ai', fields);
-        } else if (window.settingsManager && window.settingsManager.registerSettingFields) {
-            console.log('🤖 调用window.settingsManager.registerSettingFields');
-            window.settingsManager.registerSettingFields('ai', fields);
-        } else {
-            console.error('❌ 字段注册方法不可用');
-        }
-    }
+    // 注册配置显示字段（已移至统一管理器处理）
+    // registerConfigFields() 方法已废弃，由 settings-step-manager.js 统一处理
 
     // 清除配置显示字段
     clearConfigFields() {
