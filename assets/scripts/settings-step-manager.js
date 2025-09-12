@@ -384,14 +384,9 @@ class SettingsStepManager {
         return html;
     }
 
-    // 获取按钮样式类
+    // 获取按钮样式类 - 暂时返回空，未来可能扩展
     getButtonClass(type) {
-        switch (type) {
-            case 'back': return 'step-back-button';
-            case 'primary': return 'secondary-button';
-            case 'success': return 'success-button';
-            default: return 'secondary-button';
-        }
+        return '';
     }
 
     // 设置事件监听器
