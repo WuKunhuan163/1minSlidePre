@@ -345,7 +345,7 @@ class SettingsStepManager {
             const buttonId = `${this.settingId}-${step.id}-${button.id}`;
             
             const buttonHtml = `
-                <button class="btn ${buttonClass} normal-button" 
+                <button class="rect-button btn ${buttonClass} normal-button" 
                         id="${buttonId}"
                         data-step-id="${step.id}" 
                         data-button-id="${button.id}">

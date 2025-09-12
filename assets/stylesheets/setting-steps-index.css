@@ -471,17 +471,6 @@
     background: #666AF6 !important; /* hover时紫色 */
 }
 
-/* 上一步按钮样式 - 只覆盖需要的样式，其他继承自normal-button */
-.setup-step .btn.btn-back {
-    background: #333 !important; /* 默认黑色 */
-}
-
-.setup-step .btn.btn-back:hover {
-    background: #ff6b6b !important; /* hover时红色 */
-}
-
-/* 录音测试区域样式已移除 */
-
 /* 录音框统一文本样式 */
 .recording-text {
     color: #ccc;
@@ -781,9 +770,6 @@
     pointer-events: auto !important;
     opacity: 1 !important;
     cursor: pointer !important;
-    background-color: initial !important;
-    color: initial !important;
-    border-color: initial !important;
 }
 
 /* 特殊类：强制不可交互 - 优先级更高 */
