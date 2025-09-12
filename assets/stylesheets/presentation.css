@@ -1,0 +1,253 @@
+/* 演讲界面相关样式 */
+/* 从index.css迁移而来 */
+
+/* 演讲内容要求输入区域 */
+.speech-requirements {
+    background: var(--primary-purple-alpha-20); /* 使用主题紫色的10%透明度 */
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+    border: 2px solid var(--primary-purple); /* 使用主题紫色的30%透明度作为边框 */
+    display: none;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.presentation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    min-width: 300px;
+    background-color: black;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 预加载阶段样式 */
+.preload-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: black;
+}
+
+.preload-content {
+    text-align: center;
+    color: white;
+    max-width: 400px;
+    width: 100%;
+    padding: 40px 20px;
+}
+
+.preload-content h3 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    color: #666AF6;
+}
+
+.preload-steps {
+    margin-bottom: 30px;
+}
+
+.preload-step {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    background: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.preload-step i {
+    font-size: 20px;
+    color: #666AF6;
+    margin-right: 15px;
+}
+
+.preload-step span {
+    flex: 1;
+    text-align: left;
+    font-size: 16px;
+}
+
+.step-status.success {
+    color: #28a745;
+}
+
+.step-status.error {
+    color: #dc3545;
+}
+
+.preload-progress {
+    margin-top: 20px;
+}
+
+.progress-text {
+    font-size: 16px;
+    color: #666AF6;
+    margin-bottom: 10px;
+}
+
+/* 主演讲界面 */
+.main-presentation {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.presentation-header {
+    display: flex;
+    align-items: center;
+    gap: 10px 20px;
+    padding: 20px;
+    height: 80px;
+    position: relative;
+    z-index: 1002;
+}
+
+.presentation-header h2 {
+    color: white;
+    font-size: 18px;
+    font-weight: normal;
+    flex: 1; /* 让标题占据剩余空间，推动状态指示器到右侧 */
+}
+
+/* 录音录像状态指示器 */
+.recording-status-indicators {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: white;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+/* 状态点样式 - 类似设置面板的圆点 */
+.status-dot.unconfigured {
+    background-color: #666;
+    border: 1px solid #888;
+}
+
+.status-dot.success {
+    background-color: #28a745;
+    border: 1px solid #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.3);
+}
+
+.status-dot.failed {
+    background-color: #dc3545;
+    border: 1px solid #dc3545;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
+}
+
+.status-dot.testing {
+    background: linear-gradient(45deg, #666AF6, #9c6aff);
+    border: 1px solid #666AF6;
+    animation: pulse-purple 1.5s infinite;
+}
+
+.status-text {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.slide-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    position: relative; 
+    transition: filter 1s ease;
+}
+
+.presentation-slide {
+    max-width: 100%;
+    max-height: calc(100vh - 206px);
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.slide-container.blur {
+    filter: brightness(0.2);
+}
+
+/* presentation-header 响应式设计 */
+@media screen and (max-width: 450px) {
+    .presentation-header {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 80px;
+        padding: 15px 20px;
+    }
+
+.back-button-container {
+        display: block;
+        width: auto;
+    }
+
+.presentation-header h2 {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+    }
+
+.recording-status-indicators {
+        flex-basis: 100%;
+        margin-left: 0;
+        justify-content: center;
+        gap: 12px;
+    }
+}
+
+.countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 120px;
+    font-weight: bold;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.countdown-overlay.show {
+    filter: unset !important;
+    opacity: 1;
+    z-index: 1000;
+}
+
+.presentation-controls {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+    z-index: 1001;
+}
