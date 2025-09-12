@@ -1667,7 +1667,7 @@ window.getVideoStream = getVideoStream;
             await new Promise(resolve => setTimeout(resolve, 300));
             // 倒计时动画配置参数
             const countdownConfig = {
-                displayDuration: 800,    // 每个数字显示的总时长（毫秒）
+                displayDuration: 1000,   // 每个数字显示的总时长（毫秒）- 增加200ms
                 fadeOutTime: 600,       // 淡出动画时长（毫秒）
                 offsetTime: -200        // 第一个数字开始显示的时间偏移（毫秒）- 提早200ms卡准音乐鼓点
             };

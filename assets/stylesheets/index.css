@@ -749,9 +749,8 @@ body {
 
 .stop-recording {
     background: #ff4444;
-    padding: 10px 30px;  /* 覆盖normal-button的padding */
     opacity: 0.8;
-    transition: opacity 0.3s;  /* 覆盖normal-button的transition */
+    transition: opacity 0.3s;  
 }
 
 .stop-recording:hover {
