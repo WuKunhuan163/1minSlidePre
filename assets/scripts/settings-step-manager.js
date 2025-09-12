@@ -1036,7 +1036,7 @@ class SettingsStepManager {
                 const autoJumpResult = await step.autoJumpCondition();
                 console.log(`🔍 ${stepId} autoJumpCondition函数结果: ${autoJumpResult}`);
                 if (!autoJumpResult) {
-                    this.showStepStatus(stepId, '自动跳步条件不满足', 'warning');
+                    console.log(stepId, '自动跳步条件不满足', 'warning');
                     return;
                 }
             } else {
@@ -1613,15 +1613,15 @@ class SettingsStepManager {
         console.log('📹 保存摄像头配置:', formData);
         
         // 获取摄像头管理器的当前状态
-        if (typeof cameraSetupManager !== 'undefined' && cameraSetupManager) {
+        if (typeof window.cameraManager !== 'undefined' && window.cameraManager) {
             const config = {
                 enabled: true,
-                selectedDeviceId: cameraSetupManager.selectedDeviceId,
-                selectedDeviceName: cameraSetupManager.selectedDeviceName,
+                selectedDeviceId: window.cameraManager.selectedDeviceId,
+                selectedDeviceName: window.cameraManager.selectedDeviceName,
                 speakerSettings: {
-                    position: cameraSetupManager.speakerPosition,
-                    size: cameraSetupManager.speakerSize,
-                    margin: cameraSetupManager.speakerMargin
+                    position: window.cameraManager.speakerPosition,
+                    size: window.cameraManager.speakerSize,
+                    margin: window.cameraManager.speakerMargin
                 },
                 timestamp: Date.now()
             };
