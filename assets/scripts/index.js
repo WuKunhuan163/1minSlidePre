@@ -711,13 +711,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Create presentation view
     const createPresentationView = () => {
+        console.log('🎯 创建演讲界面，当前演讲时间:', presentationTime, '秒');
+        console.log('🎯 格式化后的时间文字:', formatTimeToText(presentationTime));
+        
         const overlay = document.createElement('div');
         overlay.className = 'presentation-overlay';
         overlay.innerHTML = `
             <div class="presentation-header">
-                <button class="normal-button back-button">
-                    <i class='bx bx-arrow-back'></i>
-                </button>
+                <div class="back-button-container">
+                    <button class="normal-button back-button">
+                        <i class='bx bx-arrow-back'></i>
+                    </button>
+                </div>
                 <h2 id="presentationTitle">${formatTimeToText(presentationTime)}即兴演讲</h2>
                 <div class="recording-status-indicators">
                     <div class="status-indicator" id="microphoneStatusIndicator">
@@ -801,14 +806,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 执行录音快测
             console.log('🎤 开始录音设备快测');
             microphoneStatusDot.className = 'status-dot testing';
-            microphoneStatusText.textContent = '录音测试中';
+            microphoneStatusText.textContent = '测试中';
             
             try {
                 // 使用设置管理器的缓存快测功能
                 const testResult = await window.settingsManager.performCachedTest('microphone', false);
                 if (testResult.success) {
                     microphoneStatusDot.className = 'status-dot success';
-                    microphoneStatusText.textContent = '录音';
+                    microphoneStatusText.textContent = '录音中';
                     console.log('✅ 录音设备快测成功');
                 } else {
                     microphoneStatusDot.className = 'status-dot failed';
@@ -836,14 +841,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 执行摄像头快测
             console.log('📹 开始摄像头设备快测');
             cameraStatusDot.className = 'status-dot testing';
-            cameraStatusText.textContent = '录像测试中';
+            cameraStatusText.textContent = '测试中';
             
             try {
                 // 使用设置管理器的缓存快测功能
                 const testResult = await window.settingsManager.performCachedTest('camera', false);
                 if (testResult.success) {
                     cameraStatusDot.className = 'status-dot success';
-                    cameraStatusText.textContent = '录像';
+                    cameraStatusText.textContent = '录像中';
                     console.log('✅ 摄像头设备快测成功');
                 } else {
                     cameraStatusDot.className = 'status-dot failed';
@@ -871,14 +876,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 执行录音文字识别快测（依赖录音设备快测结果）
             console.log('📝 开始录音文字识别快测');
             recordingStatusDot.className = 'status-dot testing';
-            recordingStatusText.textContent = '识别测试中';
+            recordingStatusText.textContent = '测试中';
             
             try {
                 // 使用设置管理器的缓存快测功能
                 const testResult = await window.settingsManager.performCachedTest('recording', false);
                 if (testResult.success) {
                     recordingStatusDot.className = 'status-dot success';
-                    recordingStatusText.textContent = '识别';
+                    recordingStatusText.textContent = '识别中';
                     console.log('✅ 录音文字识别快测成功');
                 } else {
                     recordingStatusDot.className = 'status-dot failed';
