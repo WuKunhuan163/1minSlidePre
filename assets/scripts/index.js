@@ -765,10 +765,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         <div class="status-dot" id="cameraStatusDot"></div>
                         <span class="status-text" id="cameraStatusText">未录像</span>
                     </div>
-                    <div class="status-indicator" id="recordingStatusIndicator">
-                        <div class="status-dot" id="recordingStatusDot"></div>
-                        <span class="status-text" id="recordingStatusText">未识别</span>
-                    </div>
                 </div>
             </div>
             
@@ -1715,7 +1711,7 @@ window.getVideoStream = getVideoStream;
             const countdownConfig = {
                 displayDuration: 800,    // 每个数字显示的总时长（毫秒）
                 fadeOutTime: 600,       // 淡出动画时长（毫秒）
-                offsetTime: 200         // 数字间隔时间（毫秒）
+                offsetTime: 0           // 数字间隔时间（毫秒）- 提早200ms卡准音乐鼓点
             };
             
             const countdown = ['3', '2', '1', '开始'];
