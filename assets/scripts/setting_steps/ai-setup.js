@@ -43,7 +43,6 @@ class AISetupManager {
                         id: 'completeBtn',
                         text: '完成账号注册',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.completeStep1(),
                         show: true
                     }
@@ -88,7 +87,6 @@ class AISetupManager {
                         id: 'validateBtn',
                         text: '验证',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.validateStep2(),
                         show: true
                     }

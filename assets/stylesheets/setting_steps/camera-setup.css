@@ -212,15 +212,6 @@ select.form-control option {
     display: inline-block;
 }
 
-.btn-primary {
-    background: #666AF6;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #5a5ee6;
-    transform: translateY(-1px);
-}
 
 .btn-secondary {
     background: #6c757d;

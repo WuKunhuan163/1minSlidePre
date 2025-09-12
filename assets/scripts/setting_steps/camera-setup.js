@@ -70,7 +70,6 @@ class CameraSetupManager {
                         id: 'nextBtn',
                         text: '验证',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.validateVideoStreamAndProceed(),
                         show: true
                     }
@@ -160,7 +159,6 @@ class CameraSetupManager {
                         id: 'nextBtn',
                         text: '下一步',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.stepManager.goToStep(3),
                         show: true
                     }
@@ -245,7 +243,6 @@ class CameraSetupManager {
                         id: 'completeBtn',
                         text: '完成设置',
                         type: 'success',
-                        isPrimary: true,
                         onClick: () => this.completeSetup(),
                         show: false  // 默认隐藏，只在录制转换成功后显示
                     }

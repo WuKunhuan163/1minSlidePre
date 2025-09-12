@@ -118,7 +118,6 @@ class SettingsStepManager {
      *       id: 'nextBtn', 
      *       text: '下一步',
      *       type: 'primary',
-     *       isPrimary: true,           // 标记为核心按钮
      *       onClick: () => {},
      *       show: true
      *     }
@@ -1216,12 +1215,6 @@ class SettingsStepManager {
         // 显示完成按钮
         const lastStep = this.steps[this.steps.length - 1];
         this.showButton(lastStep.id, 'completeBtn');
-        
-        // 隐藏核心按钮
-        const primaryButton = lastStep.buttons.find(b => b.isPrimary);
-        if (primaryButton) {
-            this.hideButton(lastStep.id, primaryButton.id);
-        }
         
         this.showStepStatus(lastStep.id, '设置完成！', 'success');
     }

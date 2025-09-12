@@ -248,10 +248,6 @@
     box-shadow: 0 0 0 0.2rem rgba(102, 106, 246, 0.25);
 }
 
-/* .btn-primary基础样式已移除，现在使用normal-button + 特定颜色覆盖 */
-
-/* .btn-back基础样式已移除，现在使用normal-button + 特定样式 */
-
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -462,14 +458,6 @@
     pointer-events: none;
 }
 
-/* 重写按钮样式 - 只覆盖颜色，其他继承自normal-button */
-.setup-step .btn.btn-primary {
-    background: #333 !important; /* 默认黑色 */
-}
-
-.setup-step .btn.btn-primary:hover {
-    background: #666AF6 !important; /* hover时紫色 */
-}
 
 /* 录音框统一文本样式 */
 .recording-text {

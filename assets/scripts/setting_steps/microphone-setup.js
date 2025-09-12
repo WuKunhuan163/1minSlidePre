@@ -93,7 +93,6 @@ class MicrophoneSetupManager {
                         id: 'recordBtn',
                         text: '开始录音',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.toggleRecording(),
                         show: true
                     },
@@ -108,7 +107,6 @@ class MicrophoneSetupManager {
                         id: 'completeBtn',
                         text: '完成设置',
                         type: 'success',
-                        isPrimary: true,
                         onClick: () => this.handleStepComplete(),
                         show: false
                     }

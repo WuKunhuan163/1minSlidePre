@@ -38,7 +38,6 @@ class AudioSetupManager {
                         id: 'completeBtn',
                         text: '完成服务启用',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.completeStep1(),
                         show: true
                     }
@@ -84,7 +83,6 @@ class AudioSetupManager {
                         id: 'validateBtn',
                         text: '验证',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.validateStep2(),
                         show: true
                     }
@@ -120,7 +118,6 @@ class AudioSetupManager {
                         id: 'completeBtn',
                         text: '完成用户创建',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.completeStep3(),
                         show: true
                     }
@@ -172,7 +169,6 @@ class AudioSetupManager {
                         id: 'validateBtn',
                         text: '验证',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.validateStep4(),
                         show: true
                     }
@@ -214,7 +210,6 @@ class AudioSetupManager {
                         id: 'recordBtn',
                         text: '开始',
                         type: 'primary',
-                        isPrimary: true,
                         onClick: () => this.toggleRecording(),
                         show: true
                     },
